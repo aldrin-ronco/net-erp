@@ -31,58 +31,52 @@ namespace NetErp.Billing.PriceList.ViewModels
         Dictionary<string, List<string>> _errors;
         public DateTime MinimumDate { get; set; } = DateTime.Now;
 
-        private string _name = string.Empty;
-
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
-                    ValidateProperty(nameof(Name), _name);
+                    field = value;
+                    ValidateProperty(nameof(Name), field);
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        private DateTime _startDate = DateTime.Now;
+        } = string.Empty;
 
         public DateTime StartDate
         {
-            get { return _startDate; }
+            get;
             set
             {
-                if (_startDate != value)
+                if (field != value)
                 {
-                    _startDate = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+                    field = DateTime.SpecifyKind(value, DateTimeKind.Utc);
                     NotifyOfPropertyChange(nameof(StartDate));
                     this.TrackChange(nameof(StartDate));
                     NotifyOfPropertyChange(nameof(CanSave));
-                    EndDate = _startDate;
+                    EndDate = field;
                 }
             }
-        }
-
-        private DateTime _endDate = DateTime.Now;
+        } = DateTime.Now;
 
         public DateTime EndDate
         {
-            get { return _endDate; }
+            get;
             set
             {
-                if (_endDate != value)
+                if (field != value)
                 {
-                    _endDate = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+                    field = DateTime.SpecifyKind(value, DateTimeKind.Utc);
                     NotifyOfPropertyChange(nameof(EndDate));
                     this.TrackChange(nameof(EndDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = DateTime.Now;
 
         // Propiedades heredadas del padre — se asignan en SetForNew()
         public bool EditablePrice { get; set; }
@@ -166,13 +160,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _nameFocus;
         public bool NameFocus
         {
-            get { return _nameFocus; }
+            get;
             set
             {
-                _nameFocus = value;
+                field = value;
                 NotifyOfPropertyChange(nameof(NameFocus));
             }
         }

@@ -40,34 +40,30 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
 
-        private string _name = string.Empty;
-
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(Name));
                 }
             }
-        }
-
-        private bool _isTaxable;
+        } = string.Empty;
 
         public bool IsTaxable
         {
-            get { return _isTaxable; }
+            get;
             set
             {
-                if (_isTaxable != value)
+                if (field != value)
                 {
-                    _isTaxable = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsTaxable));
                     this.TrackChange(nameof(IsTaxable));
                     if (value is false) PriceListIncludeTax = false;
@@ -76,16 +72,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _priceListIncludeTax;
-
         public bool PriceListIncludeTax
         {
-            get { return _priceListIncludeTax; }
+            get;
             set
             {
-                if (_priceListIncludeTax != value)
+                if (field != value)
                 {
-                    _priceListIncludeTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PriceListIncludeTax));
                     this.TrackChange(nameof(PriceListIncludeTax));
                     RefreshCostCenters();
@@ -93,46 +87,42 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _useAlternativeFormula;
-
         public bool UseAlternativeFormula
         {
-            get { return _useAlternativeFormula; }
+            get;
             set
             {
-                if (_useAlternativeFormula != value)
+                if (field != value)
                 {
-                    _useAlternativeFormula = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(UseAlternativeFormula));
                     this.TrackChange(nameof(UseAlternativeFormula));
                 }
             }
         }
 
-        private string _costMode = "USE_AVERAGE_COST";
         public string CostMode
         {
-            get => _costMode;
+            get;
             set
             {
-                if (_costMode != value)
+                if (field != value)
                 {
-                    _costMode = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostMode));
                     this.TrackChange(nameof(CostMode));
                 }
             }
-        }
+        } = "USE_AVERAGE_COST";
 
-        private PriceListCostModeEnum _selectedCostMode = PriceListCostModeEnum.USE_AVERAGE_COST;
         public PriceListCostModeEnum SelectedCostMode
         {
-            get => _selectedCostMode;
+            get;
             set
             {
-                if (_selectedCostMode != value)
+                if (field != value)
                 {
-                    _selectedCostMode = value;
+                    field = value;
                     CostMode = value.ToString();
                     NotifyOfPropertyChange(nameof(SelectedCostMode));
                     NotifyOfPropertyChange(nameof(ShowStorageSelector));
@@ -148,50 +138,44 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = PriceListCostModeEnum.USE_AVERAGE_COST;
 
         public bool ShowStorageSelector => SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE;
 
-        private ObservableCollection<StorageGraphQLModel> _storages;
-
         public ObservableCollection<StorageGraphQLModel> Storages
         {
-            get { return _storages; }
+            get;
             set
             {
-                if (_storages != value)
+                if (field != value)
                 {
-                    _storages = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Storages));
                 }
             }
         }
 
-        private ObservableCollection<CostCenterGraphQLModel> _costCenters;
-
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
-            get { return _costCenters; }
+            get;
             set
             {
-                if (_costCenters != value)
+                if (field != value)
                 {
-                    _costCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
         }
 
-        private ObservableCollection<CostCenterGraphQLModel> _shadowCostCenters;
-
         public ObservableCollection<CostCenterGraphQLModel> ShadowCostCenters
         {
-            get { return _shadowCostCenters; }
+            get;
             set
             {
-                if (_shadowCostCenters != value)
+                if (field != value)
                 {
-                    _shadowCostCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShadowCostCenters));
                 }
             }
@@ -199,17 +183,15 @@ namespace NetErp.Billing.PriceList.ViewModels
 
 
 
-        private StorageGraphQLModel? _selectedStorage;
-
         [ExpandoPath("storageId", SerializeAsId = true)]
         public StorageGraphQLModel? SelectedStorage
         {
-            get { return _selectedStorage; }
+            get;
             set
             {
-                if (_selectedStorage != value)
+                if (field != value)
                 {
-                    _selectedStorage = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedStorage));
                     this.TrackChange(nameof(SelectedStorage));
                     ValidateStorage();
@@ -229,21 +211,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool AllowNewUsersAccess { get; set; } = true;
         public string ListUpdateBehaviorOnCostChange { get; set; } = "UPDATE_PROFIT_MARGIN";
 
-        private string _selectedFormula = "D";
-
         public string SelectedFormula
         {
-            get { return _selectedFormula; }
+            get;
             set
             {
-                if (_selectedFormula != value)
+                if (field != value)
                 {
-                    _selectedFormula = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedFormula));
                     NotifyOfPropertyChange(nameof(Formula));
                 }
             }
-        }
+        } = "D";
 
         public string Formula
         {
@@ -352,13 +332,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             this.AcceptChanges();
         }
 
-        private bool _nameFocus;
         public bool NameFocus
         {
-            get { return _nameFocus; }
+            get;
             set
             {
-                _nameFocus = value;
+                field = value;
                 NotifyOfPropertyChange(nameof(NameFocus));
             }
         }

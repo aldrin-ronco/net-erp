@@ -92,31 +92,27 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Items Grid
 
-        private ObservableCollection<PromotionCatalogItemDTO> _items = [];
-
         public ObservableCollection<PromotionCatalogItemDTO> Items
         {
-            get { return _items; }
+            get;
             set
             {
-                if (_items != value)
+                if (field != value)
                 {
-                    _items = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Items));
                 }
             }
-        }
-
-        private PromotionCatalogItemDTO? _selectedItem;
+        } = [];
 
         public PromotionCatalogItemDTO? SelectedItem
         {
-            get { return _selectedItem; }
+            get;
             set
             {
-                if (_selectedItem != value)
+                if (field != value)
                 {
-                    _selectedItem = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
                 }
             }
@@ -126,20 +122,18 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Cascade Dropdowns
 
-        private ObservableCollection<CatalogGraphQLModel> _catalogs = [];
-
         public ObservableCollection<CatalogGraphQLModel> Catalogs
         {
-            get { return _catalogs; }
+            get;
             set
             {
-                if (_catalogs != value)
+                if (field != value)
                 {
-                    _catalogs = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Catalogs));
                 }
             }
-        }
+        } = [];
 
         private CatalogGraphQLModel _selectedCatalog = new();
 
@@ -165,20 +159,18 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemTypeGraphQLModel> _itemTypes = [];
-
         public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
-            get { return _itemTypes; }
+            get;
             set
             {
-                if (_itemTypes != value)
+                if (field != value)
                 {
-                    _itemTypes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemTypes));
                 }
             }
-        }
+        } = [];
 
         private ItemTypeGraphQLModel _selectedItemType = new();
 
@@ -206,20 +198,18 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
 
-        private ObservableCollection<ItemCategoryGraphQLModel> _itemsCategories = [];
-
         public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
-            get { return _itemsCategories; }
+            get;
             set
             {
-                if (_itemsCategories != value)
+                if (field != value)
                 {
-                    _itemsCategories = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemCategories));
                 }
             }
-        }
+        } = [];
 
         private ItemCategoryGraphQLModel _selectedItemCategory = new();
 
@@ -245,20 +235,18 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemSubCategoryGraphQLModel> _itemsSubCategories = [];
-
         public ObservableCollection<ItemSubCategoryGraphQLModel> ItemSubCategories
         {
-            get { return _itemsSubCategories; }
+            get;
             set
             {
-                if (_itemsSubCategories != value)
+                if (field != value)
                 {
-                    _itemsSubCategories = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemSubCategories));
                 }
             }
-        }
+        } = [];
 
         private ItemSubCategoryGraphQLModel _selectedItemSubCategory = new();
 
@@ -373,46 +361,40 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Busy / Filter / Header Check
 
-        private bool _isBusy;
-
         public bool IsBusy
         {
-            get { return _isBusy; }
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private bool _mainIsBusy;
-
         public bool MainIsBusy
         {
-            get { return _mainIsBusy; }
+            get;
             set
             {
-                if (_mainIsBusy != value)
+                if (field != value)
                 {
-                    _mainIsBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(MainIsBusy));
                 }
             }
         }
 
-        private string _filterSearch = "";
-
         public string FilterSearch
         {
-            get { return _filterSearch; }
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
@@ -421,22 +403,20 @@ namespace NetErp.Billing.PriceList.ViewModels
                     }
                 }
             }
-        }
-
-        private bool _itemsHeaderIsChecked;
+        } = "";
 
         public bool ItemsHeaderIsChecked
         {
             get
             {
                 if (Items is null || Items.Count == 0) return false;
-                return _itemsHeaderIsChecked;
+                return field;
             }
             set
             {
-                if (_itemsHeaderIsChecked != value)
+                if (field != value)
                 {
-                    _itemsHeaderIsChecked = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
                     foreach (var item in Items)
                     {
@@ -702,65 +682,57 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Pagination
 
-        private string _responseTime = "";
-
         public string ResponseTime
         {
-            get { return _responseTime; }
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
-
-        private int _pageIndex = 1;
+        } = "";
 
         public int PageIndex
         {
-            get { return _pageIndex; }
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
-
-        private int _pageSize = 50;
+        } = 1;
 
         public int PageSize
         {
-            get { return _pageSize; }
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
-
-        private int _totalCount = 0;
+        } = 50;
 
         public int TotalCount
         {
-            get { return _totalCount; }
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
-        }
+        } = 0;
 
         private ICommand? _paginationCommand;
 

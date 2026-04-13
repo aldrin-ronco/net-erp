@@ -35,53 +35,47 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public DateTime? MinimumDate { get; set; }
 
-        private string _name = string.Empty;
-
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        private DateTime? _startDate = DateTime.Now;
+        } = string.Empty;
 
         public DateTime? StartDate
         {
-            get { return _startDate; }
+            get;
             set
             {
-                if (_startDate != value)
+                if (field != value)
                 {
-                    _startDate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(StartDate));
                     this.TrackChange(nameof(StartDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                     EndDate = StartDate;
                 }
             }
-        }
-
-        private bool _isActiveFlag;
+        } = DateTime.Now;
 
         [ExpandoPath("isActive")]
         public bool IsActiveFlag
         {
-            get { return _isActiveFlag; }
+            get;
             set
             {
-                if (_isActiveFlag != value)
+                if (field != value)
                 {
-                    _isActiveFlag = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActiveFlag));
                     this.TrackChange(nameof(IsActiveFlag));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -89,22 +83,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private DateTime? _endDate = DateTime.Now;
-
         public DateTime? EndDate
         {
-            get { return _endDate; }
+            get;
             set
             {
-                if (_endDate != value)
+                if (field != value)
                 {
-                    _endDate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(EndDate));
                     this.TrackChange(nameof(EndDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = DateTime.Now;
 
         #endregion
 
@@ -150,14 +142,12 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Focus
 
-        private bool _nameFocus;
-
         public bool NameFocus
         {
-            get { return _nameFocus; }
+            get;
             set
             {
-                _nameFocus = value;
+                field = value;
                 NotifyOfPropertyChange(nameof(NameFocus));
             }
         }

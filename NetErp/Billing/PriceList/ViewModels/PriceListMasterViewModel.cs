@@ -68,45 +68,41 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public string MaskN5 { get; set; } = "n5";
 
-        private bool _mainIsBusy = true;
         public bool MainIsBusy
         {
-            get { return _mainIsBusy; }
+            get;
             set
             {
-                if (_mainIsBusy != value)
+                if (field != value)
                 {
-                    _mainIsBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(MainIsBusy));
                 }
             }
-        }
-
-        private bool _isBusy;
+        } = true;
 
         public bool IsBusy
         {
-            get { return _isBusy; }
-            set 
+            get;
+            set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
 
-        private string _filterSearch = "";
         public string FilterSearch
         {
-            get { return _filterSearch; }
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
@@ -115,57 +111,52 @@ namespace NetErp.Billing.PriceList.ViewModels
                     }
                 }
             }
-        }
+        } = "";
 
 
-        private ObservableCollection<PriceListItemDTO> _priceListItems = [];
         public ObservableCollection<PriceListItemDTO> PriceListItems
         {
-            get { return _priceListItems; }
+            get;
             set
             {
-                if (_priceListItems != value)
+                if (field != value)
                 {
-                    _priceListItems = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PriceListItems));
                 }
             }
-        }
-
-        private ObservableCollection<CatalogGraphQLModel> _catalogs = [];
+        } = [];
 
         public ObservableCollection<CatalogGraphQLModel> Catalogs
         {
-            get { return _catalogs; }
+            get;
             set
             {
-                if (_catalogs != value)
+                if (field != value)
                 {
-                    _catalogs = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Catalogs));
                 }
             }
-        }
+        } = [];
 
         private CancellationTokenSource _cascadeCancellation = new();
 
-        private CatalogGraphQLModel _selectedCatalog;
-
         public CatalogGraphQLModel SelectedCatalog
         {
-            get { return _selectedCatalog; }
+            get;
             set
             {
-                if (_selectedCatalog != value)
+                if (field != value)
                 {
-                    _selectedCatalog = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCatalog));
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         LoadItemTypes();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -173,38 +164,34 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemTypeGraphQLModel> _itemTypes = [];
-
         public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
-            get { return _itemTypes; }
+            get;
             set
             {
-                if (_itemTypes != value)
+                if (field != value)
                 {
-                    _itemTypes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemTypes));
                 }
             }
-        }
-
-        private ItemTypeGraphQLModel _selectedItemType;
+        } = [];
 
         public ItemTypeGraphQLModel SelectedItemType
         {
-            get { return _selectedItemType; }
+            get;
             set
             {
-                if (_selectedItemType != value)
+                if (field != value)
                 {
-                    _selectedItemType = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemType));
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         LoadItemCategories();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -214,38 +201,34 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
 
-        private ObservableCollection<ItemCategoryGraphQLModel> _itemsCategories = [];
-
         public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
-            get { return _itemsCategories; }
+            get;
             set
             {
-                if (_itemsCategories != value)
+                if (field != value)
                 {
-                    _itemsCategories = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemCategories));
                 }
             }
-        }
-
-        private ItemCategoryGraphQLModel _selectedItemCategory;
+        } = [];
 
         public ItemCategoryGraphQLModel SelectedItemCategory
         {
-            get { return _selectedItemCategory; }
+            get;
             set
             {
-                if (_selectedItemCategory != value)
+                if (field != value)
                 {
-                    _selectedItemCategory = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemCategory));
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         LoadItemSubCategories();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -253,38 +236,34 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemSubCategoryGraphQLModel> _itemsSubCategories = [];
-
         public ObservableCollection<ItemSubCategoryGraphQLModel> ItemSubCategories
         {
-            get { return _itemsSubCategories; }
+            get;
             set
             {
-                if (_itemsSubCategories != value)
+                if (field != value)
                 {
-                    _itemsSubCategories = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ItemSubCategories));
                 }
             }
-        }
-
-        private ItemSubCategoryGraphQLModel _selectedItemSubCategory;
+        } = [];
 
         public ItemSubCategoryGraphQLModel SelectedItemSubCategory
         {
-            get { return _selectedItemSubCategory; }
+            get;
             set
             {
-                if (_selectedItemSubCategory != value)
+                if (field != value)
                 {
-                    _selectedItemSubCategory = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
                     if (!_isUpdating && value != null && IsInitialized)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
@@ -293,31 +272,27 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
 
-        private ObservableCollection<PriceListGraphQLModel> _priceLists = [];
-
         public ObservableCollection<PriceListGraphQLModel> PriceLists
         {
-            get { return _priceLists; }
+            get;
             set
             {
-                if (_priceLists != value)
+                if (field != value)
                 {
-                    _priceLists = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PriceLists));
                 }
             }
-        }
-
-        private PriceListGraphQLModel? _selectedPriceList;
+        } = [];
 
         public PriceListGraphQLModel? SelectedPriceList
         {
-            get { return _selectedPriceList; }
+            get;
             set
             {
-                if (_selectedPriceList != value)
+                if (field != value)
                 {
-                    _selectedPriceList = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedPriceList));
                     NotifyOfPropertyChange(nameof(CostByStorageInformation));
                     NotifyOfPropertyChange(nameof(SelectedPriceListIsNotActive));
@@ -342,16 +317,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool SelectedPriceListIsNotActive => SelectedPriceList != null && !SelectedPriceList.IsActive;
         public bool IsGridReadOnly => SelectedPriceListIsNotActive || _backgroundQueueService.HasCriticalError();
 
-        private PriceListItemDTO? _selectedPriceListItems;
-
         public PriceListItemDTO? SelectedPriceListItem
         {
-            get { return _selectedPriceListItems; }
-            set 
+            get;
+            set
             {
-                if (_selectedPriceListItems != value)
+                if (field != value)
                 {
-                    _selectedPriceListItems = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedPriceListItem));
                     NotifyOfPropertyChange(nameof(ShowInventoryQuantity));
                 }
@@ -381,13 +354,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _createPriceListCommand;
         public ICommand CreatePriceListCommand
         {
             get
             {
-                if (_createPriceListCommand is null) _createPriceListCommand = new AsyncCommand(CreatePriceListAsync);
-                return _createPriceListCommand;
+                if (field is null) field = new AsyncCommand(CreatePriceListAsync);
+                return field;
             }
         }
 
@@ -412,13 +384,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _configurationCommand;
         public ICommand ConfigurationCommand
         {
             get
             {
-                if (_configurationCommand is null) _configurationCommand = new AsyncCommand(ConfigurationAsync);
-                return _configurationCommand;
+                if (field is null) field = new AsyncCommand(ConfigurationAsync);
+                return field;
             }
         }
 
@@ -451,13 +422,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _deletePriceListCommand;
         public ICommand DeletePriceListCommand
         {
             get
             {
-                if (_deletePriceListCommand is null) _deletePriceListCommand = new AsyncCommand(DeletePriceListAsync);
-                return _deletePriceListCommand;
+                if (field is null) field = new AsyncCommand(DeletePriceListAsync);
+                return field;
             }
         }
 
@@ -523,13 +493,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _createPromotionCommand;
         public ICommand CreatePromotionCommand
         {
             get
             {
-                if (_createPromotionCommand is null) _createPromotionCommand = new AsyncCommand(CreatePromotionAsync);
-                return _createPromotionCommand;
+                if (field is null) field = new AsyncCommand(CreatePromotionAsync);
+                return field;
             }
         }
 
@@ -932,15 +901,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         #region Paginacion
 
 
-        private string _responseTime;
         public string ResponseTime
         {
-            get { return _responseTime; }
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(() => ResponseTime);
                 }
             }
@@ -950,49 +918,46 @@ namespace NetErp.Billing.PriceList.ViewModels
         /// <summary>
         /// PageIndex
         /// </summary>
-        private int _pageIndex = 1; // DefaultPageIndex = 1
         public int PageIndex
         {
-            get { return _pageIndex; }
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(() => PageIndex);
                 }
             }
-        }
+        } = 1; // DefaultPageIndex = 1
 
         /// <summary>
         /// PageSize
         /// </summary>
-        private int _pageSize = 50; // Default PageSize 50
         public int PageSize
         {
-            get { return _pageSize; }
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(() => PageSize);
                 }
             }
-        }
+        } = 50; // Default PageSize 50
 
         /// <summary>
         /// TotalCount
         /// </summary>
-        private int _totalCount = 0;
         public int TotalCount
         {
-            get { return _totalCount; }
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(() => TotalCount);
                 }
             }
@@ -1001,13 +966,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         /// <summary>
         /// PaginationCommand para controlar evento
         /// </summary>
-        private ICommand _paginationCommand;
         public ICommand PaginationCommand
         {
             get
             {
-                if (_paginationCommand == null) this._paginationCommand = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
-                return _paginationCommand;
+                if (field == null) field = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
+                return field;
             }
         }
 

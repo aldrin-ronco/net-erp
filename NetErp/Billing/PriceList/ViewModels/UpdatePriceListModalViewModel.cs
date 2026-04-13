@@ -47,34 +47,30 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public int Id { get; set; }
 
-        private string _name = string.Empty;
-
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        private bool _isTaxable;
+        } = string.Empty;
 
         public bool IsTaxable
         {
-            get { return _isTaxable; }
+            get;
             set
             {
-                if (_isTaxable != value)
+                if (field != value)
                 {
-                    _isTaxable = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsTaxable));
                     this.TrackChange(nameof(IsTaxable));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -84,16 +80,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _priceListIncludeTax;
-
         public bool PriceListIncludeTax
         {
-            get { return _priceListIncludeTax; }
+            get;
             set
             {
-                if (_priceListIncludeTax != value)
+                if (field != value)
                 {
-                    _priceListIncludeTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PriceListIncludeTax));
                     this.TrackChange(nameof(PriceListIncludeTax));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -102,16 +96,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _useAlternativeFormula;
-
         public bool UseAlternativeFormula
         {
-            get { return _useAlternativeFormula; }
+            get;
             set
             {
-                if (_useAlternativeFormula != value)
+                if (field != value)
                 {
-                    _useAlternativeFormula = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(UseAlternativeFormula));
                     this.TrackChange(nameof(UseAlternativeFormula));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -119,33 +111,29 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private string _costMode = "USE_AVERAGE_COST";
-
         public string CostMode
         {
-            get => _costMode;
+            get;
             set
             {
-                if (_costMode != value)
+                if (field != value)
                 {
-                    _costMode = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostMode));
                     this.TrackChange(nameof(CostMode));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        private PriceListCostModeEnum _selectedCostMode = PriceListCostModeEnum.USE_AVERAGE_COST;
+        } = "USE_AVERAGE_COST";
 
         public PriceListCostModeEnum SelectedCostMode
         {
-            get => _selectedCostMode;
+            get;
             set
             {
-                if (_selectedCostMode != value)
+                if (field != value)
                 {
-                    _selectedCostMode = value;
+                    field = value;
                     CostMode = value.ToString();
                     NotifyOfPropertyChange(nameof(SelectedCostMode));
                     NotifyOfPropertyChange(nameof(ShowStorageSelector));
@@ -161,20 +149,18 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = PriceListCostModeEnum.USE_AVERAGE_COST;
 
         public bool ShowStorageSelector => SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE;
 
-        private bool _editablePrice;
-
         public bool EditablePrice
         {
-            get { return _editablePrice; }
+            get;
             set
             {
-                if (_editablePrice != value)
+                if (field != value)
                 {
-                    _editablePrice = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(EditablePrice));
                     this.TrackChange(nameof(EditablePrice));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -182,16 +168,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _autoApplyDiscount;
-
         public bool AutoApplyDiscount
         {
-            get { return _autoApplyDiscount; }
+            get;
             set
             {
-                if (_autoApplyDiscount != value)
+                if (field != value)
                 {
-                    _autoApplyDiscount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AutoApplyDiscount));
                     this.TrackChange(nameof(AutoApplyDiscount));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -199,16 +183,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _isPublic;
-
         public bool IsPublic
         {
-            get { return _isPublic; }
+            get;
             set
             {
-                if (_isPublic != value)
+                if (field != value)
                 {
-                    _isPublic = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsPublic));
                     this.TrackChange(nameof(IsPublic));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -216,17 +198,15 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _isActiveFlag;
-
         [ExpandoPath("isActive")]
         public bool IsActiveFlag
         {
-            get { return _isActiveFlag; }
+            get;
             set
             {
-                if (_isActiveFlag != value)
+                if (field != value)
                 {
-                    _isActiveFlag = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActiveFlag));
                     this.TrackChange(nameof(IsActiveFlag));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -234,61 +214,53 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<StorageGraphQLModel> _storages = [];
-
         public ObservableCollection<StorageGraphQLModel> Storages
         {
-            get { return _storages; }
+            get;
             set
             {
-                if (_storages != value)
+                if (field != value)
                 {
-                    _storages = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Storages));
                 }
             }
-        }
-
-        private ObservableCollection<CostCenterGraphQLModel> _costCenters = [];
+        } = [];
 
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
-            get { return _costCenters; }
+            get;
             set
             {
-                if (_costCenters != value)
+                if (field != value)
                 {
-                    _costCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
-        }
-
-        private ObservableCollection<CostCenterGraphQLModel> _shadowCostCenters = [];
+        } = [];
 
         public ObservableCollection<CostCenterGraphQLModel> ShadowCostCenters
         {
-            get { return _shadowCostCenters; }
+            get;
             set
             {
-                if (_shadowCostCenters != value)
+                if (field != value)
                 {
-                    _shadowCostCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShadowCostCenters));
                 }
             }
-        }
-
-        private ObservableCollection<PaymentMethodPriceListDTO> _paymentMethods = [];
+        } = [];
 
         public ObservableCollection<PaymentMethodPriceListDTO> PaymentMethods
         {
-            get { return _paymentMethods; }
+            get;
             set
             {
-                if (_paymentMethods != value)
+                if (field != value)
                 {
-                    _paymentMethods = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PaymentMethods));
                     NotifyOfPropertyChange(nameof(ExcludedPaymentMethodIds));
                     this.TrackChange(nameof(ExcludedPaymentMethodIds));
@@ -296,22 +268,20 @@ namespace NetErp.Billing.PriceList.ViewModels
                     ListenPaymentMethodCheck();
                 }
             }
-        }
+        } = [];
 
         [ExpandoPath("excludedPaymentMethodIds")]
         public List<int> ExcludedPaymentMethodIds => PaymentMethods.Where(p => !p.IsChecked).Select(p => p.Id).ToList();
 
-        private StorageGraphQLModel? _selectedStorage;
-
         [ExpandoPath("storageId", SerializeAsId = true)]
         public StorageGraphQLModel? SelectedStorage
         {
-            get { return _selectedStorage; }
+            get;
             set
             {
-                if (_selectedStorage != value)
+                if (field != value)
                 {
-                    _selectedStorage = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedStorage));
                     this.TrackChange(nameof(SelectedStorage));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -320,22 +290,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private string _selectedListUpdateBehaviorOnCostChange = "UPDATE_PROFIT_MARGIN";
-
         public string SelectedListUpdateBehaviorOnCostChange
         {
-            get { return _selectedListUpdateBehaviorOnCostChange; }
+            get;
             set
             {
-                if (_selectedListUpdateBehaviorOnCostChange != value)
+                if (field != value)
                 {
-                    _selectedListUpdateBehaviorOnCostChange = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedListUpdateBehaviorOnCostChange));
                     this.TrackChange(nameof(SelectedListUpdateBehaviorOnCostChange));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = "UPDATE_PROFIT_MARGIN";
 
         public Dictionary<string, string> ListUpdateBehaviorOnCostChange { get; set; } = new()
         {
@@ -343,21 +311,19 @@ namespace NetErp.Billing.PriceList.ViewModels
             { "UPDATE_PRICE", "Actualizar precio de venta" },
         };
 
-        private string _selectedFormula = "D";
-
         public string SelectedFormula
         {
-            get { return _selectedFormula; }
+            get;
             set
             {
-                if (_selectedFormula != value)
+                if (field != value)
                 {
-                    _selectedFormula = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedFormula));
                     NotifyOfPropertyChange(nameof(Formula));
                 }
             }
-        }
+        } = "D";
 
         public string Formula
         {
@@ -413,14 +379,12 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Focus
 
-        private bool _nameFocus;
-
         public bool NameFocus
         {
-            get { return _nameFocus; }
+            get;
             set
             {
-                _nameFocus = value;
+                field = value;
                 NotifyOfPropertyChange(nameof(NameFocus));
             }
         }
