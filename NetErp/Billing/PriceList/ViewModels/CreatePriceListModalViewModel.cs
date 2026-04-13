@@ -32,7 +32,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private readonly Helpers.IDialogService _dialogService;
         private readonly IEventAggregator _eventAggregator;
-        Dictionary<string, List<string>> _errors;
+        private readonly Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IGraphQLClient _graphQLClient;
         private readonly JoinableTaskFactory _joinableTaskFactory;
@@ -332,26 +332,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             this.AcceptChanges();
         }
 
-        public bool NameFocus
-        {
-            get;
-            set
-            {
-                field = value;
-                NotifyOfPropertyChange(nameof(NameFocus));
-            }
-        }
-
-        void SetFocus(Expression<Func<object>> propertyExpression)
-        {
-            string controlName = propertyExpression.GetMemberInfo().Name;
-            NameFocus = false;
-
-            NameFocus = controlName == nameof(Name);
-        }
-
-
-
         private ICommand _cancelCommand;
 
         public ICommand CancelCommand
@@ -390,6 +370,23 @@ namespace NetErp.Billing.PriceList.ViewModels
             _joinableTaskFactory = joinableTaskFactory;
         }
 
+        public bool NameFocus
+        {
+            get;
+            set
+            {
+                field = value;
+                NotifyOfPropertyChange(nameof(NameFocus));
+            }
+        }
+
+        void SetFocus(Expression<Func<object>> propertyExpression)
+        {
+            string controlName = propertyExpression.GetMemberInfo().Name;
+            NameFocus = false;
+            NameFocus = controlName == nameof(Name);
+        }
+
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
@@ -407,22 +404,23 @@ namespace NetErp.Billing.PriceList.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        public IEnumerable GetErrors(string propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
 
-        private void AddError(string propertyName, string error)
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
                 RaiseErrorsChanged(propertyName);
-            }
         }
 
         private void ClearErrors(string propertyName)
@@ -436,31 +434,23 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private void ValidateStorage()
         {
-            ClearErrors(nameof(SelectedStorage));
+            List<string> errors = [];
             if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null)
-                AddError(nameof(SelectedStorage), "Debe seleccionar una bodega");
+                errors.Add("Debe seleccionar una bodega");
+            SetPropertyErrors(nameof(SelectedStorage), errors);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            List<string> errors = [];
+            switch (propertyName)
             {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Name):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                }
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(value.Trim())) errors.Add("El nombre no puede estar vacío");
+                    break;
             }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
+            SetPropertyErrors(propertyName, errors);
         }
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
