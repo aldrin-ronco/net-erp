@@ -22,6 +22,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -34,6 +35,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IGraphQLClient _graphQLClient;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
@@ -288,11 +290,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -398,7 +397,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             StorageCache storageCache,
             CostCenterCache costCenterCache,
             StringLengthCache stringLengthCache,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
             _dialogService = dialogService;
@@ -408,6 +408,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         protected override void OnViewReady(object view)
@@ -478,7 +479,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 Execute.OnUIThread(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 });
             }
         }

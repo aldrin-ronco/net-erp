@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
@@ -9,12 +10,10 @@ using Models.Inventory;
 using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Helpers.Services;
 using Common.Services;
+using Microsoft.VisualStudio.Threading;
 using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Helpers.Cache;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -37,6 +36,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         private PriceListMasterViewModel _priceListMasterViewModel;
 
@@ -44,7 +44,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get 
             {
-                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient);
+                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient, _joinableTaskFactory);
                 return _priceListMasterViewModel; 
             }
         }
@@ -66,6 +66,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
             StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient)
         {
             AutoMapper = autoMapper;
@@ -83,6 +84,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
         }
 
@@ -122,7 +124,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _joinableTaskFactory);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
                 instance.IsPromotionActive = promotion.IsActive;
@@ -131,21 +133,14 @@ namespace NetErp.Billing.PriceList.ViewModels
                 await instance.InitializeAsync();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
-            catch (AsyncException ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(ActivateUpdatePromotionViewAsync)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
     }

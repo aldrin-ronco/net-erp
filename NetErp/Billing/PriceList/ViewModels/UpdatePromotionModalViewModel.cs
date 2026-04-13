@@ -2,6 +2,7 @@ using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Microsoft.VisualStudio.Threading;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
@@ -26,6 +27,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #region Properties
 
@@ -167,12 +169,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         public UpdatePromotionModalViewModel(
             Helpers.IDialogService dialogService,
             IEventAggregator eventAggregator,
-            IRepository<PriceListGraphQLModel> priceListService)
+            IRepository<PriceListGraphQLModel> priceListService,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
             _priceListService = priceListService;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -235,15 +239,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atenci\u00f3n!",
-                        text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -323,8 +324,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Execute.OnUIThread(() =>
                 {
                     ThemedMessageBox.Show(
-                        title: "Atenci\u00f3n!",
-                        text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}",
+                        title: "Atención!",
+                        text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}",
                         messageBoxButtons: MessageBoxButton.OK,
                         image: MessageBoxImage.Error);
                 });

@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -40,6 +41,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IRepository<PriceListGraphQLModel> _priceListServiceForModal;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
         public PriceListViewModel Context { get; set; }
 
         // Referencia al modal activo para poder cerrarlo en caso de error crítico
@@ -52,7 +54,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             Helpers.IDialogService dialogService,
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
-            IRepository<PriceListGraphQLModel> priceListServiceForModal)
+            IRepository<PriceListGraphQLModel> priceListServiceForModal,
+            JoinableTaskFactory joinableTaskFactory)
         {
             Context = context;
             _notificationService = notificationService;
@@ -61,6 +64,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _itemService = itemService;
             _tempRecordService = tempRecordService;
             _priceListServiceForModal = priceListServiceForModal;
+            _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -358,14 +362,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                await Execute.OnUIThreadAsync(async () =>
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                if (cancellationToken.IsCancellationRequested) return;
 
-                    IsBusy = true;
-                    await LoadProducts();
-                    IsBusy = false;
-                });
+                IsBusy = true;
+                await LoadProducts();
+                IsBusy = false;
             }
             catch (OperationCanceledException)
             {
@@ -520,7 +522,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionModalViewModel instance = new(_dialogService, Context.EventAggregator, _priceListServiceForModal);
+                UpdatePromotionModalViewModel instance = new(_dialogService, Context.EventAggregator, _priceListServiceForModal, _joinableTaskFactory);
                 instance.SetForEdit(new PriceListGraphQLModel
                 {
                     Id = Id,
@@ -533,11 +535,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(EditAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -555,7 +554,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService);
+                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService, _joinableTaskFactory);
                 MainIsBusy = true;
                 _activeModal.PromotionId = Id;
                 await _activeModal.InitializeAsync();
@@ -564,19 +563,13 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (AsyncException ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(AddProductsAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -621,11 +614,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(LoadProducts)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(LoadProducts)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -809,11 +799,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(DeleteListAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
             {
@@ -869,11 +856,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ClearPromotionAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
             {

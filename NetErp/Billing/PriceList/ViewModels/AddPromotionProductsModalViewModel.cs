@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -29,6 +30,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
         private const int BatchSize = 50;
         public PriceListViewModel Context { get; set; }
 
@@ -36,12 +38,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             PriceListViewModel context,
             Helpers.IDialogService dialogService,
             IRepository<PriceListItemGraphQLModel> priceListItemService,
-            IRepository<ItemGraphQLModel> itemService)
+            IRepository<ItemGraphQLModel> itemService,
+            JoinableTaskFactory joinableTaskFactory)
         {
             Context = context;
             _dialogService = dialogService;
             _priceListItemService = priceListItemService;
             _itemService = itemService;
+            _joinableTaskFactory = joinableTaskFactory;
 
             Items.CollectionChanged += (s, e) =>
             {
@@ -293,14 +297,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                await Execute.OnUIThreadAsync(async () =>
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                if (cancellationToken.IsCancellationRequested) return;
 
-                    IsBusy = true;
-                    await LoadItemsAsync();
-                    IsBusy = false;
-                });
+                IsBusy = true;
+                await LoadItemsAsync();
+                IsBusy = false;
             }
             catch (OperationCanceledException)
             {
@@ -490,11 +492,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
             {
@@ -628,11 +627,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
             {
@@ -690,20 +686,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (AsyncException ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 return false;
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(CanCloseAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 return false;
             }
         }

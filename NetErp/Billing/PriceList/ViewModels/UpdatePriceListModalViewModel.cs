@@ -3,6 +3,7 @@ using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Microsoft.VisualStudio.Threading;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
@@ -40,6 +41,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #region Properties
 
@@ -443,7 +445,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
             StringLengthCache stringLengthCache,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
             _dialogService = dialogService;
@@ -455,6 +458,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _paymentMethodCache = paymentMethodCache;
             _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -562,15 +566,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -712,7 +713,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     ThemedMessageBox.Show(
                         title: "Atención!",
-                        text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}",
+                        text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}",
                         messageBoxButtons: MessageBoxButton.OK,
                         image: MessageBoxImage.Error);
                 });

@@ -17,6 +17,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -26,6 +27,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
         Dictionary<string, List<string>> _errors;
         public DateTime MinimumDate { get; set; } = DateTime.Now;
 
@@ -151,11 +153,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atenci\u00f3n!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -244,13 +243,15 @@ namespace NetErp.Billing.PriceList.ViewModels
             Helpers.IDialogService dialogService,
             IEventAggregator eventAggregator,
             PriceListGraphQLModel parentPriceList,
-            IRepository<PriceListGraphQLModel> priceListService)
+            IRepository<PriceListGraphQLModel> priceListService,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
             ParentPriceList = parentPriceList;
             _priceListService = priceListService;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         public bool HasErrors => _errors.Count > 0;
@@ -305,7 +306,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 Execute.OnUIThread(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atenci\u00f3n!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 });
             }
         }
