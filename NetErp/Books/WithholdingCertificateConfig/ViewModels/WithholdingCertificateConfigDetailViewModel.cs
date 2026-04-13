@@ -194,7 +194,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     if (AccountingAccounts.Any(a => a.IsChecked == true))
                     {
-                        var result = ThemedMessageBox.Show("Atención!",
+                        MessageBoxResult result = ThemedMessageBox.Show("Atención!",
                             "Al cambiar el grupo se perderá la selección de cuentas actual. ¿Desea continuar?",
                             MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -273,39 +273,32 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        private void AddError(string propertyName, string error)
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = [];
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
 
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
+            if (hadErrors || errors.Count > 0)
                 RaiseErrorsChanged(propertyName);
-            }
-            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string? value)
         {
-            ClearErrors(propertyName);
+            List<string> errors = [];
             switch (propertyName)
             {
                 case nameof(Name):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) errors.Add("El nombre no puede estar vacío");
                     break;
                 case nameof(Description):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "La descripción no puede estar vacía");
+                    if (string.IsNullOrEmpty(value)) errors.Add("La descripción no puede estar vacía");
                     break;
             }
+            SetPropertyErrors(propertyName, errors);
         }
 
         private void ValidateProperties()
@@ -328,7 +321,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _isAllChecked = value;
                     NotifyOfPropertyChange(nameof(IsAllChecked));
-                    foreach (var account in AccountingAccounts) account.IsChecked = value;
+                    foreach (AccountingAccountGroupDetailDTO account in AccountingAccounts) account.IsChecked = value;
                 }
             }
         }
@@ -365,11 +358,16 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
 
         #endregion
-        #region Constructor
-
-        #endregion
 
         #region Lifecycle
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            ValidateProperties();
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
@@ -389,8 +387,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             this.ClearSeeds();
             this.SeedValue(nameof(Name), Name);
             this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(CostCenterId), CostCenterId);
+            this.SeedValue(nameof(AccountingAccountGroupId), AccountingAccountGroupId);
+            this.SeedValue(nameof(AccountingAccountIds), AccountingAccountIds);
             this.AcceptChanges();
-            ValidateProperties();
         }
 
         public void SetForEdit()
@@ -401,7 +401,6 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             this.SeedValue(nameof(AccountingAccountGroupId), AccountingAccountGroupId);
             this.SeedValue(nameof(AccountingAccountIds), AccountingAccountIds);
             this.AcceptChanges();
-            ValidateProperties();
         }
 
         #endregion
@@ -430,7 +429,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             try
             {
                 await _accountingAccountGroupCache.EnsureLoadedAsync();
-                AccountingAccountGroups = new ObservableCollection<AccountingAccountGroupGraphQLModel>(_accountingAccountGroupCache.Items);
+                AccountingAccountGroups = [.. _accountingAccountGroupCache.Items];
             }
             catch (Exception ex)
             {
@@ -459,7 +458,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 ObservableCollection<AccountingAccountGroupDetailDTO> acgd =
                     Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(group.Accounts);
 
-                foreach (var account in acgd)
+                foreach (AccountingAccountGroupDetailDTO account in acgd)
                 {
                     account.Context = this;
                     account.IsChecked = restoreSelection && Entity?.AccountingAccounts?.Any(x => x.Id == account.Id) == true;
@@ -680,7 +679,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         private void SubscribeAccountingAccountEvents()
         {
-            foreach (var account in AccountingAccounts)
+            foreach (AccountingAccountGroupDetailDTO account in AccountingAccounts)
             {
                 account.PropertyChanged += AccountingAccount_PropertyChanged;
             }
@@ -690,7 +689,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private void UnsubscribeAccountingAccountEvents()
         {
             if (AccountingAccounts == null) return;
-            foreach (var account in AccountingAccounts)
+            foreach (AccountingAccountGroupDetailDTO account in AccountingAccounts)
             {
                 account.PropertyChanged -= AccountingAccount_PropertyChanged;
             }

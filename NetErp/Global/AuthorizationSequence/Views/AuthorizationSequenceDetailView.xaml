@@ -135,7 +135,8 @@
                                         VerticalAlignment="Stretch"
                                         Text="{Binding Number, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                         IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                        CharacterCasing="Upper"
+                                        MaskType="RegEx"
+                                        Mask="{Binding NumberMask}"
                                         x:Name="Number"
                                         h:FocusBehavior.IsFocused="True"
                                         BorderBrush="#C8CED6"/>
@@ -182,6 +183,7 @@
                                         Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                         IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                         CharacterCasing="Upper"
+                                        MaxLength="{Binding PrefixMaxLength}"
                                         x:Name="Prefix"
                                         BorderBrush="#C8CED6"/>
                                 </Grid>
@@ -287,6 +289,7 @@
                                 Style="{StaticResource FocusedHighlightStyle}"
                                 Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 CharacterCasing="Upper"
+                                MaxLength="{Binding ReferenceMaxLength}"
                                 x:Name="Reference"
                                 BorderBrush="#C8CED6"
                                 Margin="0,0,0,8"/>
@@ -297,6 +300,7 @@
                                 Style="{StaticResource FocusedHighlightStyle}"
                                 Text="{Binding TechnicalKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 CharacterCasing="Upper"
+                                MaxLength="{Binding TechnicalKeyMaxLength}"
                                 IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                 x:Name="TechnicalKey"
                                 BorderBrush="#C8CED6"

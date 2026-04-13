@@ -16,8 +16,14 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
+            <!-- Dependency State (highest priority) -->
+            <uc:DependencyStateView Visibility="{Binding HasUnmetDependencies, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                    Title="Configuración requerida para Certificados de retención"
+                                    Message="Antes de registrar certificados de retención, debe configurar los siguientes elementos:"
+                                    Dependencies="{Binding Dependencies}"/>
+
             <!-- Empty State -->
-            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+            <uc:EmptyStateView Visibility="{Binding CanShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                Title="No hay certificados de retención registrados"
                                Message="Cree un nuevo certificado de retención para comenzar"
                                ContextInfo="Los certificados de retención definen la configuración para generar e imprimir los certificados que acreditan las retenciones practicadas a terceros, asociando las cuentas contables y el centro de costo correspondiente."
