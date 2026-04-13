@@ -21,7 +21,6 @@ using NetErp.Helpers.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Data;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Globalization;
@@ -158,7 +157,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         LoadItemTypes();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -193,7 +192,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         LoadItemCategories();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -230,7 +229,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         LoadItemSubCategories();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -258,7 +257,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
-                    if (!_isUpdating && value != null && IsInitialized)
+                    if (!_isUpdating && value != null && _isInitialized)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -308,7 +307,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
                         LoadItemTypes();
                         FilterSearch = "";
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -442,15 +441,15 @@ namespace NetErp.Billing.PriceList.ViewModels
                 int id = SelectedPriceList.Id;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeletePriceListQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", id)
                     .Build();
-                var validation = await _priceListService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _priceListService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     var (deleteFragment, deleteQuery) = _deletePriceListQuery.Value;
-                    var deleteVars = new GraphQLVariables()
+                    ExpandoObject deleteVars = new GraphQLVariables()
                         .For(deleteFragment, "id", id)
                         .Build();
                     DeleteResponseType deletedPriceList = await _priceListService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
@@ -513,7 +512,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(CreatePromotionAsync)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(CreatePromotionAsync)}: {ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -534,9 +534,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 PriceListDataContext result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
 
 
-                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
+                Catalogs = [.. result.CatalogsPage.Entries];
                 SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
-                PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceListsPage.Entries);
+                PriceLists = [.. result.PriceListsPage.Entries];
                 _isInitialized = true;
                 ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
                 NotifyOfPropertyChange(nameof(HasRecords));
@@ -593,7 +593,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (!string.IsNullOrEmpty(FilterSearch))
                     filters.filterSearch = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "priceListId", SelectedPriceList!.Id)
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
@@ -606,7 +606,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                foreach (var item in PriceListItems)
+                foreach (PriceListItemDTO item in PriceListItems)
                 {
                     item.Context = this;
                     item.ResolveCost(SelectedPriceList);
@@ -641,7 +641,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             if (SelectedCatalog?.ItemTypes is null) return;
 
             _isUpdating = true;
-            ItemTypes = new ObservableCollection<ItemTypeGraphQLModel>(SelectedCatalog.ItemTypes);
+            ItemTypes = [.. SelectedCatalog.ItemTypes];
             ItemTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
             SelectedItemType = ItemTypes.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemType can't be null");
             LoadItemCategories();
@@ -654,7 +654,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             
             if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
             {
-                ItemCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemCategories);
+                ItemCategories = [.. SelectedItemType.ItemCategories];
                 ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
                 SelectedItemCategory = ItemCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemCategory can't be null");
             }
@@ -677,7 +677,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             
             if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemSubCategories != null)
             {
-                ItemSubCategories = new ObservableCollection<ItemSubCategoryGraphQLModel>(SelectedItemCategory.ItemSubCategories);
+                ItemSubCategories = [.. SelectedItemCategory.ItemSubCategories];
                 ItemSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
                 SelectedItemSubCategory = ItemSubCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemSubCategory can't be null");
             }
@@ -698,7 +698,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public void ApplyBatchTestPrice()
         {
             if (PriceListItems == null || PriceListItems.Count == 0 || BatchTestPrice <= 0) return;
-            foreach (var item in PriceListItems)
+            foreach (PriceListItemDTO item in PriceListItems)
             {
                 item.Price = BatchTestPrice;
             }
@@ -747,6 +747,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Context.EventAggregator.Unsubscribe(this);
                 _cascadeCancellation?.Cancel();
                 _cascadeCancellation?.Dispose();
+                PriceListItems.Clear();
+                PriceLists.Clear();
+                Catalogs.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -786,7 +789,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             if (_operationItemMapping.TryGetValue(message.OperationId, out int itemId))
             {
-                var item = PriceListItems.FirstOrDefault(i => i.Item.Id == itemId);
+                PriceListItemDTO? item = PriceListItems.FirstOrDefault(i => i.Item.Id == itemId);
                 if (item != null)
                 {
                     if (message.Success)
@@ -909,7 +912,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => ResponseTime);
+                    NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
         }
@@ -926,7 +929,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => PageIndex);
+                    NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
         } = 1; // DefaultPageIndex = 1
@@ -942,7 +945,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => PageSize);
+                    NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
         } = 50; // Default PageSize 50
@@ -958,7 +961,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => TotalCount);
+                    NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
