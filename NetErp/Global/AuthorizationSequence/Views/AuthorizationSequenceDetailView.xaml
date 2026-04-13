@@ -138,7 +138,6 @@
                                         MaskType="RegEx"
                                         Mask="{Binding NumberMask}"
                                         x:Name="Number"
-                                        h:FocusBehavior.IsFocused="True"
                                         BorderBrush="#C8CED6"/>
                                 </Grid>
 

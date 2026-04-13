@@ -708,8 +708,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             // Ceder al dispatcher para que el cache procese el mensaje primero.
             // ContextIdle (prioridad 3) se ejecuta después de que todas las
             // operaciones de mayor prioridad (incluido el handler del cache) completen.
+            // JoinableTaskFactory.SwitchToMainThreadAsync() no soporta prioridades.
+#pragma warning disable VSTHRD001
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                 () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
 
             EvaluateDependencies();
             if (!HasUnmetDependencies)
@@ -720,8 +723,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             if (HasUnmetDependencies) return;
 
+#pragma warning disable VSTHRD001
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                 () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
 
             EvaluateDependencies();
         }
