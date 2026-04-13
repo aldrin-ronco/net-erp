@@ -321,11 +321,12 @@
                                     BorderBrush="#C8CED6"/>
                             </StackPanel>
 
-                            <!-- Activa -->
+                            <!-- Activa (solo visible en edición) -->
                             <dxe:CheckEdit Content="Autorización activa"
                                            Style="{StaticResource BlueCheckedTextStyle}"
                                            Padding="2"
-                                           IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                           IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
