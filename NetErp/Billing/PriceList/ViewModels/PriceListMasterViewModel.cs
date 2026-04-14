@@ -192,7 +192,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemType));
-                    if (!_isUpdating && value != null)
+                    if (!_isUpdating)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -205,7 +205,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
+        public bool CanShowItemCategories => SelectedItemType != null;
 
         public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
@@ -229,7 +229,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemCategory));
-                    if (!_isUpdating && value != null)
+                    if (!_isUpdating)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -264,7 +264,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
-                    if (!_isUpdating && value != null && _isInitialized)
+                    if (!_isUpdating && _isInitialized)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -276,7 +276,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
+        public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemCategory != null;
 
         public ObservableCollection<PriceListGraphQLModel> PriceLists
         {
@@ -608,13 +608,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 var (fragment, query) = _loadPriceListItemsQuery.Value;
 
                 dynamic filters = new ExpandoObject();
-                if (SelectedCatalog != null && SelectedCatalog.Id != 0)
+                if (SelectedCatalog != null)
                     filters.catalogId = SelectedCatalog.Id;
-                if (SelectedItemType != null && SelectedItemType.Id != 0)
+                if (SelectedItemType != null)
                     filters.itemTypeId = SelectedItemType.Id;
-                if (SelectedItemCategory != null && SelectedItemCategory.Id != 0)
+                if (SelectedItemCategory != null)
                     filters.itemCategoryId = SelectedItemCategory.Id;
-                if (SelectedItemSubCategory != null && SelectedItemSubCategory.Id != 0)
+                if (SelectedItemSubCategory != null)
                     filters.itemSubCategoryId = SelectedItemSubCategory.Id;
                 if (!string.IsNullOrEmpty(FilterSearch))
                     filters.filterSearch = FilterSearch.Trim().RemoveExtraSpaces();
@@ -668,8 +668,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             _isUpdating = true;
             ItemTypes = [.. SelectedCatalog.ItemTypes];
-            ItemTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
-            SelectedItemType = ItemTypes.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemType can't be null");
+            SelectedItemType = null;
             LoadItemCategories();
             _isUpdating = false;
         }
@@ -677,20 +676,17 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void LoadItemCategories()
         {
             _isUpdating = true;
-            
-            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
+
+            if (SelectedItemType != null && SelectedItemType.ItemCategories != null)
             {
                 ItemCategories = [.. SelectedItemType.ItemCategories];
-                ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
-                SelectedItemCategory = ItemCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemCategory can't be null");
             }
             else
             {
-                // Reset categories when ItemType is "Show All" (Id = 0)
                 ItemCategories.Clear();
-                SelectedItemCategory = new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" };
             }
-            
+            SelectedItemCategory = null;
+
             LoadItemSubCategories();
             NotifyOfPropertyChange(nameof(CanShowItemCategories));
             NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
@@ -700,20 +696,17 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void LoadItemSubCategories()
         {
             _isUpdating = true;
-            
-            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemSubCategories != null)
+
+            if (SelectedItemCategory != null && SelectedItemCategory.ItemSubCategories != null)
             {
                 ItemSubCategories = [.. SelectedItemCategory.ItemSubCategories];
-                ItemSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
-                SelectedItemSubCategory = ItemSubCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemSubCategory can't be null");
             }
             else
             {
-                // Reset subcategories when Category is "Show All" (Id = 0) or ItemType is "Show All"
                 ItemSubCategories.Clear();
-                SelectedItemSubCategory = new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" };
             }
-            
+            SelectedItemSubCategory = null;
+
             NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
         }
@@ -1142,6 +1135,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(e => e.Quantity)
                     .Select(e => e.Item, item => item
                         .Field(i => i.Id)
+                        .Field(i => i.Code)
                         .Field(i => i.Name)
                         .Field(i => i.Reference)
                         .Select(i => i.MeasurementUnit, mu => mu

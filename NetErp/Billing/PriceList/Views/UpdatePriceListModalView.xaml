@@ -26,7 +26,7 @@
     </UserControl.Width>
     <UserControl.Height>
         <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.85"/>
+                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.70"/>
     </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
@@ -38,7 +38,8 @@
             </Grid.RowDefinitions>
 
             <!-- Tabs -->
-            <dx:DXTabControl Grid.Row="0" Margin="10,10,10,0">
+            <dx:DXTabControl Grid.Row="0" Margin="10,10,10,0" Padding="8"
+                                    TabContentCacheMode="CacheTabsOnSelecting">
 
                 <!-- Tab 1: Datos Básicos -->
                 <dx:DXTabItem ToolTip="{Binding Data.BasicDataTabTooltip, Source={StaticResource DataContextProxy}}">
@@ -131,20 +132,21 @@
                         </Grid>
 
                         <!-- Info formula -->
-                        <StackPanel Grid.Row="7" Orientation="Vertical" Margin="0,0,0,10">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                <Image Source="{dx:DXImage 'Images/Function Library/Information_16x16.png'}" Width="16" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                                <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11" FontStyle="Italic">
-                                    <Run Text="Fórmula para calcular el"/>
-                                    <Run Text="precio de venta" FontWeight="Bold"/>
-                                </TextBlock>
+                        <Border Grid.Row="7" Background="#F7F9FB" BorderBrush="#D9DDE3" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Image Source="{dx:DXImage 'Images/Function Library/Information_16x16.png'}" Width="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Fórmula para calcular el precio de venta" Foreground="#555" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Formula}" FontSize="12" FontFamily="Consolas" Foreground="#2C3E50"
+                                           HorizontalAlignment="Center" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <TextBlock Text="{Binding Formula}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
-                        </StackPanel>
+                        </Border>
 
                         <!-- Grid centros de costo -->
-                        <DockPanel Grid.Row="8">
-                            <TextBlock DockPanel.Dock="Top" Text="Centros de costos compatibles" FontSize="13" FontWeight="SemiBold"
+                        <DockPanel Grid.Row="8" MaxHeight="150">
+                            <TextBlock DockPanel.Dock="Top" Text="Centros de costos compatibles" FontSize="13"
                                        HorizontalAlignment="Center" Margin="0,0,0,5"/>
                             <dxg:GridControl ItemsSource="{Binding ShadowCostCenters, UpdateSourceTrigger=PropertyChanged}">
                                 <dxg:GridControl.View>
@@ -233,7 +235,7 @@
                                 <Style TargetType="Image">
                                     <Style.Triggers>
                                         <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value="0.4"/>
+                                            <Setter Property="Opacity" Value="0.7"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>

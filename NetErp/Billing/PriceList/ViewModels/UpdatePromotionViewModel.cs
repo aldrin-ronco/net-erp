@@ -227,9 +227,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private ItemTypeGraphQLModel _selectedItemType = new();
+        private ItemTypeGraphQLModel? _selectedItemType;
 
-        public ItemTypeGraphQLModel SelectedItemType
+        public ItemTypeGraphQLModel? SelectedItemType
         {
             get { return _selectedItemType; }
             set
@@ -238,12 +238,12 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemType = value;
                     NotifyOfPropertyChange(nameof(SelectedItemType));
-                    if (!_isUpdating && value != null)
+                    if (!_isUpdating)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         BuildItemCategories();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -251,7 +251,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
+        public bool CanShowItemCategories => SelectedItemType != null;
 
         public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
@@ -266,9 +266,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private ItemCategoryGraphQLModel _selectedItemCategory = new();
+        private ItemCategoryGraphQLModel? _selectedItemCategory;
 
-        public ItemCategoryGraphQLModel SelectedItemCategory
+        public ItemCategoryGraphQLModel? SelectedItemCategory
         {
             get { return _selectedItemCategory; }
             set
@@ -277,12 +277,12 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemCategory = value;
                     NotifyOfPropertyChange(nameof(SelectedItemCategory));
-                    if (!_isUpdating && value != null)
+                    if (!_isUpdating)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         BuildItemSubCategories();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -303,9 +303,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private ItemSubCategoryGraphQLModel _selectedItemSubCategory = new();
+        private ItemSubCategoryGraphQLModel? _selectedItemSubCategory;
 
-        public ItemSubCategoryGraphQLModel SelectedItemSubCategory
+        public ItemSubCategoryGraphQLModel? SelectedItemSubCategory
         {
             get { return _selectedItemSubCategory; }
             set
@@ -314,19 +314,19 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemSubCategory = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
-                    if (!_isUpdating && value != null && IsInitialized)
+                    if (!_isUpdating && IsInitialized)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
         }
 
-        public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
+        public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemCategory != null;
 
 
 
@@ -362,8 +362,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             _isUpdating = true;
             ItemTypes = [.. SelectedCatalog.ItemTypes];
-            ItemTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
-            _selectedItemType = ItemTypes.First(x => x.Id == 0);
+            _selectedItemType = null;
             NotifyOfPropertyChange(nameof(SelectedItemType));
             BuildItemCategories();
             _isUpdating = false;
@@ -372,21 +371,17 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void BuildItemCategories()
         {
             _isUpdating = true;
-            
-            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
+
+            if (SelectedItemType != null && SelectedItemType.ItemCategories != null)
             {
                 ItemCategories = [.. SelectedItemType.ItemCategories];
-                ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
-                _selectedItemCategory = ItemCategories.First(x => x.Id == 0);
-                NotifyOfPropertyChange(nameof(SelectedItemCategory));
             }
             else
             {
-                // Reset categories when ItemType is "Show All" (Id = 0)
                 ItemCategories.Clear();
-                _selectedItemCategory = new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" };
-                NotifyOfPropertyChange(nameof(SelectedItemCategory));
             }
+            _selectedItemCategory = null;
+            NotifyOfPropertyChange(nameof(SelectedItemCategory));
 
             BuildItemSubCategories();
             NotifyOfPropertyChange(nameof(CanShowItemCategories));
@@ -397,21 +392,17 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void BuildItemSubCategories()
         {
             _isUpdating = true;
-            
-            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemSubCategories != null)
+
+            if (SelectedItemCategory != null && SelectedItemCategory.ItemSubCategories != null)
             {
                 ItemSubCategories = [.. SelectedItemCategory.ItemSubCategories];
-                ItemSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
-                _selectedItemSubCategory = ItemSubCategories.First(x => x.Id == 0);
-                NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
             }
             else
             {
-                // Reset subcategories when Category is "Show All" (Id = 0) or ItemType is "Show All"
                 ItemSubCategories.Clear();
-                _selectedItemSubCategory = new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" };
-                NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
             }
+            _selectedItemSubCategory = null;
+            NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
 
             NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
@@ -549,13 +540,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 var (fragment, query) = _loadPromotionItemsQuery.Value;
 
                 dynamic filters = new ExpandoObject();
-                if (SelectedCatalog != null && SelectedCatalog.Id != 0)
+                if (SelectedCatalog != null)
                     filters.catalogId = SelectedCatalog.Id;
-                if (SelectedItemType != null && SelectedItemType.Id != 0)
+                if (SelectedItemType != null)
                     filters.itemTypeId = SelectedItemType.Id;
-                if (SelectedItemCategory != null && SelectedItemCategory.Id != 0)
+                if (SelectedItemCategory != null)
                     filters.itemCategoryId = SelectedItemCategory.Id;
-                if (SelectedItemSubCategory != null && SelectedItemSubCategory.Id != 0)
+                if (SelectedItemSubCategory != null)
                     filters.itemSubCategoryId = SelectedItemSubCategory.Id;
                 if (!string.IsNullOrEmpty(FilterSearch))
                     filters.filterSearch = FilterSearch.Trim().RemoveExtraSpaces();
