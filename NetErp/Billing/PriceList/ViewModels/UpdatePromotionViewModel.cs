@@ -508,6 +508,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                     StartDate = StartDate,
                     EndDate = EndDate
                 });
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    instance.DialogWidth = parentView.ActualWidth * 0.35;
+                    instance.DialogHeight = parentView.ActualHeight * 0.55;
+                }
+
                 await _dialogService.ShowDialogAsync(instance, "Editar promoción");
             }
             catch (Exception ex)

@@ -42,9 +42,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
+
+        public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; }
 
         public int Id { get; set; }
 
@@ -121,6 +125,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
+                if (IsBusy) return false;
                 if (_errors.Count > 0) return false;
                 if (!this.HasChanges()) return false;
                 return true;
@@ -161,6 +166,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 field = value;
                 NotifyOfPropertyChange(nameof(NameFocus));
             }
+        }
+
+        void SetFocus(Expression<Func<object>> propertyExpression)
+        {
+            string controlName = propertyExpression.GetMemberInfo().Name;
+            NameFocus = false;
+            NameFocus = controlName == nameof(Name);
         }
 
         #endregion
@@ -271,7 +283,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
-            Dispatcher.CurrentDispatcher.BeginInvoke(() => this.SetFocus(() => Name));
+            _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(() => SetFocus(() => Name)),
+                DispatcherPriority.Render);
         }
 
         #endregion
