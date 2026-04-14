@@ -53,6 +53,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -320,7 +321,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = "UPDATE_PROFIT_MARGIN";
 
-        public Dictionary<string, string> ListUpdateBehaviorOnCostChange { get; set; } = new()
+        public Dictionary<string, string> ListUpdateBehaviorOnCostChange { get; } = new()
         {
             { "UPDATE_PROFIT_MARGIN", "Actualizar margen de utilidad" },
             { "UPDATE_PRICE", "Actualizar precio de venta" },
@@ -358,6 +359,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
+                if (IsBusy) return false;
                 if (_errors.Count > 0) return false;
                 if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null) return false;
                 if (!this.HasChanges()) return false;
@@ -606,7 +608,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
-            Dispatcher.CurrentDispatcher.BeginInvoke(() => SetFocus(() => Name));
+            _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(() => SetFocus(() => Name)),
+                DispatcherPriority.Render);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -616,6 +620,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 foreach (PaymentMethodPriceListDTO pm in PaymentMethods)
                     pm.PropertyChanged -= PaymentMethod_PropertyChanged!;
                 PaymentMethods.CollectionChanged -= PaymentMethod_CollectionChanged!;
+
+                Storages.Clear();
+                CostCenters.Clear();
+                ShadowCostCenters.Clear();
+                PaymentMethods.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
