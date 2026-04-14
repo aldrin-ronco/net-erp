@@ -43,7 +43,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, _graphQLClient, _joinableTaskFactory);
+                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _graphQLClient, _joinableTaskFactory);
                 return field;
             }
         }

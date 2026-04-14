@@ -52,7 +52,7 @@ namespace NetErp.Billing.PriceList.DTO
                     _profitMargin = value;
                     NotifyOfPropertyChange(nameof(ProfitMargin));
                     NotifyOfPropertyChange(nameof(Profit));
-                    if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(ProfitMargin));
+                    if (!_suppressNotifications && Context != null) _ = Context.AddModifiedProductAsync(this, nameof(ProfitMargin));
                 }
             }
         }
@@ -78,7 +78,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _price = value;
                     NotifyOfPropertyChange(nameof(Price));
-                    if(!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(Price));
+                    if (!_suppressNotifications && Context != null) _ = Context.AddModifiedProductAsync(this, nameof(Price));
                 }
             }
         }
@@ -93,7 +93,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _minimumPrice = value;
                     NotifyOfPropertyChange(nameof(MinimumPrice));
-                    if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(MinimumPrice));
+                    if (!_suppressNotifications && Context != null) _ = Context.AddModifiedProductAsync(this, nameof(MinimumPrice));
                 }
             }
         }
@@ -108,7 +108,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _discountMargin = value;
                     NotifyOfPropertyChange(nameof(DiscountMargin));
-                    if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(DiscountMargin));
+                    if (!_suppressNotifications && Context != null) _ = Context.AddModifiedProductAsync(this, nameof(DiscountMargin));
                 }
             }
         }

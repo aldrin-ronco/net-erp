@@ -10,24 +10,16 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              mc:Ignorable="d"
              d:DesignHeight="550" d:DesignWidth="500"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
              Background="#EEF1F5">
 
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.45"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.70"/>
-    </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8">
@@ -176,14 +168,15 @@
                             <dxg:GridControl.View>
                                 <dxg:TableView AllowCascadeUpdate="False" AllowSorting="False" AllowColumnMoving="False"
                                                EnableSelectedRowAppearance="True"
-                                               ShowGroupPanel="False" AlternateRowBackground="Beige" AllowEditing="False"/>
+                                               ShowGroupPanel="False" AlternateRowBackground="Beige" AllowEditing="False"
+                                               RowMinHeight="22"/>
                             </dxg:GridControl.View>
                             <dxg:GridColumn Header="Abreviación" Binding="{Binding Abbreviation, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
                             <dxg:GridColumn Header="Nombre" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
                             <dxg:GridColumn Header="" Width="30" HorizontalHeaderContentAlignment="Center">
                                 <dxg:GridColumn.CellTemplate>
                                     <DataTemplate>
-                                        <CheckBox Margin="4" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        <CheckBox Margin="0" VerticalAlignment="Center" HorizontalAlignment="Center"
                                                   IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </dxg:GridColumn.CellTemplate>

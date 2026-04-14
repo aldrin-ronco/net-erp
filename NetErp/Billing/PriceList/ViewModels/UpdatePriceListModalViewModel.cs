@@ -57,6 +57,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; }
+
         public int Id { get; set; }
 
         public string Name

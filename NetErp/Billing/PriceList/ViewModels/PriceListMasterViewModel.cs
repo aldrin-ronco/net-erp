@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,7 +50,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
         private readonly Dictionary<Guid, int> _operationItemMapping = [];
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
 
         // Raw flat store with both base lists and promotions; PriceLists/Promotions are derived views.
         private readonly List<PriceListGraphQLModel> _allPriceLists = [];
@@ -459,6 +458,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                MainIsBusy = true;
                 CreatePriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, _priceListService, _storageCache, _costCenterCache, _stringLengthCache, _graphQLClient, _joinableTaskFactory);
                 await viewModel.InitializeAsync();
                 viewModel.SetForNew();
@@ -469,6 +469,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     viewModel.DialogHeight = parentView.ActualHeight * 0.75;
                 }
 
+                MainIsBusy = false;
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
             }
             catch (AsyncException ex)
@@ -480,6 +481,10 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(CreatePriceListAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                MainIsBusy = false;
             }
         }
 
@@ -497,9 +502,18 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 if (SelectedPriceList is null) return;
+                MainIsBusy = true;
                 UpdatePriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, Context.AutoMapper, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient, _joinableTaskFactory);
                 await viewModel.InitializeAsync();
                 viewModel.SetForEdit(SelectedPriceList);
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    viewModel.DialogWidth = parentView.ActualWidth * 0.55;
+                    viewModel.DialogHeight = parentView.ActualHeight * 0.80;
+                }
+
+                MainIsBusy = false;
                 await _dialogService.ShowDialogAsync(viewModel, "Configuración de lista de precios");
             }
             catch (AsyncException ex)
@@ -511,6 +525,10 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ConfigurePriceListAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                MainIsBusy = false;
             }
         }
 
@@ -645,6 +663,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             if (SelectedPriceList is null) return;
             try
             {
+                MainIsBusy = true;
                 CreatePromotionModalViewModel viewModel = new(_dialogService, Context.EventAggregator, SelectedPriceList, _priceListService, _stringLengthCache, _joinableTaskFactory);
                 viewModel.SetForNew();
 
@@ -654,12 +673,17 @@ namespace NetErp.Billing.PriceList.ViewModels
                     viewModel.DialogHeight = parentView.ActualHeight * 0.55;
                 }
 
+                MainIsBusy = false;
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de promociones");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(CreatePromotionAsync)}: {ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                MainIsBusy = false;
             }
         }
 
@@ -672,7 +696,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 _isUpdating = true;
                 var (query, catalogsFragment, priceListsFragment) = _initializeQuery.Value;
 
-                dynamic variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(catalogsFragment, "pagination", new { pageSize = -1 })
                     .For(priceListsFragment, "pagination", new { pageSize = -1 })
                     .Build();
@@ -723,13 +747,12 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool HasRecords => _isInitialized && !ShowEmptyState && !HasUnmetDependencies;
 
-        private List<DependencyItem>? _dependencies;
         public List<DependencyItem>? Dependencies
         {
-            get => _dependencies;
+            get;
             private set
             {
-                _dependencies = value;
+                field = value;
                 NotifyOfPropertyChange(nameof(Dependencies));
                 NotifyOfPropertyChange(nameof(HasUnmetDependencies));
                 NotifyOfPropertyChange(nameof(CanShowEmptyState));
@@ -868,7 +891,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
         private ObservableCollection<PriceListItemDTO> ModifiedProduct { get; set; } = [];
-        public async void AddModifiedProduct(PriceListItemDTO priceListDetail, string modifiedProperty)
+        public async Task AddModifiedProductAsync(PriceListItemDTO priceListDetail, string modifiedProperty)
         {
             try
             {
@@ -877,7 +900,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 calculator.RecalculateProductValues(priceListDetail, modifiedProperty, SelectedPriceList);
                 priceListDetail.Status = OperationStatus.Pending;
 
-                var operation = new PriceListUpdateOperation(_priceListItemService)
+                PriceListUpdateOperation operation = new(_priceListItemService)
                 {
                     ItemId = priceListDetail.Item.Id,
                     NewPrice = priceListDetail.Price,
@@ -915,6 +938,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Promotions.Clear();
                 _allPriceLists.Clear();
                 Catalogs.Clear();
+                ItemTypes.Clear();
+                ItemCategories.Clear();
+                ItemSubCategories.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -1041,6 +1067,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             PaymentMethodCache paymentMethodCache,
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
+            DebouncedAction searchDebounce,
             IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -1057,6 +1084,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _paymentMethodCache = paymentMethodCache;
             _stringLengthCache = stringLengthCache;
             _permissionCache = permissionCache;
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _graphQLClient = graphQLClient;
             _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnUIThread(this);
