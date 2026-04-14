@@ -129,7 +129,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, _permissionCache, _catalogCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
                 instance.IsPromotionActive = promotion.IsActive;

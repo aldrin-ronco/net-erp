@@ -23,6 +23,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -42,6 +43,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<PriceListGraphQLModel> _priceListServiceForModal;
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
+        private readonly CatalogCache _catalogCache;
         private readonly DebouncedAction _searchDebounce;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         public PriceListViewModel Context { get; set; }
@@ -59,6 +61,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<PriceListGraphQLModel> priceListServiceForModal,
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
+            CatalogCache catalogCache,
             DebouncedAction searchDebounce,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -71,6 +74,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _priceListServiceForModal = priceListServiceForModal;
             _stringLengthCache = stringLengthCache;
             _permissionCache = permissionCache;
+            _catalogCache = catalogCache;
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnUIThread(this);
@@ -194,9 +198,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private CatalogGraphQLModel _selectedCatalog = new();
+        private CatalogGraphQLModel? _selectedCatalog;
 
-        public CatalogGraphQLModel SelectedCatalog
+        public CatalogGraphQLModel? SelectedCatalog
         {
             get { return _selectedCatalog; }
             set
@@ -205,18 +209,21 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedCatalog = value;
                     NotifyOfPropertyChange(nameof(SelectedCatalog));
-                    if (!_isUpdating && value != null)
+                    NotifyOfPropertyChange(nameof(CanShowItemTypes));
+                    if (!_isUpdating)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         BuildItemTypes();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
         }
+
+        public bool CanShowItemTypes => SelectedCatalog != null;
 
         public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
@@ -362,10 +369,10 @@ namespace NetErp.Billing.PriceList.ViewModels
         // Métodos de construcción de listas
         private void BuildItemTypes()
         {
-            if (SelectedCatalog?.ItemTypes == null) return;
-
             _isUpdating = true;
-            ItemTypes = [.. SelectedCatalog.ItemTypes];
+            ItemTypes = SelectedCatalog?.ItemTypes is null
+                ? []
+                : [.. SelectedCatalog.ItemTypes];
             _selectedItemType = null;
             NotifyOfPropertyChange(nameof(SelectedItemType));
             BuildItemCategories();
@@ -523,7 +530,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService, _joinableTaskFactory);
+                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService, _catalogCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
                 MainIsBusy = true;
                 _activeModal.PromotionId = Id;
                 await _activeModal.InitializeAsync();
@@ -593,11 +600,11 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             PriceListDataContext result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
             Catalogs = [.. result.CatalogsPage.Entries];
-            CatalogGraphQLModel selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
             IsInitialized = true;
             _isUpdating = true;
-            _selectedCatalog = selectedCatalog;
+            _selectedCatalog = null;
             NotifyOfPropertyChange(nameof(SelectedCatalog));
+            NotifyOfPropertyChange(nameof(CanShowItemTypes));
             BuildItemTypes();
             _isUpdating = false;
             await ReloadDataAsync(_cascadeCancellation.Token);
@@ -822,7 +829,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             base.OnViewReady(view);
             NotifyPermissionProperties();
-            this.SetFocus(nameof(FilterSearch));
+            _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(() => this.SetFocus(nameof(FilterSearch))),
+                DispatcherPriority.Render);
         }
 
         private void NotifyPermissionProperties()
@@ -976,7 +985,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                         .Field(i => i.Id)
                         .Field(i => i.Name)
                         .Field(i => i.Code)
-                        .Field(i => i.Reference)))
+                        .Field(i => i.Reference)
+                        .Select(i => i.MeasurementUnit, mu => mu
+                            .Field(u => u.Id)
+                            .Field(u => u.Abbreviation))))
                 .Build();
 
             var filterParam = new GraphQLQueryParameter("filters", "PriceListItemCatalogFilters");
