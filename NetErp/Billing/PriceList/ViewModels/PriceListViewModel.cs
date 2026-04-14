@@ -36,13 +36,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         public PriceListMasterViewModel PriceListMasterViewModel
         {
             get
             {
-                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient, _joinableTaskFactory);
+                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, _graphQLClient, _joinableTaskFactory);
                 return field;
             }
         }
@@ -65,6 +66,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient)
         {
@@ -84,6 +86,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
             _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
         }
@@ -126,7 +129,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
                 instance.IsPromotionActive = promotion.IsActive;

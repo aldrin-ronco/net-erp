@@ -96,7 +96,7 @@
                     <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="4,0,4,6">
                         <TextBlock Text="Lista de precios" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding PriceLists, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedPriceList, UpdateSourceTrigger=PropertyChanged}"
-                                          IsTextEditable="False" DisplayMember="Name" ApplyItemTemplateToSelectedItem="True" Padding="2" BorderBrush="#C8CED6">
+                                          IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6">
                             <dxe:ComboBoxEdit.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}">
@@ -119,8 +119,8 @@
                                 Visibility="{Binding HasPromotions, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                         <TextBlock Text="Promoción" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding Promotions, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedPromotion, UpdateSourceTrigger=PropertyChanged}"
-                                          IsTextEditable="False" DisplayMember="Name" ApplyItemTemplateToSelectedItem="True" Padding="2" BorderBrush="#C8CED6"
-                                          AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="(Ver lista base)">
+                                          IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"
+                                          AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Selecciona una promoción">
                             <dxe:ComboBoxEdit.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}">
@@ -404,60 +404,112 @@
                 <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                     <!-- Grupo: Lista de precios -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanCreatePriceList, UpdateSourceTrigger=PropertyChanged}"
                             Command="{Binding CreatePriceListCommand}"
                             ToolTip="Crear una nueva lista de precios">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Nueva lista" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasCreatePriceListPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Nueva lista" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanConfigurePriceList, UpdateSourceTrigger=PropertyChanged}"
-                            Command="{Binding ConfigurePriceListCommand}"
-                            ToolTip="Configurar la lista de precios seleccionada">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Setup/Properties_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Configurar lista" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanDeletePriceList, UpdateSourceTrigger=PropertyChanged}"
                             Command="{Binding DeletePriceListCommand}"
                             ToolTip="Eliminar la lista de precios seleccionada">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Eliminar lista" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasDeletePriceListPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Eliminar lista" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanConfigurePriceList, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding ConfigurePriceListCommand}"
+                            ToolTip="Configurar la lista de precios seleccionada">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Setup/Properties_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Configurar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasEditPriceListPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </Grid>
                     </Button>
 
                     <!-- Separador -->
@@ -468,58 +520,109 @@
                             IsEnabled="{Binding CanCreatePromotion, UpdateSourceTrigger=PropertyChanged}"
                             Command="{Binding CreatePromotionCommand}"
                             ToolTip="Crear una promoción para la lista de precios seleccionada">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Nueva promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasCreatePromotionPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Nueva promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanManagePromotion, UpdateSourceTrigger=PropertyChanged}"
-                            Command="{Binding ManagePromotionCommand}"
-                            ToolTip="Gestionar productos y precios de la promoción seleccionada">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Grid/EditTableStyle_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Gestionar promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanDeletePromotion, UpdateSourceTrigger=PropertyChanged}"
                             Command="{Binding DeletePromotionCommand}"
                             ToolTip="Eliminar la promoción seleccionada">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Eliminar promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasDeletePromotionPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Eliminar promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanManagePromotion, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding ManagePromotionCommand}"
+                            ToolTip="Gestionar productos y precios de la promoción seleccionada">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Grid/EditTableStyle_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Gestionar promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasEditPromotionPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </Grid>
                     </Button>
                 </StackPanel>
 

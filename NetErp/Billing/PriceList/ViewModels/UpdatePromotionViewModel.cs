@@ -30,7 +30,8 @@ namespace NetErp.Billing.PriceList.ViewModels
     public class UpdatePromotionViewModel: Screen,
                 IHandle<PriceListUpdateMessage>,
                 IHandle<PromotionTempRecordResponseMessage>,
-                IHandle<CriticalSystemErrorMessage>
+                IHandle<CriticalSystemErrorMessage>,
+                IHandle<PermissionsCacheRefreshedMessage>
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -40,6 +41,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IRepository<PriceListGraphQLModel> _priceListServiceForModal;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly DebouncedAction _searchDebounce;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         public PriceListViewModel Context { get; set; }
@@ -56,6 +58,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<TempRecordGraphQLModel> tempRecordService,
             IRepository<PriceListGraphQLModel> priceListServiceForModal,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             DebouncedAction searchDebounce,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -67,6 +70,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _tempRecordService = tempRecordService;
             _priceListServiceForModal = priceListServiceForModal;
             _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnUIThread(this);
@@ -469,8 +473,10 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        public bool HasEditPromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Edit);
+
         // Propiedad computed que determina si se pueden realizar operaciones de datos
-        public bool CanPerformDataOperations => !HasCriticalError;
+        public bool CanPerformDataOperations => !HasCriticalError && HasEditPromotionPermission;
 
 
         public ICommand EditCommand
@@ -815,7 +821,22 @@ namespace NetErp.Billing.PriceList.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            NotifyPermissionProperties();
             this.SetFocus(nameof(FilterSearch));
+        }
+
+        private void NotifyPermissionProperties()
+        {
+            NotifyOfPropertyChange(nameof(HasEditPromotionPermission));
+            NotifyOfPropertyChange(nameof(CanPerformDataOperations));
+            NotifyOfPropertyChange(nameof(CanDelete));
+            NotifyOfPropertyChange(nameof(CanClearPromotion));
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyPermissionProperties();
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(PromotionTempRecordResponseMessage message, CancellationToken cancellationToken)

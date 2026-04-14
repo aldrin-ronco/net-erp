@@ -45,7 +45,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         IHandle<CostCenterCreateMessage>,
         IHandle<CostCenterDeleteMessage>,
         IHandle<StorageCreateMessage>,
-        IHandle<StorageDeleteMessage>
+        IHandle<StorageDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
@@ -71,6 +72,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
 
         public PriceListViewModel Context { get; set; }
         public string MaskN2 { get; set; } = "n2";
@@ -382,7 +384,11 @@ namespace NetErp.Billing.PriceList.ViewModels
         public string InactiveBannerText => IsViewingPromotion
             ? "ESTA PROMOCIÓN NO ESTÁ ACTIVA"
             : "ESTA LISTA DE PRECIOS NO ESTÁ ACTIVA";
-        public bool IsGridReadOnly => ActiveEntityIsNotActive || _backgroundQueueService.HasCriticalError();
+        public bool IsGridReadOnly =>
+            ActiveEntityIsNotActive
+            || _backgroundQueueService.HasCriticalError()
+            || (IsViewingPromotion && !HasEditPromotionPermission)
+            || (IsViewingBaseList && !HasEditPriceListPermission);
 
         public PriceListItemDTO? SelectedPriceListItem
         {
@@ -398,10 +404,22 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanConfigurePriceList => SelectedPriceList != null;
-        public bool CanManagePromotion => SelectedPromotion != null;
-        public bool CanDeletePriceList => SelectedPriceList != null;
-        public bool CanDeletePromotion => SelectedPromotion != null;
+        #region Permissions
+
+        public bool HasCreatePriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Create);
+        public bool HasEditPriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Edit);
+        public bool HasDeletePriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Delete);
+        public bool HasCreatePromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Create);
+        public bool HasEditPromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Edit);
+        public bool HasDeletePromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Delete);
+
+        #endregion
+
+        public bool CanCreatePriceList => HasCreatePriceListPermission;
+        public bool CanConfigurePriceList => HasEditPriceListPermission && SelectedPriceList != null;
+        public bool CanDeletePriceList => HasDeletePriceListPermission && SelectedPriceList != null;
+        public bool CanManagePromotion => HasEditPromotionPermission && SelectedPromotion != null;
+        public bool CanDeletePromotion => HasDeletePromotionPermission && SelectedPromotion != null;
 
         private void RefreshPromotions()
         {
@@ -628,7 +646,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanCreatePromotion => SelectedPriceList is { IsActive: true };
+        public bool CanCreatePromotion => HasCreatePromotionPermission && SelectedPriceList is { IsActive: true };
 
         public async Task InitializeAsync()
         {
@@ -648,7 +666,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Catalogs = [.. result.CatalogsPage.Entries];
                 SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
                 _allPriceLists.Clear();
-                _allPriceLists.AddRange(result.PriceListsPage.Entries);
+                _allPriceLists.AddRange(result.PriceListsPage.Entries.Where(p => !p.Archived));
                 PriceLists = [.. _allPriceLists.Where(p => p.Parent is null)];
                 _isInitialized = true;
                 ShowEmptyState = PriceLists.Count == 0;
@@ -887,8 +905,26 @@ namespace NetErp.Billing.PriceList.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            NotifyPermissionProperties();
             if (!HasUnmetDependencies)
                 this.SetFocus(nameof(FilterSearch));
+        }
+
+        private void NotifyPermissionProperties()
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePriceListPermission));
+            NotifyOfPropertyChange(nameof(HasEditPriceListPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePriceListPermission));
+            NotifyOfPropertyChange(nameof(HasCreatePromotionPermission));
+            NotifyOfPropertyChange(nameof(HasEditPromotionPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePromotionPermission));
+            NotifyOfPropertyChange(nameof(CanCreatePriceList));
+            NotifyOfPropertyChange(nameof(CanConfigurePriceList));
+            NotifyOfPropertyChange(nameof(CanDeletePriceList));
+            NotifyOfPropertyChange(nameof(CanCreatePromotion));
+            NotifyOfPropertyChange(nameof(CanDeletePromotion));
+            NotifyOfPropertyChange(nameof(CanManagePromotion));
+            NotifyOfPropertyChange(nameof(IsGridReadOnly));
         }
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
@@ -966,6 +1002,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             return Task.CompletedTask;
         }
 
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyPermissionProperties();
+            return Task.CompletedTask;
+        }
+
         public PriceListMasterViewModel(
             PriceListViewModel context,
             IRepository<PriceListItemGraphQLModel> priceListItemService,
@@ -979,6 +1021,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -994,6 +1037,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
             _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
             _graphQLClient = graphQLClient;
             _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnUIThread(this);
