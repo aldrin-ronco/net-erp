@@ -153,7 +153,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private CancellationTokenSource _cascadeCancellation = new();
 
-        public CatalogGraphQLModel SelectedCatalog
+        public CatalogGraphQLModel? SelectedCatalog
         {
             get;
             set
@@ -162,7 +162,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedCatalog));
-                    if (!_isUpdating && value != null)
+                    NotifyOfPropertyChange(nameof(CanShowItemTypes));
+                    if (!_isUpdating)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -174,6 +175,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 }
             }
         }
+
+        public bool CanShowItemTypes => SelectedCatalog != null;
 
         public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
@@ -459,6 +462,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 CreatePriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, _priceListService, _storageCache, _costCenterCache, _stringLengthCache, _graphQLClient, _joinableTaskFactory);
                 await viewModel.InitializeAsync();
                 viewModel.SetForNew();
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    viewModel.DialogWidth = parentView.ActualWidth * 0.50;
+                    viewModel.DialogHeight = parentView.ActualHeight * 0.75;
+                }
+
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
             }
             catch (AsyncException ex)
@@ -664,7 +674,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
 
                 Catalogs = [.. result.CatalogsPage.Entries];
-                SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
+                SelectedCatalog = null;
                 _allPriceLists.Clear();
                 _allPriceLists.AddRange(result.PriceListsPage.Entries.Where(p => !p.Archived));
                 PriceLists = [.. _allPriceLists.Where(p => p.Parent is null)];
@@ -791,10 +801,10 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private void LoadItemTypes()
         {
-            if (SelectedCatalog?.ItemTypes is null) return;
-
             _isUpdating = true;
-            ItemTypes = [.. SelectedCatalog.ItemTypes];
+            ItemTypes = SelectedCatalog?.ItemTypes is null
+                ? []
+                : [.. SelectedCatalog.ItemTypes];
             SelectedItemType = null;
             LoadItemCategories();
             _isUpdating = false;
@@ -907,7 +917,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             base.OnViewReady(view);
             NotifyPermissionProperties();
             if (!HasUnmetDependencies)
-                this.SetFocus(nameof(FilterSearch));
+                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                    new System.Action(() => this.SetFocus(nameof(FilterSearch))),
+                    DispatcherPriority.Render);
         }
 
         private void NotifyPermissionProperties()
@@ -1078,8 +1090,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (existing != null)
                 {
                     int index = PriceLists.IndexOf(existing);
+                    bool wasSelected = SelectedPriceList?.Id == entity.Id;
+                    _isUpdating = true;
                     PriceLists[index] = entity;
-                    if (SelectedPriceList?.Id == entity.Id) SelectedPriceList = entity;
+                    _isUpdating = false;
+                    if (wasSelected) SelectedPriceList = entity;
                 }
             }
             else
@@ -1088,8 +1103,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (existing != null)
                 {
                     int index = Promotions.IndexOf(existing);
+                    bool wasSelected = SelectedPromotion?.Id == entity.Id;
+                    _isUpdating = true;
                     Promotions[index] = entity;
-                    if (SelectedPromotion?.Id == entity.Id) SelectedPromotion = entity;
+                    _isUpdating = false;
+                    if (wasSelected) SelectedPromotion = entity;
                 }
             }
 

@@ -7,7 +7,6 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Global;
-using NetErp.Billing.PriceList.DTO;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -16,10 +15,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.Threading;
@@ -142,6 +141,23 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool ShowStorageSelector => SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE;
 
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; }
+
         public ObservableCollection<StorageGraphQLModel> Storages
         {
             get;
@@ -204,7 +220,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool EditablePrice { get; set; } = true;
 
         [ExpandoPath("isActive")]
-        public bool IsActiveFlag { get; set; } = true;
+        public bool IsActiveFlag
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsActiveFlag));
+                    this.TrackChange(nameof(IsActiveFlag));
+                }
+            }
+        } = true;
 
         public bool AutoApplyDiscount { get; set; }
         public bool IsPublic { get; set; } = true;
@@ -240,14 +268,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
 
-        private ICommand _saveCommand;
-
         public ICommand SaveCommand
         {
             get
             {
-                if (_saveCommand == null) _saveCommand = new AsyncCommand(SaveAsync);
-                return _saveCommand;
+                field ??= new AsyncCommand(SaveAsync);
+                return field;
             }
         }
 
@@ -255,6 +281,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var (_, query) = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
@@ -273,12 +300,17 @@ namespace NetErp.Billing.PriceList.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public bool CanSave
         {
             get
             {
+                if (IsBusy) return false;
                 if (_errors.Count > 0) return false;
                 if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null) return false;
                 if (!this.HasChanges()) return false;
@@ -332,14 +364,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             this.AcceptChanges();
         }
 
-        private ICommand _cancelCommand;
-
         public ICommand CancelCommand
         {
             get
             {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(CancelAsync);
-                return _cancelCommand;
+                field ??= new AsyncCommand(CancelAsync);
+                return field;
             }
         }
 
@@ -398,7 +428,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool HasErrors => _errors.Count > 0;
 
-        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));

@@ -10,23 +10,15 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              mc:Ignorable="d"
              d:DesignHeight="550" d:DesignWidth="500"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
              Background="#EEF1F5">
 
     <UserControl.Resources>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.45"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.60"/>
-    </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8">
