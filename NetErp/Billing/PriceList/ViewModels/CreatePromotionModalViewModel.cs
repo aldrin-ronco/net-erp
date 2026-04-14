@@ -13,7 +13,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -33,6 +32,23 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly Dictionary<string, List<string>> _errors;
         public DateTime MinimumDate { get; set; } = DateTime.Now;
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; }
 
         public string Name
         {
@@ -85,7 +101,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool EditablePrice { get; set; }
 
         [ExpandoPath("isActive")]
-        public bool IsActiveFlag { get; set; }
+        public bool IsActiveFlag
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsActiveFlag));
+                    this.TrackChange(nameof(IsActiveFlag));
+                }
+            }
+        }
 
         public bool AutoApplyDiscount { get; set; }
         public bool IsPublic { get; set; }
@@ -97,21 +125,43 @@ namespace NetErp.Billing.PriceList.ViewModels
         public string CostMode { get; set; } = string.Empty;
 
         [ExpandoPath("storageId")]
-        public int? StorageId { get; set; }
+        public int? StorageId
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(StorageId));
+                    this.TrackChange(nameof(StorageId));
+                }
+            }
+        }
 
         [ExpandoPath("parentId")]
-        public int ParentId { get; set; }
+        public int ParentId
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ParentId));
+                    this.TrackChange(nameof(ParentId));
+                }
+            }
+        }
 
-        public PriceListGraphQLModel ParentPriceList { get; set; }
-
-        private ICommand _cancelCommand;
+        public PriceListGraphQLModel ParentPriceList { get; set; } = null!;
 
         public ICommand CancelCommand
         {
             get
             {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(CancelAsync);
-                return _cancelCommand;
+                field ??= new AsyncCommand(CancelAsync);
+                return field;
             }
         }
 
@@ -120,14 +170,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             await _dialogService.CloseDialogAsync(this, true);
         }
 
-        private ICommand _saveCommand;
-
         public ICommand SaveCommand
         {
             get
             {
-                if (_saveCommand == null) _saveCommand = new AsyncCommand(SaveAsync);
-                return _saveCommand;
+                field ??= new AsyncCommand(SaveAsync);
+                return field;
             }
         }
 
@@ -135,6 +183,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var (_, query) = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
@@ -153,12 +202,17 @@ namespace NetErp.Billing.PriceList.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public bool CanSave
         {
             get
             {
+                if (IsBusy) return false;
                 return _errors.Count <= 0 && this.HasChanges();
             }
         }

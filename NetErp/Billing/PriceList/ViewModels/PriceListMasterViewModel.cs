@@ -647,6 +647,13 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 CreatePromotionModalViewModel viewModel = new(_dialogService, Context.EventAggregator, SelectedPriceList, _priceListService, _stringLengthCache, _joinableTaskFactory);
                 viewModel.SetForNew();
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    viewModel.DialogWidth = parentView.ActualWidth * 0.35;
+                    viewModel.DialogHeight = parentView.ActualHeight * 0.55;
+                }
+
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de promociones");
             }
             catch (Exception ex)
