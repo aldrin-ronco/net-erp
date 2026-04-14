@@ -56,7 +56,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _joinableTaskFactory = joinableTaskFactory;
 
-            Items.CollectionChanged += OnItemsCollectionChanged;
+            Items.CollectionChanged += OnItemsCollectionChanged!;
         }
 
         private void OnItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -71,7 +71,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 _cascadeCancellation?.Cancel();
                 _cascadeCancellation?.Dispose();
 
-                Items.CollectionChanged -= OnItemsCollectionChanged;
+                Items.CollectionChanged -= OnItemsCollectionChanged!;
 
                 Items.Clear();
                 Catalogs.Clear();
@@ -86,7 +86,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(
+            _ = System.Windows.Application.Current.Dispatcher?.BeginInvoke(
                 new System.Action(() => SetFocus(() => FilterSearch)),
                 DispatcherPriority.Render);
         }
@@ -558,7 +558,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     minimumPrice = 0m
                 }).ToList();
 
-                var (_, query) = _batchUpdatePricesQuery.Value;
+                var (fragment, query) = _batchUpdatePricesQuery.Value;
                 int totalAdded = 0;
                 int totalFailed = 0;
                 List<string> failedMessages = [];
@@ -567,7 +567,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 for (int i = 0; i < allItems.Count; i += BatchSize)
                 {
                     var batch = allItems.Skip(i).Take(BatchSize).ToList();
-                    var variables = new { input = new { priceListId = PromotionId, items = batch } };
+                    ExpandoObject variables = new GraphQLVariables()
+                        .For(fragment, "input", new { priceListId = PromotionId, items = batch })
+                        .Build();
 
                     BatchResultGraphQLModel batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
 

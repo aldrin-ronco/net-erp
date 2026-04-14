@@ -168,6 +168,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Context.EventAggregator.Unsubscribe(this);
                 _cascadeCancellation?.Cancel();
                 _cascadeCancellation?.Dispose();
+
+                PriceListItems.Clear();
+                Catalogs.Clear();
+                ItemTypes.Clear();
+                ItemCategories.Clear();
+                ItemSubCategories.Clear();
+                ShadowItems.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -198,16 +205,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private CatalogGraphQLModel? _selectedCatalog;
-
         public CatalogGraphQLModel? SelectedCatalog
         {
-            get { return _selectedCatalog; }
+            get;
             set
             {
-                if (_selectedCatalog != value)
+                if (field != value)
                 {
-                    _selectedCatalog = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCatalog));
                     NotifyOfPropertyChange(nameof(CanShowItemTypes));
                     if (!_isUpdating)
@@ -238,16 +243,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private ItemTypeGraphQLModel? _selectedItemType;
-
         public ItemTypeGraphQLModel? SelectedItemType
         {
-            get { return _selectedItemType; }
+            get;
             set
             {
-                if (_selectedItemType != value)
+                if (field != value)
                 {
-                    _selectedItemType = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemType));
                     if (!_isUpdating)
                     {
@@ -277,16 +280,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private ItemCategoryGraphQLModel? _selectedItemCategory;
-
         public ItemCategoryGraphQLModel? SelectedItemCategory
         {
-            get { return _selectedItemCategory; }
+            get;
             set
             {
-                if (_selectedItemCategory != value)
+                if (field != value)
                 {
-                    _selectedItemCategory = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemCategory));
                     if (!_isUpdating)
                     {
@@ -314,16 +315,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
-        private ItemSubCategoryGraphQLModel? _selectedItemSubCategory;
-
         public ItemSubCategoryGraphQLModel? SelectedItemSubCategory
         {
-            get { return _selectedItemSubCategory; }
+            get;
             set
             {
-                if (_selectedItemSubCategory != value)
+                if (field != value)
                 {
-                    _selectedItemSubCategory = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
                     if (!_isUpdating && IsInitialized)
                     {
@@ -345,10 +344,6 @@ namespace NetErp.Billing.PriceList.ViewModels
         private bool _isUpdating = false;
         private CancellationTokenSource _cascadeCancellation = new();
 
-        // Obsolete method - replaced by individual dropdown logic
-        // Keeping for backward compatibility during transition
-
-        // Reload data method with cancellation support
         private async Task ReloadDataAsync(CancellationToken cancellationToken)
         {
             try
@@ -373,8 +368,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             ItemTypes = SelectedCatalog?.ItemTypes is null
                 ? []
                 : [.. SelectedCatalog.ItemTypes];
-            _selectedItemType = null;
-            NotifyOfPropertyChange(nameof(SelectedItemType));
+            SelectedItemType = null;
             BuildItemCategories();
             _isUpdating = false;
         }
@@ -382,17 +376,10 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void BuildItemCategories()
         {
             _isUpdating = true;
-
-            if (SelectedItemType != null && SelectedItemType.ItemCategories != null)
-            {
-                ItemCategories = [.. SelectedItemType.ItemCategories];
-            }
-            else
-            {
-                ItemCategories.Clear();
-            }
-            _selectedItemCategory = null;
-            NotifyOfPropertyChange(nameof(SelectedItemCategory));
+            ItemCategories = SelectedItemType?.ItemCategories is null
+                ? []
+                : [.. SelectedItemType.ItemCategories];
+            SelectedItemCategory = null;
 
             BuildItemSubCategories();
             NotifyOfPropertyChange(nameof(CanShowItemCategories));
@@ -403,17 +390,10 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void BuildItemSubCategories()
         {
             _isUpdating = true;
-
-            if (SelectedItemCategory != null && SelectedItemCategory.ItemSubCategories != null)
-            {
-                ItemSubCategories = [.. SelectedItemCategory.ItemSubCategories];
-            }
-            else
-            {
-                ItemSubCategories.Clear();
-            }
-            _selectedItemSubCategory = null;
-            NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
+            ItemSubCategories = SelectedItemCategory?.ItemSubCategories is null
+                ? []
+                : [.. SelectedItemCategory.ItemSubCategories];
+            SelectedItemSubCategory = null;
 
             NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
@@ -571,7 +551,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (!string.IsNullOrEmpty(FilterSearch))
                     filters.filterSearch = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "priceListId", Id)
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
@@ -599,19 +579,12 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task InitializeAsync()
         {
-            var (query, catalogsFragment) = _catalogsQuery.Value;
+            await _catalogCache.EnsureLoadedAsync();
 
-            dynamic variables = new GraphQLVariables()
-                .For(catalogsFragment, "pagination", new { pageSize = -1 })
-                .Build();
-
-            PriceListDataContext result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
-            Catalogs = [.. result.CatalogsPage.Entries];
+            Catalogs = [.. _catalogCache.Items];
             IsInitialized = true;
             _isUpdating = true;
-            _selectedCatalog = null;
-            NotifyOfPropertyChange(nameof(SelectedCatalog));
-            NotifyOfPropertyChange(nameof(CanShowItemTypes));
+            SelectedCatalog = null;
             BuildItemTypes();
             _isUpdating = false;
             await ReloadDataAsync(_cascadeCancellation.Token);
@@ -701,17 +674,6 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private const int DeleteBatchSize = 50;
 
-        private static readonly Lazy<string> _batchDeleteQuery = new(() => @"
-            mutation ($input: BatchDeletePriceListPricesInput!) {
-              SingleItemResponse: batchDeletePriceListPrices(input: $input) {
-                success
-                message
-                totalAffected
-                affectedIds
-                errors { fields message }
-              }
-            }");
-
         public async Task DeleteListAsync()
         {
             try
@@ -723,14 +685,16 @@ namespace NetErp.Billing.PriceList.ViewModels
 
                 IsBusy = true;
                 List<int> itemIds = ShadowItems.ToList();
-                string query = _batchDeleteQuery.Value;
+                var (fragment, query) = _batchDeleteQuery.Value;
                 int totalDeleted = 0;
                 List<string> failedMessages = [];
 
                 for (int i = 0; i < itemIds.Count; i += DeleteBatchSize)
                 {
                     List<int> batch = itemIds.Skip(i).Take(DeleteBatchSize).ToList();
-                    var variables = new { input = new { priceListId = Id, itemIds = batch } };
+                    ExpandoObject variables = new GraphQLVariables()
+                        .For(fragment, "input", new { priceListId = Id, itemIds = batch })
+                        .Build();
 
                     BatchResultGraphQLModel batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
 
@@ -785,17 +749,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private static readonly Lazy<string> _purgeQuery = new(() => @"
-            mutation ($priceListId: ID!) {
-              SingleItemResponse: purgePriceListPrices(priceListId: $priceListId) {
-                success
-                message
-                totalAffected
-                affectedIds
-                errors { fields message }
-              }
-            }");
-
         public async Task ClearPromotionAsync()
         {
             try
@@ -804,8 +757,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (result != MessageBoxResult.Yes) return;
 
                 IsBusy = true;
-                var variables = new { priceListId = Id };
-                BatchResultGraphQLModel batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(_purgeQuery.Value, variables);
+                var (fragment, query) = _purgeQuery.Value;
+                ExpandoObject variables = new GraphQLVariables()
+                    .For(fragment, "priceListId", Id)
+                    .Build();
+                BatchResultGraphQLModel batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
 
                 if (!batchResult.Success)
                 {
@@ -887,7 +843,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => ResponseTime);
+                    NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
         }
@@ -904,7 +860,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => PageIndex);
+                    NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
         } = 1; // DefaultPageIndex = 1
@@ -920,7 +876,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => PageSize);
+                    NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
         } = 50; // Default PageSize 50
@@ -936,7 +892,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => TotalCount);
+                    NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         } = 0;
@@ -957,30 +913,28 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Query Builders
 
-        private static readonly Lazy<(string Query, GraphQLQueryFragment CatalogsFragment)> _catalogsQuery = new(() =>
+        private static Lazy<(GraphQLQueryFragment Fragment, string Query)> BuildBatchResultMutationQuery(string operationName, GraphQLQueryParameter parameter) => new(() =>
         {
-            var catalogsFields = FieldSpec<PageType<CatalogGraphQLModel>>
+            var fields = FieldSpec<BatchResultGraphQLModel>
                 .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .SelectList(e => e.ItemTypes, it => it
-                        .Field(t => t.Id)
-                        .Field(t => t.Name)
-                        .SelectList(t => t.ItemCategories, ic => ic
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            .SelectList(c => c.ItemSubCategories, isc => isc
-                                .Field(s => s.Id)
-                                .Field(s => s.Name)))))
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Field(f => f.TotalAffected)
+                .Field(f => f.AffectedIds)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var catalogsFragment = new GraphQLQueryFragment("catalogsPage", [paginationParam], catalogsFields);
-
-            var query = new GraphQLQueryBuilder([catalogsFragment]).GetQuery();
-            return (query, catalogsFragment);
+            var fragment = new GraphQLQueryFragment(operationName, [parameter], fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _batchDeleteQuery =
+            BuildBatchResultMutationQuery("batchDeletePriceListPrices", new GraphQLQueryParameter("input", "BatchDeletePriceListPricesInput!"));
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _purgeQuery =
+            BuildBatchResultMutationQuery("purgePriceListPrices", new GraphQLQueryParameter("priceListId", "ID!"));
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadPromotionItemsQuery = new(() =>
         {
