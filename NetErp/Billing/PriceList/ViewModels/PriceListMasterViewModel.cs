@@ -51,6 +51,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         private bool _isUpdating = false;
         private readonly Dictionary<Guid, int> _operationItemMapping = [];
         private readonly DebouncedAction _searchDebounce = new();
+
+        // Raw flat store with both base lists and promotions; PriceLists/Promotions are derived views.
+        private readonly List<PriceListGraphQLModel> _allPriceLists = [];
         
         // Dependency injection fields
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -291,6 +294,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         } = [];
 
+        public ObservableCollection<PriceListGraphQLModel> Promotions
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Promotions));
+                    NotifyOfPropertyChange(nameof(HasPromotions));
+                }
+            }
+        } = [];
+
         public PriceListGraphQLModel? SelectedPriceList
         {
             get;
@@ -301,10 +318,16 @@ namespace NetErp.Billing.PriceList.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedPriceList));
                     NotifyOfPropertyChange(nameof(CostByStorageInformation));
-                    NotifyOfPropertyChange(nameof(SelectedPriceListIsNotActive));
                     NotifyOfPropertyChange(nameof(IsGridReadOnly));
-                    NotifyOfPropertyChange(nameof(IsPriceList));
+                    NotifyOfPropertyChange(nameof(ActiveEntityIsNotActive));
+                    NotifyOfPropertyChange(nameof(InactiveBannerText));
+                    NotifyOfPropertyChange(nameof(IsViewingBaseList));
+                    NotifyOfPropertyChange(nameof(CanConfigurePriceList));
+                    NotifyOfPropertyChange(nameof(CanDeletePriceList));
                     NotifyOfPropertyChange(nameof(CanCreatePromotion));
+
+                    RefreshPromotions();
+                    SelectedPromotion = null;
 
                     if (!_isUpdating && value != null)
                     {
@@ -320,8 +343,46 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool SelectedPriceListIsNotActive => SelectedPriceList != null && !SelectedPriceList.IsActive;
-        public bool IsGridReadOnly => SelectedPriceListIsNotActive || _backgroundQueueService.HasCriticalError();
+        public PriceListGraphQLModel? SelectedPromotion
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedPromotion));
+                    NotifyOfPropertyChange(nameof(IsViewingPromotion));
+                    NotifyOfPropertyChange(nameof(IsViewingBaseList));
+                    NotifyOfPropertyChange(nameof(IsGridReadOnly));
+                    NotifyOfPropertyChange(nameof(ActiveEntityIsNotActive));
+                    NotifyOfPropertyChange(nameof(InactiveBannerText));
+                    NotifyOfPropertyChange(nameof(CanManagePromotion));
+                    NotifyOfPropertyChange(nameof(CanDeletePromotion));
+
+                    if (!_isUpdating && _isInitialized)
+                    {
+                        _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
+                        _cascadeCancellation = new CancellationTokenSource();
+
+                        _ = ReloadDataAsync(_cascadeCancellation.Token);
+                    }
+                }
+            }
+        }
+
+        private PriceListGraphQLModel? ActiveEntity => SelectedPromotion ?? SelectedPriceList;
+
+        public bool IsViewingPromotion => SelectedPromotion != null;
+        public bool IsViewingBaseList => SelectedPriceList != null && SelectedPromotion == null;
+        public bool HasPromotions => Promotions.Count > 0;
+
+        public bool ActiveEntityIsNotActive => ActiveEntity is { IsActive: false };
+        public string InactiveBannerText => IsViewingPromotion
+            ? "ESTA PROMOCIÓN NO ESTÁ ACTIVA"
+            : "ESTA LISTA DE PRECIOS NO ESTÁ ACTIVA";
+        public bool IsGridReadOnly => ActiveEntityIsNotActive || _backgroundQueueService.HasCriticalError();
 
         public PriceListItemDTO? SelectedPriceListItem
         {
@@ -337,13 +398,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool IsPriceList
+        public bool CanConfigurePriceList => SelectedPriceList != null;
+        public bool CanManagePromotion => SelectedPromotion != null;
+        public bool CanDeletePriceList => SelectedPriceList != null;
+        public bool CanDeletePromotion => SelectedPromotion != null;
+
+        private void RefreshPromotions()
         {
-            get
-            {
-                if (SelectedPriceList == null) return false;
-                return SelectedPriceList.Parent == null || SelectedPriceList.Parent.Id == 0;
-            }
+            int? parentId = SelectedPriceList?.Id;
+            Promotions = parentId is null
+                ? []
+                : [.. _allPriceLists.Where(p => p.Parent?.Id == parentId)];
         }
 
         public bool ShowInventoryQuantity
@@ -390,27 +455,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public ICommand ConfigurationCommand
+        public ICommand ConfigurePriceListCommand
         {
             get
             {
-                if (field is null) field = new AsyncCommand(ConfigurationAsync);
+                if (field is null) field = new AsyncCommand(ConfigurePriceListAsync);
                 return field;
             }
         }
 
-        //TODO: Refactorizar throw exception en FirstOrDefault
-        public async Task ConfigurationAsync()
+        public async Task ConfigurePriceListAsync()
         {
             try
             {
-                if (!IsPriceList)
-                {
-                    MainIsBusy = true;
-                    await Context.ActivateUpdatePromotionViewAsync(SelectedPriceList);
-                    MainIsBusy = false;
-                    return;
-                }
+                if (SelectedPriceList is null) return;
                 UpdatePriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, Context.AutoMapper, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient, _joinableTaskFactory);
                 await viewModel.InitializeAsync();
                 viewModel.SetForEdit(SelectedPriceList);
@@ -424,7 +482,33 @@ namespace NetErp.Billing.PriceList.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ConfigurationAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ConfigurePriceListAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+        }
+
+        public ICommand ManagePromotionCommand
+        {
+            get
+            {
+                if (field is null) field = new AsyncCommand(ManagePromotionAsync);
+                return field;
+            }
+        }
+
+        public async Task ManagePromotionAsync()
+        {
+            try
+            {
+                PriceListGraphQLModel? promotion = SelectedPromotion;
+                if (promotion is null) return;
+                MainIsBusy = true;
+                await Context.ActivateUpdatePromotionViewAsync(promotion);
+                MainIsBusy = false;
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ManagePromotionAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -439,13 +523,33 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task DeletePriceListAsync()
         {
+            if (SelectedPriceList is null) return;
+            await DeleteOrArchiveAsync(SelectedPriceList);
+        }
+
+        public ICommand DeletePromotionCommand
+        {
+            get
+            {
+                if (field is null) field = new AsyncCommand(DeletePromotionAsync);
+                return field;
+            }
+        }
+
+        public async Task DeletePromotionAsync()
+        {
+            if (SelectedPromotion is null) return;
+            await DeleteOrArchiveAsync(SelectedPromotion);
+        }
+
+        private async Task DeleteOrArchiveAsync(PriceListGraphQLModel target)
+        {
             try
             {
-                if (SelectedPriceList is null) return;
-                MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedPriceList.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {target.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                 if (result != MessageBoxResult.Yes) return;
                 IsBusy = true;
-                int id = SelectedPriceList.Id;
+                int id = target.Id;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeletePriceListQuery.Value;
                 ExpandoObject canDeleteVars = new GraphQLVariables()
@@ -491,7 +595,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(DeletePriceListAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(DeleteOrArchiveAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
             {
@@ -524,7 +628,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanCreatePromotion => SelectedPriceList != null && SelectedPriceList.IsActive && SelectedPriceList.Parent == null;
+        public bool CanCreatePromotion => SelectedPriceList is { IsActive: true };
 
         public async Task InitializeAsync()
         {
@@ -543,12 +647,14 @@ namespace NetErp.Billing.PriceList.ViewModels
 
                 Catalogs = [.. result.CatalogsPage.Entries];
                 SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
-                PriceLists = [.. result.PriceListsPage.Entries];
+                _allPriceLists.Clear();
+                _allPriceLists.AddRange(result.PriceListsPage.Entries);
+                PriceLists = [.. _allPriceLists.Where(p => p.Parent is null)];
                 _isInitialized = true;
-                ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
+                ShowEmptyState = PriceLists.Count == 0;
                 NotifyOfPropertyChange(nameof(HasRecords));
                 if (ShowEmptyState) return;
-                SelectedPriceList = PriceLists?.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
+                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
                 LoadItemTypes();
             }
             catch (Exception ex)
@@ -619,8 +725,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (!string.IsNullOrEmpty(FilterSearch))
                     filters.filterSearch = FilterSearch.Trim().RemoveExtraSpaces();
 
+                PriceListGraphQLModel? target = ActiveEntity;
+                if (target is null) return;
+
                 ExpandoObject variables = new GraphQLVariables()
-                    .For(fragment, "priceListId", SelectedPriceList!.Id)
+                    .For(fragment, "priceListId", target.Id)
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -768,6 +877,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 _cascadeCancellation?.Dispose();
                 PriceListItems.Clear();
                 PriceLists.Clear();
+                Promotions.Clear();
+                _allPriceLists.Clear();
                 Catalogs.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
@@ -890,45 +1001,104 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public Task HandleAsync(PriceListCreateMessage message, CancellationToken cancellationToken)
         {
-            PriceLists.Add(message.CreatedPriceList.Entity);
-            SelectedPriceList = message.CreatedPriceList.Entity;
-            ShowEmptyState = false;
+            PriceListGraphQLModel entity = message.CreatedPriceList.Entity;
+            _allPriceLists.Add(entity);
+
+            if (entity.Parent is null)
+            {
+                PriceLists.Add(entity);
+                SelectedPriceList = entity;
+                ShowEmptyState = false;
+            }
+            else if (entity.Parent.Id == SelectedPriceList?.Id)
+            {
+                Promotions.Add(entity);
+                NotifyOfPropertyChange(nameof(HasPromotions));
+                SelectedPromotion = entity;
+            }
+
             _notificationService.ShowSuccess(message.CreatedPriceList.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(PriceListUpdateMessage message, CancellationToken cancellationToken)
         {
-            PriceListGraphQLModel? existing = PriceLists.FirstOrDefault(x => x.Id == message.UpdatedPriceList.Entity.Id);
-            if (existing != null)
+            PriceListGraphQLModel entity = message.UpdatedPriceList.Entity;
+
+            PriceListGraphQLModel? stored = _allPriceLists.FirstOrDefault(x => x.Id == entity.Id);
+            if (stored != null) _allPriceLists[_allPriceLists.IndexOf(stored)] = entity;
+
+            if (entity.Parent is null)
             {
-                int index = PriceLists.IndexOf(existing);
-                PriceLists[index] = message.UpdatedPriceList.Entity;
-                SelectedPriceList = message.UpdatedPriceList.Entity;
+                PriceListGraphQLModel? existing = PriceLists.FirstOrDefault(x => x.Id == entity.Id);
+                if (existing != null)
+                {
+                    int index = PriceLists.IndexOf(existing);
+                    PriceLists[index] = entity;
+                    if (SelectedPriceList?.Id == entity.Id) SelectedPriceList = entity;
+                }
             }
-            NotifyOfPropertyChange(nameof(SelectedPriceListIsNotActive));
+            else
+            {
+                PriceListGraphQLModel? existing = Promotions.FirstOrDefault(x => x.Id == entity.Id);
+                if (existing != null)
+                {
+                    int index = Promotions.IndexOf(existing);
+                    Promotions[index] = entity;
+                    if (SelectedPromotion?.Id == entity.Id) SelectedPromotion = entity;
+                }
+            }
+
+            NotifyOfPropertyChange(nameof(ActiveEntityIsNotActive));
+            NotifyOfPropertyChange(nameof(InactiveBannerText));
             _notificationService.ShowSuccess(message.UpdatedPriceList.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(PriceListDeleteMessage message, CancellationToken cancellationToken)
         {
-            PriceListGraphQLModel? toRemove = PriceLists.FirstOrDefault(x => x.Id == message.DeletedPriceList.DeletedId);
-            if (toRemove != null) PriceLists.Remove(toRemove);
-            SelectedPriceList = PriceLists.FirstOrDefault();
-            ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
+            if (message.DeletedPriceList.DeletedId is not int id) return Task.CompletedTask;
+
+            PriceListGraphQLModel? removed = _allPriceLists.FirstOrDefault(x => x.Id == id);
+            if (removed != null) _allPriceLists.Remove(removed);
+
+            RemoveFromCollections(id, removed);
             _notificationService.ShowSuccess(message.DeletedPriceList.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(PriceListArchiveMessage message, CancellationToken cancellationToken)
         {
-            PriceListGraphQLModel? toRemove = PriceLists.FirstOrDefault(x => x.Id == message.ArchivedPriceList.Entity.Id);
-            if (toRemove != null) PriceLists.Remove(toRemove);
-            SelectedPriceList = PriceLists.FirstOrDefault();
-            ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
+            PriceListGraphQLModel entity = message.ArchivedPriceList.Entity;
+            PriceListGraphQLModel? removed = _allPriceLists.FirstOrDefault(x => x.Id == entity.Id);
+            if (removed != null) _allPriceLists.Remove(removed);
+
+            RemoveFromCollections(entity.Id, removed ?? entity);
             _notificationService.ShowSuccess(message.ArchivedPriceList.Message);
             return Task.CompletedTask;
+        }
+
+        private void RemoveFromCollections(int id, PriceListGraphQLModel? removed)
+        {
+            bool wasBaseList = removed?.Parent is null;
+
+            if (wasBaseList)
+            {
+                PriceListGraphQLModel? inList = PriceLists.FirstOrDefault(x => x.Id == id);
+                if (inList != null) PriceLists.Remove(inList);
+                if (SelectedPriceList?.Id == id) SelectedPriceList = PriceLists.FirstOrDefault();
+                ShowEmptyState = PriceLists.Count == 0;
+            }
+            else
+            {
+                PriceListGraphQLModel? inPromos = Promotions.FirstOrDefault(x => x.Id == id);
+                if (inPromos != null)
+                {
+                    Promotions.Remove(inPromos);
+                    NotifyOfPropertyChange(nameof(HasPromotions));
+                }
+                if (SelectedPromotion?.Id == id) SelectedPromotion = null;
+            }
         }
 
         #region Dependencies
