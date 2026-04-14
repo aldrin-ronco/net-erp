@@ -2,7 +2,6 @@
 using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
-using Common.Services;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
@@ -25,7 +24,6 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IBackgroundQueueService _backgroundQueueService;
         private readonly INotificationService _notificationService;
         private readonly NetErp.Helpers.IDialogService _dialogService;
-        private readonly IParallelBatchProcessor _parallelBatchProcessor;
         private readonly IPriceListCalculatorFactory _calculatorFactory;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
@@ -56,7 +54,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             IBackgroundQueueService backgroundQueueService,
             INotificationService notificationService,
             NetErp.Helpers.IDialogService dialogService,
-            IParallelBatchProcessor parallelBatchProcessor,
             IPriceListCalculatorFactory calculatorFactory,
             IRepository<PriceListGraphQLModel> priceListService,
             IRepository<ItemGraphQLModel> itemService,
@@ -76,7 +73,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             _backgroundQueueService = backgroundQueueService;
             _notificationService = notificationService;
             _dialogService = dialogService;
-            _parallelBatchProcessor = parallelBatchProcessor;
             _calculatorFactory = calculatorFactory;
             _priceListService = priceListService;
             _itemService = itemService;
@@ -101,6 +97,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
