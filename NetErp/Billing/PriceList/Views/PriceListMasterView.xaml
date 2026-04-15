@@ -66,7 +66,6 @@
                                 CharacterCasing="Upper"
                                 BorderBrush="#C8CED6"
                                 AllowDefaultButton="False"
-                                h:FocusBehavior.IsFocused="True"
                                 Margin="10,10,10,0">
                     <dxe:ButtonEdit.Buttons>
                         <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
@@ -87,13 +86,8 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
+                    <!-- Fila 0: jerarquía de precios -->
                     <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0,0,4,6">
-                        <TextBlock Text="Catálogo de productos" Margin="0,0,0,3"/>
-                        <dxe:ComboBoxEdit ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
-                                          IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="4,0,4,6">
                         <TextBlock Text="Lista de precios" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding PriceLists, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedPriceList, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6">
@@ -115,7 +109,7 @@
                         </dxe:ComboBoxEdit>
                     </StackPanel>
 
-                    <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="0" Margin="4,0,0,6"
+                    <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="4,0,0,6"
                                 Visibility="{Binding HasPromotions, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                         <TextBlock Text="Promoción" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding Promotions, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedPromotion, UpdateSourceTrigger=PropertyChanged}"
@@ -139,21 +133,30 @@
                         </dxe:ComboBoxEdit>
                     </StackPanel>
 
+                    <!-- Fila 1: filtros de productos -->
                     <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="1" Margin="0,0,4,0">
+                        <TextBlock Text="Catálogo de productos" Margin="0,0,0,3"/>
+                        <dxe:ComboBoxEdit ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
+                                          IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"
+                                          AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todos los catálogos"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="1" Margin="4,0,4,0"
+                                Visibility="{Binding CanShowItemTypes, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                         <TextBlock Text="Tipo de producto" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"
                                           AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todos los tipos"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="1" Margin="4,0,4,0" Visibility="{Binding CanShowItemCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1" Margin="4,0,4,0" Visibility="{Binding CanShowItemCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                         <TextBlock Text="Línea/Categoría" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"
                                           AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todas las categorías"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1" Margin="4,0,4,0" Visibility="{Binding CanShowItemSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="1" Margin="4,0,0,0" Visibility="{Binding CanShowItemSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                         <TextBlock Text="Sublínea/Subcategoría" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemSubCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"

@@ -95,13 +95,28 @@ namespace NetErp.Billing.PriceList.DTO
 		public ItemSubCategoryGraphQLModel SubCategory
 		{
 			get { return _subCategory; }
-			set 
+			set
 			{
 				if(_subCategory != value)
 				{
-					_subCategory = value; 
+					_subCategory = value;
 					NotifyOfPropertyChange(nameof(SubCategory));
                 }
+			}
+		}
+
+		private MeasurementUnitGraphQLModel _measurementUnit = new();
+
+		public MeasurementUnitGraphQLModel MeasurementUnit
+		{
+			get { return _measurementUnit; }
+			set
+			{
+				if (_measurementUnit != value)
+				{
+					_measurementUnit = value;
+					NotifyOfPropertyChange(nameof(MeasurementUnit));
+				}
 			}
 		}
 

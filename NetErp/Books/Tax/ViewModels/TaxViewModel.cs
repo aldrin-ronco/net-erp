@@ -477,7 +477,6 @@ namespace NetErp.Books.Tax.ViewModels
                     .Field(e => e.Name)
                     .Field(e => e.Rate)
                     .Field(e => e.IsActive)
-                    .Field(e => e.Formula)
                     .Select(e => e.TaxCategory, cat => cat
                         .Field(c => c.Id)
                         .Field(c => c.Name)

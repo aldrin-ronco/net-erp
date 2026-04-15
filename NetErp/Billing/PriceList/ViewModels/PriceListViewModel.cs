@@ -24,7 +24,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IBackgroundQueueService _backgroundQueueService;
         private readonly INotificationService _notificationService;
         private readonly NetErp.Helpers.IDialogService _dialogService;
-        private readonly IPriceListCalculatorFactory _calculatorFactory;
+        private readonly IPriceListCalculator _calculator;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
@@ -41,7 +41,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _graphQLClient, _joinableTaskFactory);
+                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculator, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _graphQLClient, _joinableTaskFactory);
                 return field;
             }
         }
@@ -54,7 +54,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             IBackgroundQueueService backgroundQueueService,
             INotificationService notificationService,
             NetErp.Helpers.IDialogService dialogService,
-            IPriceListCalculatorFactory calculatorFactory,
+            IPriceListCalculator calculator,
             IRepository<PriceListGraphQLModel> priceListService,
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
@@ -73,7 +73,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _backgroundQueueService = backgroundQueueService;
             _notificationService = notificationService;
             _dialogService = dialogService;
-            _calculatorFactory = calculatorFactory;
+            _calculator = calculator;
             _priceListService = priceListService;
             _itemService = itemService;
             _tempRecordService = tempRecordService;

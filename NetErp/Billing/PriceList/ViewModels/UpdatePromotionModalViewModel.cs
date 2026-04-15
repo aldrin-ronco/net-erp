@@ -348,7 +348,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Name)
                     .Field(f => f.IsActive)
                     .Field(f => f.StartDate)
-                    .Field(f => f.EndDate))
+                    .Field(f => f.EndDate)
+                    .Select(f => f.Parent, p => p.Field(x => x!.Id)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq

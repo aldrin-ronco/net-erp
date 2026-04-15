@@ -51,7 +51,6 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _profitMargin = value;
                     NotifyOfPropertyChange(nameof(ProfitMargin));
-                    NotifyOfPropertyChange(nameof(Profit));
                     if (!_suppressNotifications && Context != null) _ = Context.AddModifiedProductAsync(this, nameof(ProfitMargin));
                 }
             }
@@ -62,8 +61,11 @@ namespace NetErp.Billing.PriceList.DTO
             get
             {
                 if (Cost == 0) return 0;
-                decimal priceWithoutDiscount = Cost / (1 - ProfitMargin / 100);
-                return priceWithoutDiscount - Cost;
+                PriceListGraphQLModel? pl = Context?.SelectedPriceList;
+                if (pl is null) return 0;
+                decimal ivaRate = (pl.IsTaxable && pl.PriceListIncludeTax && IVA > 0) ? IVA : 0;
+                decimal priceSinIva = ivaRate > 0 ? Price / (1 + ivaRate / 100m) : Price;
+                return priceSinIva - Cost;
             }
         }
 
@@ -78,6 +80,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _price = value;
                     NotifyOfPropertyChange(nameof(Price));
+                    NotifyOfPropertyChange(nameof(Profit));
                     if (!_suppressNotifications && Context != null) _ = Context.AddModifiedProductAsync(this, nameof(Price));
                 }
             }

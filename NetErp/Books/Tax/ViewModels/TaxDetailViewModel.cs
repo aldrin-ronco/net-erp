@@ -131,36 +131,6 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        public string Formula
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    NotifyOfPropertyChange(nameof(Formula));
-                    this.TrackChange(nameof(Formula));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        } = string.Empty;
-
-        public string AlternativeFormula
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    NotifyOfPropertyChange(nameof(AlternativeFormula));
-                    this.TrackChange(nameof(AlternativeFormula));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        } = string.Empty;
-
         #endregion
 
         #region TaxCategory Selection
@@ -534,14 +504,10 @@ namespace NetErp.Books.Tax.ViewModels
         {
             IsActive = true;
             Rate = 0;
-            Formula = "Formula por definir";
-            AlternativeFormula = "AlternativeFormula por definir";
 
             this.ClearSeeds();
             this.SeedValue(nameof(IsActive), IsActive);
             this.SeedValue(nameof(Rate), Rate);
-            this.SeedValue(nameof(Formula), Formula);
-            this.SeedValue(nameof(AlternativeFormula), AlternativeFormula);
             this.AcceptChanges();
             ValidateProperties();
         }
@@ -551,8 +517,6 @@ namespace NetErp.Books.Tax.ViewModels
             this.SeedValue(nameof(Name), Name);
             this.SeedValue(nameof(Rate), Rate);
             this.SeedValue(nameof(IsActive), IsActive);
-            this.SeedValue(nameof(Formula), Formula);
-            this.SeedValue(nameof(AlternativeFormula), AlternativeFormula);
             this.SeedValue(nameof(TaxCategoryId), TaxCategoryId);
             this.SeedValue(nameof(GeneratedTaxAccountId), GeneratedTaxAccountId);
             this.SeedValue(nameof(GeneratedTaxRefundAccountId), GeneratedTaxRefundAccountId);
@@ -581,8 +545,6 @@ namespace NetErp.Books.Tax.ViewModels
         {
             Name = tax.Name;
             Rate = tax.Rate;
-            Formula = tax.Formula;
-            AlternativeFormula = tax.AlternativeFormula;
             IsActive = tax.IsActive;
             SelectedTaxCategoryGraphQLModel = TaxCategories.FirstOrDefault(f => f.Id == tax.TaxCategory.Id);
             GeneratedTaxAccountId = tax.GeneratedTaxAccount?.Id;
@@ -706,8 +668,6 @@ namespace NetErp.Books.Tax.ViewModels
                 .Field(e => e.Name)
                 .Field(e => e.Rate)
                 .Field(e => e.IsActive)
-                .Field(e => e.Formula)
-                .Field(e => e.AlternativeFormula)
                 .Select(e => e.TaxCategory, cat => cat
                     .Field(c => c.Id)
                     .Field(c => c.Name)

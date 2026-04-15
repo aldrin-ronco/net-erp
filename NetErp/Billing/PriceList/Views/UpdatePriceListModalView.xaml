@@ -205,7 +205,7 @@
                                        Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
 
                         <TextBlock Text="Cuando el costo cambie quiero..." FontSize="13" Margin="0,0,0,5"/>
-                        <dxe:ComboBoxEdit ItemsSource="{Binding ListUpdateBehaviorOnCostChange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        <dxe:ComboBoxEdit ItemsSource="{Binding ListUpdateBehaviorOnCostChange}"
                                           IsTextEditable="False" DisplayMember="Value"
                                           EditValue="{Binding SelectedListUpdateBehaviorOnCostChange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                           ValueMember="Key" Padding="2" BorderBrush="#C8CED6"/>

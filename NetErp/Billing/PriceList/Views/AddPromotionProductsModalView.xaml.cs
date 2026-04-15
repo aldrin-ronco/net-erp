@@ -1,4 +1,3 @@
-using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Billing.PriceList.Views
@@ -11,7 +10,6 @@ namespace NetErp.Billing.PriceList.Views
         public AddPromotionProductsModalView()
         {
             InitializeComponent();
-            Loaded += (s, e) => FilterSearchEdit.Focus();
         }
     }
 }

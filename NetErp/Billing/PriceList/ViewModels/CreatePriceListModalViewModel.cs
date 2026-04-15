@@ -258,7 +258,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             get
             {
                 if (SelectedFormula == "D") return "COSTO / (1-(MARGEN_UTILIDAD/100))";
-                return "(COSTO*(1+(MARGEN_IMPUESTO/100))) / (1-(MARGEN_UTILIDAD/100))";
+                return "COSTO * (1+(MARGEN_UTILIDAD/100))";
             }
         }
 

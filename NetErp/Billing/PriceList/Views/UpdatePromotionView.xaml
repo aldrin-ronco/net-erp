@@ -86,7 +86,6 @@
                                 CharacterCasing="Upper"
                                 BorderBrush="#C8CED6"
                                 AllowDefaultButton="False"
-                                h:FocusBehavior.IsFocused="True"
                                 Margin="10,6,10,0">
                     <dxe:ButtonEdit.Buttons>
                         <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
@@ -105,10 +104,12 @@
                     <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,0,4,0">
                         <TextBlock Text="Catálogo de productos" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
-                                          IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"/>
+                                          IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"
+                                          AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todos los catálogos"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Vertical" Grid.Column="1" Margin="4,0,4,0">
+                    <StackPanel Orientation="Vertical" Grid.Column="1" Margin="4,0,4,0"
+                                Visibility="{Binding CanShowItemTypes, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                         <TextBlock Text="Tipo de producto" Margin="0,0,0,3"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"
@@ -149,9 +150,10 @@
                                 AllowSorting="False" AllowColumnFiltering="False"/>
                         </dxg:GridControl.View>
 
-                        <dxg:GridColumn Binding="{Binding Item.Code, UpdateSourceTrigger=PropertyChanged}" Header="Código"/>
+                        <dxg:GridColumn Binding="{Binding Item.Code, UpdateSourceTrigger=PropertyChanged}" Header="Código" Width="65" HorizontalHeaderContentAlignment="Center"/>
                         <dxg:GridColumn Binding="{Binding Item.Name}" Header="Nombre del producto" Width="*"/>
-                        <dxg:GridColumn Binding="{Binding Item.Reference}" Header="Referencia"/>
+                        <dxg:GridColumn Binding="{Binding Item.Reference}" Header="Referencia" HorizontalHeaderContentAlignment="Center"/>
+                        <dxg:GridColumn Binding="{Binding Item.MeasurementUnit.Abbreviation}" Header="UND" Width="Auto"/>
 
                         <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
                             <dxg:GridColumn.HeaderTemplate>

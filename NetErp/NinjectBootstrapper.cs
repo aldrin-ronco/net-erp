@@ -399,9 +399,7 @@ namespace NetErp
             })).InSingletonScope();
             _ = kernel.Bind(typeof(ILogger<>)).To(typeof(Logger<>)).InSingletonScope();
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
-            _ = kernel.Bind<IPriceListCalculator>().To<StandardPriceListCalculator>().InSingletonScope().Named("Standard");
-            _ = kernel.Bind<IPriceListCalculator>().To<AlternativePriceListCalculator>().InSingletonScope().Named("Alternative");
-            _ = kernel.Bind<IPriceListCalculatorFactory>().To<PriceListCalculatorFactory>().InSingletonScope();
+            _ = kernel.Bind<IPriceListCalculator>().To<StandardPriceListCalculator>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TempRecordGraphQLModel>>().To<TempRecordService>().InSingletonScope();
             _ = kernel.Bind<IParallelBatchProcessor>().To<ParallelBatchProcessor>().InSingletonScope();
             // Setup application clases

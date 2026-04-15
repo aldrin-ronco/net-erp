@@ -59,7 +59,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly IBackgroundQueueService _backgroundQueueService;
-        private readonly IPriceListCalculatorFactory _calculatorFactory;
+        private readonly IPriceListCalculator _calculator;
         private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly JoinableTaskFactory _joinableTaskFactory;
@@ -727,6 +727,17 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
         private bool _isInitialized;
+        private bool _hasActivatedOnce;
+
+        protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
+        {
+            await base.OnActivatedAsync(cancellationToken);
+            if (_hasActivatedOnce && _isInitialized && !HasUnmetDependencies && ActiveEntity is not null)
+            {
+                await LoadPriceListItemsAsync();
+            }
+            _hasActivatedOnce = true;
+        }
 
         public bool ShowEmptyState
         {
@@ -896,8 +907,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 if (SelectedPriceList is null) return;
-                IPriceListCalculator calculator = _calculatorFactory.GetCalculator(SelectedPriceList.UseAlternativeFormula);
-                calculator.RecalculateProductValues(priceListDetail, modifiedProperty, SelectedPriceList);
+                PriceListGraphQLModel target = ActiveEntity ?? SelectedPriceList;
+                _calculator.RecalculateProductValues(priceListDetail, modifiedProperty, SelectedPriceList);
                 priceListDetail.Status = OperationStatus.Pending;
 
                 PriceListUpdateOperation operation = new(_priceListItemService)
@@ -907,7 +918,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NewDiscountMargin = priceListDetail.DiscountMargin,
                     NewMinimumPrice = priceListDetail.MinimumPrice,
                     NewProfitMargin = priceListDetail.ProfitMargin,
-                    PriceListId = SelectedPriceList.Id,
+                    PriceListId = target.Id,
                     ItemName = priceListDetail.Item.Name
                 };
 
@@ -1058,7 +1069,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<PriceListItemGraphQLModel> priceListItemService,
             IBackgroundQueueService backgroundQueueService,
             Helpers.Services.INotificationService notificationService,
-            IPriceListCalculatorFactory calculatorFactory,
+            IPriceListCalculator calculator,
             Helpers.IDialogService dialogService,
             IRepository<PriceListGraphQLModel> priceListService,
             CatalogCache catalogCache,
@@ -1075,7 +1086,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _priceListItemService = priceListItemService;
             _backgroundQueueService = backgroundQueueService;
             _notificationService = notificationService;
-            _calculatorFactory = calculatorFactory;
+            _calculator = calculator;
             _dialogService = dialogService;
             _priceListService = priceListService;
             _catalogCache = catalogCache;
@@ -1411,14 +1422,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                         .Select(i => i.AccountingGroup, ag => ag
                             .Select(a => a.SalesPrimaryTax, t => t
                                 .Field(tx => tx.Rate)
-                                .Field(tx => tx.Formula)
-                                .Field(tx => tx.AlternativeFormula)
                                 .Select(tx => tx.TaxCategory, tc => tc
                                     .Field(c => c.Prefix)))
                             .Select(a => a.SalesSecondaryTax, t => t
                                 .Field(tx => tx.Rate)
-                                .Field(tx => tx.Formula)
-                                .Field(tx => tx.AlternativeFormula)
                                 .Select(tx => tx.TaxCategory, tc => tc
                                     .Field(c => c.Prefix))))
                         .SelectList(i => i.Stocks, stocks => stocks
