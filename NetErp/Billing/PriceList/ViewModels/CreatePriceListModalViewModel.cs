@@ -169,7 +169,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(Storages));
                 }
             }
-        }
+        } = [];
 
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
@@ -182,7 +182,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
-        }
+        } = [];
 
         public ObservableCollection<CostCenterGraphQLModel> ShadowCostCenters
         {
@@ -195,7 +195,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(ShadowCostCenters));
                 }
             }
-        }
+        } = [];
 
 
 
@@ -282,8 +282,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 IsBusy = true;
-                var (_, query) = _createQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                var (fragment, query) = _createQuery.Value;
+                string prefix = GraphQLQueryFragment.GetVariableName(fragment.Alias, "input");
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: prefix);
                 UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
                 if (!result.Success)
@@ -390,14 +391,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
-            _dialogService = dialogService;
-            _eventAggregator = eventAggregator;
-            _priceListService = priceListService;
-            _storageCache = storageCache;
-            _costCenterCache = costCenterCache;
-            _stringLengthCache = stringLengthCache;
-            _graphQLClient = graphQLClient;
-            _joinableTaskFactory = joinableTaskFactory;
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _priceListService = priceListService ?? throw new ArgumentNullException(nameof(priceListService));
+            _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
         }
 
         public bool NameFocus

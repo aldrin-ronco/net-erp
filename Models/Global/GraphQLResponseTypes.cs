@@ -68,5 +68,16 @@ namespace Models.Global
             public string Message { get; set; } = string.Empty;
             public bool Success { get; set; }
         }
+
+        public class SuccessResponseModel
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
+        }
+
+        public class SuccessResponseDataWrapper
+        {
+            public SuccessResponseModel Data { get; set; } = new();
+        }
     }
 }

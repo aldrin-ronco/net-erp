@@ -36,12 +36,13 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly Func<NetErp.Helpers.DebouncedAction> _debouncedActionFactory;
 
         public PriceListMasterViewModel PriceListMasterViewModel
         {
             get
             {
-                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculator, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _graphQLClient, _joinableTaskFactory);
+                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculator, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, _debouncedActionFactory(), _graphQLClient, _joinableTaskFactory);
                 return field;
             }
         }
@@ -65,26 +66,28 @@ namespace NetErp.Billing.PriceList.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            Func<NetErp.Helpers.DebouncedAction> debouncedActionFactory)
         {
-            AutoMapper = autoMapper;
-            EventAggregator = eventAggregator;
-            _priceListItemService = priceListItemService;
-            _backgroundQueueService = backgroundQueueService;
-            _notificationService = notificationService;
-            _dialogService = dialogService;
-            _calculator = calculator;
-            _priceListService = priceListService;
-            _itemService = itemService;
-            _tempRecordService = tempRecordService;
-            _catalogCache = catalogCache;
-            _storageCache = storageCache;
-            _costCenterCache = costCenterCache;
-            _paymentMethodCache = paymentMethodCache;
-            _stringLengthCache = stringLengthCache;
-            _permissionCache = permissionCache;
-            _joinableTaskFactory = joinableTaskFactory;
-            _graphQLClient = graphQLClient;
+            AutoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
+            EventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _priceListItemService = priceListItemService ?? throw new ArgumentNullException(nameof(priceListItemService));
+            _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _calculator = calculator ?? throw new ArgumentNullException(nameof(calculator));
+            _priceListService = priceListService ?? throw new ArgumentNullException(nameof(priceListService));
+            _itemService = itemService ?? throw new ArgumentNullException(nameof(itemService));
+            _tempRecordService = tempRecordService ?? throw new ArgumentNullException(nameof(tempRecordService));
+            _catalogCache = catalogCache ?? throw new ArgumentNullException(nameof(catalogCache));
+            _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _paymentMethodCache = paymentMethodCache ?? throw new ArgumentNullException(nameof(paymentMethodCache));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
+            _debouncedActionFactory = debouncedActionFactory ?? throw new ArgumentNullException(nameof(debouncedActionFactory));
         }
 
         protected override async void OnViewReady(object view)
@@ -126,7 +129,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, _permissionCache, _catalogCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, _permissionCache, _catalogCache, _debouncedActionFactory(), _joinableTaskFactory, _debouncedActionFactory);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
                 instance.IsPromotionActive = promotion.IsActive;
