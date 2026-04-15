@@ -234,9 +234,7 @@ public MyViewModel(IRepository<T> service, SomeCache cache)
 - Event aggregation via Caliburn.Micro's `IEventAggregator`
 
 **Special Services**:
-- `PriceListCalculatorFactory` - Factory for price calculation strategies:
-  - `StandardPriceListCalculator` - Standard pricing calculations
-  - `AlternativePriceListCalculator` - Alternative pricing strategy
+- `IPriceListCalculator` / `StandardPriceListCalculator` - Single calculator that handles both pricing strategies (margen-sobre-venta vs markup) via the `UseAlternativeFormula` flag on `PriceListGraphQLModel`, and honors `PriceListIncludeTax` to apply IVA when the stored price is tax-inclusive.
 
 ### Core Helpers and Utilities
 

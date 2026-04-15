@@ -3,18 +3,15 @@ using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Global;
 using Models.Inventory;
-using NetErp.Billing.CreditLimit.ViewModels;
-using NetErp.Helpers.Services;
-using Common.Services;
 using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.Services;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -27,24 +24,25 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IBackgroundQueueService _backgroundQueueService;
         private readonly INotificationService _notificationService;
         private readonly NetErp.Helpers.IDialogService _dialogService;
-        private readonly IParallelBatchProcessor _parallelBatchProcessor;
-        private readonly IPriceListCalculatorFactory _calculatorFactory;
+        private readonly IPriceListCalculator _calculator;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IGraphQLClient _graphQLClient;
+        private readonly CatalogCache _catalogCache;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
-
-        private PriceListMasterViewModel _priceListMasterViewModel;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         public PriceListMasterViewModel PriceListMasterViewModel
         {
-            get 
+            get
             {
-                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _graphQLClient);
-                return _priceListMasterViewModel; 
+                field ??= new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculator, _dialogService, _priceListService, _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _permissionCache, new NetErp.Helpers.DebouncedAction(), _graphQLClient, _joinableTaskFactory);
+                return field;
             }
         }
 
@@ -56,14 +54,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             IBackgroundQueueService backgroundQueueService,
             INotificationService notificationService,
             NetErp.Helpers.IDialogService dialogService,
-            IParallelBatchProcessor parallelBatchProcessor,
-            IPriceListCalculatorFactory calculatorFactory,
+            IPriceListCalculator calculator,
             IRepository<PriceListGraphQLModel> priceListService,
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
+            CatalogCache catalogCache,
             StorageCache storageCache,
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
+            StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
+            JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient)
         {
             AutoMapper = autoMapper;
@@ -72,14 +73,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             _backgroundQueueService = backgroundQueueService;
             _notificationService = notificationService;
             _dialogService = dialogService;
-            _parallelBatchProcessor = parallelBatchProcessor;
-            _calculatorFactory = calculatorFactory;
+            _calculator = calculator;
             _priceListService = priceListService;
             _itemService = itemService;
             _tempRecordService = tempRecordService;
+            _catalogCache = catalogCache;
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
+            _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
+            _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
         }
 
@@ -88,59 +92,57 @@ namespace NetErp.Billing.PriceList.ViewModels
             base.OnViewReady(view);
             try
             {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.PriceList);
                 await ActivateMasterViewAsync();
-            }
-            catch (AsyncException ex)
-            {
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(OnViewReady)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
             }
         }
 
         public async Task ActivateMasterViewAsync()
         {
-            try
+            await ActivateItemAsync(PriceListMasterViewModel, default);
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
             {
-                await ActivateItemAsync(PriceListMasterViewModel, new System.Threading.CancellationToken());
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
+                Items.Clear();
             }
 
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         public async Task ActivateUpdatePromotionViewAsync(PriceListGraphQLModel promotion)
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService, _stringLengthCache, _permissionCache, _catalogCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
                 instance.IsPromotionActive = promotion.IsActive;
                 instance.StartDate = promotion.StartDate;
                 instance.EndDate = promotion.EndDate;
                 await instance.InitializeAsync();
-                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
-            }
-            catch (AsyncException ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await ActivateItemAsync(instance, default);
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(ActivateUpdatePromotionViewAsync)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
     }

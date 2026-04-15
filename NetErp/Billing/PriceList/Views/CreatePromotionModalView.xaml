@@ -3,26 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="500"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
              Background="#EEF1F5">
-
-    <UserControl.Resources>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
-    </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.30"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.45"/>
-    </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8">
@@ -60,6 +48,7 @@
                               Style="{StaticResource FocusedHighlightStyle}"
                               Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                               CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                              MaxLength="{Binding NameMaxLength}"
                               Margin="0,0,0,10">
                     <dxmvvm:Interaction.Behaviors>
                         <dxmvvm:FocusBehavior SourceObject="{Binding}" PropertyName="NameFocus"/>
@@ -104,17 +93,15 @@
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                 <!-- Guardar -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
+                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                        Command="{Binding SaveCommand}">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Style.Triggers>
                                         <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value="0.4"/>
+                                            <Setter Property="Opacity" Value="0.7"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -125,10 +112,8 @@
                 </Button>
                 <!-- Cancelar -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsCancel="True">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
+                        IsCancel="True"
+                        Command="{Binding CancelCommand}">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
                         <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>

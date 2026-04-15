@@ -19,8 +19,6 @@ namespace Models.Books
         public AccountingAccountGraphQLModel DeductibleTaxRefundAccount { get; set; } = new();
         public TaxCategoryGraphQLModel TaxCategory { get; set; } = new();
         public bool IsActive { get; set; }
-        public string Formula { get; set; } = string.Empty;
-        public string AlternativeFormula { get; set; } = string.Empty;
     }
 
   

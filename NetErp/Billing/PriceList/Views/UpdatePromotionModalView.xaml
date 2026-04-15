@@ -3,26 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="500"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
              Background="#EEF1F5">
-
-    <UserControl.Resources>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
-    </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.30"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.45"/>
-    </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8">
@@ -47,6 +35,7 @@
                               Style="{StaticResource FocusedHighlightStyle}"
                               Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                               CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                              MaxLength="{Binding NameMaxLength}"
                               Margin="0,0,0,10">
                     <dxmvvm:Interaction.Behaviors>
                         <dxmvvm:FocusBehavior SourceObject="{Binding}" PropertyName="NameFocus"/>

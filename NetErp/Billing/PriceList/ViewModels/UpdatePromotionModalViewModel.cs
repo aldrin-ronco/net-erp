@@ -1,17 +1,19 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Dynamic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -26,60 +28,73 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #region Properties
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; }
 
         public int Id { get; set; }
 
         public DateTime? MinimumDate { get; set; }
 
-        private string _name = string.Empty;
-
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        private DateTime? _startDate = DateTime.Now;
+        } = string.Empty;
 
         public DateTime? StartDate
         {
-            get { return _startDate; }
+            get;
             set
             {
-                if (_startDate != value)
+                if (field != value)
                 {
-                    _startDate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(StartDate));
                     this.TrackChange(nameof(StartDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                     EndDate = StartDate;
                 }
             }
-        }
-
-        private bool _isActiveFlag;
+        } = DateTime.Now;
 
         [ExpandoPath("isActive")]
         public bool IsActiveFlag
         {
-            get { return _isActiveFlag; }
+            get;
             set
             {
-                if (_isActiveFlag != value)
+                if (field != value)
                 {
-                    _isActiveFlag = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActiveFlag));
                     this.TrackChange(nameof(IsActiveFlag));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -87,22 +102,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private DateTime? _endDate = DateTime.Now;
-
         public DateTime? EndDate
         {
-            get { return _endDate; }
+            get;
             set
             {
-                if (_endDate != value)
+                if (field != value)
                 {
-                    _endDate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(EndDate));
                     this.TrackChange(nameof(EndDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = DateTime.Now;
 
         #endregion
 
@@ -112,6 +125,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
+                if (IsBusy) return false;
                 if (_errors.Count > 0) return false;
                 if (!this.HasChanges()) return false;
                 return true;
@@ -122,25 +136,21 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Commands
 
-        private ICommand? _saveCommand;
-
         public ICommand SaveCommand
         {
             get
             {
-                _saveCommand ??= new AsyncCommand(SaveAsync);
-                return _saveCommand;
+                field ??= new AsyncCommand(SaveAsync);
+                return field;
             }
         }
-
-        private ICommand? _cancelCommand;
 
         public ICommand CancelCommand
         {
             get
             {
-                _cancelCommand ??= new AsyncCommand(CancelAsync);
-                return _cancelCommand;
+                field ??= new AsyncCommand(CancelAsync);
+                return field;
             }
         }
 
@@ -148,16 +158,21 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Focus
 
-        private bool _nameFocus;
-
         public bool NameFocus
         {
-            get { return _nameFocus; }
+            get;
             set
             {
-                _nameFocus = value;
+                field = value;
                 NotifyOfPropertyChange(nameof(NameFocus));
             }
+        }
+
+        void SetFocus(Expression<Func<object>> propertyExpression)
+        {
+            string controlName = propertyExpression.GetMemberInfo().Name;
+            NameFocus = false;
+            NameFocus = controlName == nameof(Name);
         }
 
         #endregion
@@ -167,12 +182,16 @@ namespace NetErp.Billing.PriceList.ViewModels
         public UpdatePromotionModalViewModel(
             Helpers.IDialogService dialogService,
             IEventAggregator eventAggregator,
-            IRepository<PriceListGraphQLModel> priceListService)
+            IRepository<PriceListGraphQLModel> priceListService,
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
             _priceListService = priceListService;
+            _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -207,18 +226,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = _updateQuery.Value;
+                IsBusy = true;
+                var (_, query) = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
 
                 // Override dates with UTC conversion if they were changed
-                var dict = (IDictionary<string, object>)variables;
+                IDictionary<string, object> dict = (IDictionary<string, object>)variables;
                 if (dict.ContainsKey("updateResponseDataStartDate"))
                     dict["updateResponseDataStartDate"] = DateTimeHelper.DateTimeKindUTC(StartDate);
                 if (dict.ContainsKey("updateResponseDataEndDate"))
                     dict["updateResponseDataEndDate"] = DateTimeHelper.DateTimeKindUTC(EndDate);
 
-                var result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
+                UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
                 if (!result.Success)
                 {
@@ -235,15 +255,16 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atenci\u00f3n!",
-                        text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -262,12 +283,16 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
-            _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
+            _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(() => SetFocus(() => Name)),
+                DispatcherPriority.Render);
         }
 
         #endregion
 
         #region Validation
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<PriceListGraphQLModel>(nameof(PriceListGraphQLModel.Name));
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -278,64 +303,43 @@ namespace NetErp.Billing.PriceList.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        public IEnumerable? GetErrors(string? propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return Enumerable.Empty<string>();
             return _errors[propertyName];
         }
 
-        private void AddError(string propertyName, string error)
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = [];
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
                 _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
                 RaiseErrorsChanged(propertyName);
-            }
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            List<string> errors = [];
+            switch (propertyName)
             {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Name):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vac\u00edo");
-                        break;
-                }
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(value.Trim())) errors.Add("El nombre no puede estar vacío");
+                    break;
             }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atenci\u00f3n!",
-                        text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                });
-            }
+            SetPropertyErrors(propertyName, errors);
         }
 
         #endregion
 
         #region GraphQL Query
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
                 .Create()
@@ -344,7 +348,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Name)
                     .Field(f => f.IsActive)
                     .Field(f => f.StartDate)
-                    .Field(f => f.EndDate))
+                    .Field(f => f.EndDate)
+                    .Select(f => f.Parent, p => p.Field(x => x!.Id)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -352,10 +357,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var dataParam = new GraphQLQueryParameter("data", "UpdatePriceListInput!");
-            var idParam = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("updatePriceList", [dataParam, idParam], fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updatePriceList",
+                [new("data", "UpdatePriceListInput!"), new("id", "ID!")], fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion

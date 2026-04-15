@@ -16,7 +16,6 @@
 
     <UserControl.Resources>
         <h:MultiplyConverter x:Key="MultiplyConverter"/>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
     <UserControl.Width>
@@ -25,7 +24,7 @@
     </UserControl.Width>
     <UserControl.Height>
         <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.85"/>
+                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.69"/>
     </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
@@ -39,8 +38,39 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Row 0: Filters -->
+            <!-- Row 0: Search + Counter -->
             <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Búsqueda -->
+                <dxe:ButtonEdit x:Name="FilterSearch" Grid.Column="0"
+                                Text="{Binding FilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                NullText="Escribe por lo menos 2 caracteres para iniciar la búsqueda"
+                                ToolTip="Escribe aquí para buscar"
+                                MinHeight="25"
+                                CharacterCasing="Upper"
+                                BorderBrush="#C8CED6"
+                                AllowDefaultButton="False">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:FocusBehavior SourceObject="{Binding}" PropertyName="FilterSearchFocus"/>
+                    </dxmvvm:Interaction.Behaviors>
+                    <dxe:ButtonEdit.Buttons>
+                        <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                    </dxe:ButtonEdit.Buttons>
+                </dxe:ButtonEdit>
+
+                <!-- Selected count -->
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0" FontSize="13">
+                    <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
+                    <Run Text="productos seleccionados"/>
+                </TextBlock>
+            </Grid>
+
+            <!-- Row 1: Filters -->
+            <Grid Grid.Row="1" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -54,16 +84,19 @@
                     <dxe:ComboBoxEdit ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                       DisplayMember="Name" IsTextEditable="False"
-                                      Padding="2" BorderBrush="#C8CED6"/>
+                                      Padding="2" BorderBrush="#C8CED6"
+                                      AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todos los catálogos"/>
                 </StackPanel>
 
                 <!-- Tipo de producto -->
-                <StackPanel Orientation="Vertical" Grid.Column="1" Margin="8,0,8,0">
+                <StackPanel Orientation="Vertical" Grid.Column="1" Margin="8,0,8,0"
+                            Visibility="{Binding CanShowItemTypes, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                     <TextBlock Text="Tipo de producto" FontSize="13" Margin="0,0,0,4"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                       DisplayMember="Name" IsTextEditable="False"
-                                      Padding="2" BorderBrush="#C8CED6"/>
+                                      Padding="2" BorderBrush="#C8CED6"
+                                      AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todos los tipos"/>
                 </StackPanel>
 
                 <!-- Categoria -->
@@ -73,7 +106,8 @@
                     <dxe:ComboBoxEdit ItemsSource="{Binding ItemCategories, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                       DisplayMember="Name" IsTextEditable="False"
-                                      Padding="2" BorderBrush="#C8CED6"/>
+                                      Padding="2" BorderBrush="#C8CED6"
+                                      AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todas las categorías"/>
                 </StackPanel>
 
                 <!-- Subcategoria -->
@@ -83,33 +117,9 @@
                     <dxe:ComboBoxEdit ItemsSource="{Binding ItemSubCategories, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                       DisplayMember="Name" IsTextEditable="False"
-                                      Padding="2" BorderBrush="#C8CED6"/>
+                                      Padding="2" BorderBrush="#C8CED6"
+                                      AllowNullInput="True" NullValueButtonPlacement="EditBox" NullText="Todas las subcategorías"/>
                 </StackPanel>
-            </Grid>
-
-            <!-- Row 1: Search + Counter -->
-            <Grid Grid.Row="1" Margin="0,0,0,10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Search ButtonEdit -->
-                <dxe:TextEdit x:Name="FilterSearchEdit" Grid.Column="0"
-                              Style="{StaticResource FocusedHighlightStyle}"
-                              NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
-                              ShowNullTextForEmptyValue="True"
-                              ShowNullTextIfFocused="True"
-                              Padding="3"
-                              CharacterCasing="Upper"
-                              BorderBrush="#C8CED6"
-                              Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}"/>
-
-                <!-- Selected count -->
-                <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0" FontSize="13">
-                    <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
-                    <Run Text="productos seleccionados"/>
-                </TextBlock>
             </Grid>
 
             <!-- Row 2: Grid inside BusyMask -->
@@ -130,12 +140,14 @@
                                        ColumnFilterPopupMode="Disabled"
                                        AllowSorting="False"
                                        AllowColumnFiltering="False"
-                                       AllowResizing="False"/>
+                                       AllowResizing="False"
+                                       RowMinHeight="22"/>
                     </dxg:GridControl.View>
 
-                    <dxg:GridColumn Header="Codigo" FieldName="Code"/>
+                    <dxg:GridColumn Header="Código" FieldName="Code" Width="65" HorizontalHeaderContentAlignment="Center"/>
                     <dxg:GridColumn Header="Nombre del producto" FieldName="Name" Width="*"/>
-                    <dxg:GridColumn Header="Referencia" FieldName="Reference"/>
+                    <dxg:GridColumn Header="Referencia" FieldName="Reference" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="UND" FieldName="MeasurementUnit.Abbreviation" Width="Auto"/>
 
                     <!-- Checkbox column with header select-all -->
                     <dxg:GridColumn Width="40" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
@@ -149,7 +161,7 @@
                         </dxg:GridColumn.HeaderTemplate>
                         <dxg:GridColumn.CellTemplate>
                             <DataTemplate>
-                                <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
+                                <dxe:CheckEdit Margin="0" VerticalAlignment="Center"
                                                HorizontalAlignment="Center"
                                                IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </DataTemplate>
@@ -163,11 +175,11 @@
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            Margin="0,5,0,5"
-                           ChangedIndexCommand="{Binding ItemsPaginationCommand}"
-                           PageIndex="{Binding ItemsPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           PageSize="{Binding ItemsPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           TotalCount="{Binding ItemsTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           ResponseTime="{Binding ItemsResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                           ChangedIndexCommand="{Binding PaginationCommand}"
+                           PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Row 4: Bottom buttons -->
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,5">
