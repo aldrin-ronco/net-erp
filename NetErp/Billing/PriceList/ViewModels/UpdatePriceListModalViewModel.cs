@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -427,32 +428,39 @@ namespace NetErp.Billing.PriceList.ViewModels
             JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
-            _dialogService = dialogService;
-            _eventAggregator = eventAggregator;
-            _autoMapper = autoMapper;
-            _priceListService = priceListService;
-            _storageCache = storageCache;
-            _costCenterCache = costCenterCache;
-            _paymentMethodCache = paymentMethodCache;
-            _stringLengthCache = stringLengthCache;
-            _graphQLClient = graphQLClient;
-            _joinableTaskFactory = joinableTaskFactory;
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _autoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
+            _priceListService = priceListService ?? throw new ArgumentNullException(nameof(priceListService));
+            _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _paymentMethodCache = paymentMethodCache ?? throw new ArgumentNullException(nameof(paymentMethodCache));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
         }
 
         #endregion
 
         #region Initialize / SetForEdit / Seeding
 
-        public async Task InitializeAsync()
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
-            await CacheBatchLoader.LoadAsync(
-                _graphQLClient, default,
-                _storageCache, _costCenterCache, _paymentMethodCache);
+            try
+            {
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, cancellationToken,
+                    _storageCache, _costCenterCache, _paymentMethodCache);
 
-            Storages = [.. _storageCache.Items];
-            CostCenters = [.. _costCenterCache.Items];
-            RefreshCostCenters();
-            PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(_paymentMethodCache.Items)];
+                Storages = [.. _storageCache.Items];
+                CostCenters = [.. _costCenterCache.Items];
+                RefreshCostCenters();
+                PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(_paymentMethodCache.Items)];
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
         }
 
         public void SetForEdit(PriceListGraphQLModel priceList)
@@ -517,9 +525,11 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 IsBusy = true;
-                var (_, query) = _updateQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Id;
+                var (fragment, query) = _updateQuery.Value;
+                string dataPrefix = GraphQLQueryFragment.GetVariableName(fragment.Alias, "data");
+                string idVarName = GraphQLQueryFragment.GetVariableName(fragment.Alias, "id");
+                ExpandoObject variables = ChangeCollector.CollectChanges(this, prefix: dataPrefix);
+                ((IDictionary<string, object>)variables)[idVarName] = Id;
 
                 UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 

@@ -46,10 +46,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CatalogCache _catalogCache;
         private readonly DebouncedAction _searchDebounce;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly Func<DebouncedAction> _debouncedActionFactory;
         public PriceListViewModel Context { get; set; }
-
-        // Referencia al modal activo para poder cerrarlo en caso de error crítico
-        private AddPromotionProductsModalViewModel _activeModal;
 
         public UpdatePromotionViewModel(
             PriceListViewModel context,
@@ -63,20 +61,22 @@ namespace NetErp.Billing.PriceList.ViewModels
             PermissionCache permissionCache,
             CatalogCache catalogCache,
             DebouncedAction searchDebounce,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            Func<DebouncedAction> debouncedActionFactory)
         {
-            Context = context;
-            _notificationService = notificationService;
-            _priceListItemService = priceListItemService;
-            _dialogService = dialogService;
-            _itemService = itemService;
-            _tempRecordService = tempRecordService;
-            _priceListServiceForModal = priceListServiceForModal;
-            _stringLengthCache = stringLengthCache;
-            _permissionCache = permissionCache;
-            _catalogCache = catalogCache;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _priceListItemService = priceListItemService ?? throw new ArgumentNullException(nameof(priceListItemService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _itemService = itemService ?? throw new ArgumentNullException(nameof(itemService));
+            _tempRecordService = tempRecordService ?? throw new ArgumentNullException(nameof(tempRecordService));
+            _priceListServiceForModal = priceListServiceForModal ?? throw new ArgumentNullException(nameof(priceListServiceForModal));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
+            _catalogCache = catalogCache ?? throw new ArgumentNullException(nameof(catalogCache));
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
-            _joinableTaskFactory = joinableTaskFactory;
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
+            _debouncedActionFactory = debouncedActionFactory ?? throw new ArgumentNullException(nameof(debouncedActionFactory));
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -222,7 +222,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         BuildItemTypes();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -259,7 +259,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         BuildItemCategories();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -296,7 +296,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         BuildItemSubCategories();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -324,7 +324,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
-                    if (!_isUpdating && IsInitialized)
+                    if (!_isUpdating && _isInitialized)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -425,7 +425,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
                         PageIndex = 1;
-                        if (IsInitialized) _ = _searchDebounce.RunAsync(LoadProducts);
+                        if (_isInitialized) _ = _searchDebounce.RunAsync(LoadProducts);
                     }
                 }
             }
@@ -517,12 +517,18 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService, _catalogCache, new NetErp.Helpers.DebouncedAction(), _joinableTaskFactory);
-                MainIsBusy = true;
-                _activeModal.PromotionId = Id;
-                await _activeModal.InitializeAsync();
-                await _dialogService.ShowDialogAsync(_activeModal, "Agregar productos a la promoción");
-                MainIsBusy = false;
+                AddPromotionProductsModalViewModel modal = new(Context, _dialogService, _priceListItemService, _itemService, _catalogCache, _debouncedActionFactory(), _joinableTaskFactory, Context.EventAggregator)
+                {
+                    PromotionId = Id
+                };
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    modal.DialogWidth = parentView.ActualWidth * 0.85;
+                    modal.DialogHeight = parentView.ActualHeight * 0.85;
+                }
+
+                await _dialogService.ShowDialogAsync(modal, "Agregar productos a la promoción");
             }
             catch (Exception ex)
             {
@@ -579,18 +585,25 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task InitializeAsync()
         {
-            await _catalogCache.EnsureLoadedAsync();
+            try
+            {
+                await _catalogCache.EnsureLoadedAsync();
 
-            Catalogs = [.. _catalogCache.Items];
-            IsInitialized = true;
-            _isUpdating = true;
-            SelectedCatalog = null;
-            BuildItemTypes();
-            _isUpdating = false;
-            await ReloadDataAsync(_cascadeCancellation.Token);
+                Catalogs = [.. _catalogCache.Items];
+                _isInitialized = true;
+                _isUpdating = true;
+                SelectedCatalog = null;
+                BuildItemTypes();
+                _isUpdating = false;
+                await ReloadDataAsync(_cascadeCancellation.Token);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
         }
 
-        public new bool IsInitialized { get; set; } = false;
+        private bool _isInitialized;
 
 
         public List<int> ShadowItems

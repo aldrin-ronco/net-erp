@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
@@ -12,20 +11,9 @@
              xmlns:uc="clr-namespace:NetErp.UserControls"
              mc:Ignorable="d"
              d:DesignHeight="900" d:DesignWidth="1400"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
              Background="#EEF1F5">
-
-    <UserControl.Resources>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
-    </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.75"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.69"/>
-    </UserControl.Height>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8">

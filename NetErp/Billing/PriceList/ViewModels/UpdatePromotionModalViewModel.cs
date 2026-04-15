@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -187,11 +188,11 @@ namespace NetErp.Billing.PriceList.ViewModels
             JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
-            _dialogService = dialogService;
-            _eventAggregator = eventAggregator;
-            _priceListService = priceListService;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _priceListService = priceListService ?? throw new ArgumentNullException(nameof(priceListService));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
         }
 
         #endregion
@@ -227,16 +228,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 IsBusy = true;
-                var (_, query) = _updateQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Id;
+                var (fragment, query) = _updateQuery.Value;
+                string dataPrefix = GraphQLQueryFragment.GetVariableName(fragment.Alias, "data");
+                string idVarName = GraphQLQueryFragment.GetVariableName(fragment.Alias, "id");
+                ExpandoObject variables = ChangeCollector.CollectChanges(this, prefix: dataPrefix);
+                IDictionary<string, object> dict = variables;
+                dict[idVarName] = Id;
 
                 // Override dates with UTC conversion if they were changed
-                IDictionary<string, object> dict = (IDictionary<string, object>)variables;
-                if (dict.ContainsKey("updateResponseDataStartDate"))
-                    dict["updateResponseDataStartDate"] = DateTimeHelper.DateTimeKindUTC(StartDate);
-                if (dict.ContainsKey("updateResponseDataEndDate"))
-                    dict["updateResponseDataEndDate"] = DateTimeHelper.DateTimeKindUTC(EndDate);
+                string startDateKey = dataPrefix + nameof(StartDate);
+                string endDateKey = dataPrefix + nameof(EndDate);
+                if (dict.ContainsKey(startDateKey))
+                    dict[startDateKey] = DateTimeHelper.DateTimeKindUTC(StartDate);
+                if (dict.ContainsKey(endDateKey))
+                    dict[endDateKey] = DateTimeHelper.DateTimeKindUTC(EndDate);
 
                 UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 

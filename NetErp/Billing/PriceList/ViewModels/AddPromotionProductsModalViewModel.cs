@@ -36,8 +36,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly CatalogCache _catalogCache;
         private readonly DebouncedAction _searchDebounce;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IEventAggregator _eventAggregator;
         private const int BatchSize = 50;
         public PriceListViewModel Context { get; set; }
+
+        public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; }
 
         public AddPromotionProductsModalViewModel(
             PriceListViewModel context,
@@ -46,7 +50,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<ItemGraphQLModel> itemService,
             CatalogCache catalogCache,
             DebouncedAction searchDebounce,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IEventAggregator eventAggregator)
         {
             Context = context;
             _dialogService = dialogService;
@@ -55,11 +60,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             _catalogCache = catalogCache;
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _joinableTaskFactory = joinableTaskFactory;
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
 
-            Items.CollectionChanged += OnItemsCollectionChanged!;
+            Items.CollectionChanged += OnItemsCollectionChanged;
         }
 
-        private void OnItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
         }
@@ -71,7 +77,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 _cascadeCancellation?.Cancel();
                 _cascadeCancellation?.Dispose();
 
-                Items.CollectionChanged -= OnItemsCollectionChanged!;
+                Items.CollectionChanged -= OnItemsCollectionChanged;
 
                 Items.Clear();
                 Catalogs.Clear();
@@ -83,12 +89,31 @@ namespace NetErp.Billing.PriceList.ViewModels
             return base.OnDeactivateAsync(close, cancellationToken);
         }
 
-        protected override void OnViewReady(object view)
+        protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            _ = System.Windows.Application.Current.Dispatcher?.BeginInvoke(
-                new System.Action(() => SetFocus(() => FilterSearch)),
-                DispatcherPriority.Render);
+            try
+            {
+                IsBusy = true;
+                await InitializeAsync();
+                _ = System.Windows.Application.Current.Dispatcher?.BeginInvoke(
+                    new System.Action(() => SetFocus(() => FilterSearch)),
+                    DispatcherPriority.Render);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public bool FilterSearchFocus
@@ -392,19 +417,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool MainIsBusy
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    NotifyOfPropertyChange(nameof(MainIsBusy));
-                }
-            }
-        }
-
         public string FilterSearch
         {
             get;
@@ -503,24 +515,17 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Initialize
 
-        public async Task InitializeAsync()
+        private async Task InitializeAsync()
         {
-            try
-            {
-                await _catalogCache.EnsureLoadedAsync();
+            await _catalogCache.EnsureLoadedAsync();
 
-                Catalogs = [.. _catalogCache.Items];
-                _isInitialized = true;
-                _isUpdating = true;
-                SelectedCatalog = null;
-                BuildItemTypes();
-                _isUpdating = false;
-                await ReloadDataAsync(_cascadeCancellation.Token);
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            Catalogs = [.. _catalogCache.Items];
+            _isInitialized = true;
+            _isUpdating = true;
+            SelectedCatalog = null;
+            BuildItemTypes();
+            _isUpdating = false;
+            await ReloadDataAsync(_cascadeCancellation.Token);
         }
 
         #endregion
@@ -547,7 +552,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             try
             {
-                MainIsBusy = true;
+                IsBusy = true;
 
                 var allItems = SelectedItemIds.Select(id => new
                 {
@@ -609,7 +614,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     return;
                 }
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(
+                await _eventAggregator.PublishOnCurrentThreadAsync(
                     new PromotionTempRecordResponseMessage
                     {
                         Response = new SuccessResponseModel { Success = true, Message = $"{totalAdded} productos agregados correctamente" }
@@ -623,7 +628,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             finally
             {
-                MainIsBusy = false;
+                IsBusy = false;
             }
         }
 
@@ -672,12 +677,6 @@ namespace NetErp.Billing.PriceList.ViewModels
                 }
 
                 return await base.CanCloseAsync(cancellationToken);
-            }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                return false;
             }
             catch (Exception ex)
             {
@@ -808,21 +807,5 @@ namespace NetErp.Billing.PriceList.ViewModels
         });
 
         #endregion
-    }
-
-    public class PromotionTempRecordResponseMessage
-    {
-        public SuccessResponseModel Response { get; set; } = new();
-    }
-
-    public class SuccessResponseModel
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-    }
-
-    public class SuccessResponseDataWrapper
-    {
-        public SuccessResponseModel Data { get; set; } = new();
     }
 }

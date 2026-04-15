@@ -91,8 +91,11 @@ namespace NetErp.Billing.PriceList.ViewModels
             get;
             set
             {
-                field = value;
-                NotifyOfPropertyChange(nameof(AvailableParents));
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(AvailableParents));
+                }
             }
         } = [];
 
@@ -194,11 +197,11 @@ namespace NetErp.Billing.PriceList.ViewModels
             JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
-            _dialogService = dialogService;
-            _eventAggregator = eventAggregator;
-            _priceListService = priceListService;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _priceListService = priceListService ?? throw new ArgumentNullException(nameof(priceListService));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
         }
 
         #endregion

@@ -203,6 +203,11 @@ namespace NetErp
             // CancellationTokenSource).
             _ = kernel.Bind<NetErp.Helpers.DebouncedAction>().ToSelf();
 
+            // Factory para Conductors que instancian múltiples VMs hijos y necesitan
+            // entregar una DebouncedAction fresca a cada construcción.
+            _ = kernel.Bind<Func<NetErp.Helpers.DebouncedAction>>()
+                .ToMethod(ctx => () => ctx.Kernel.Get<NetErp.Helpers.DebouncedAction>());
+
             _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());
 

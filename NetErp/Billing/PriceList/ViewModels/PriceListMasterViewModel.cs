@@ -2,17 +2,14 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using Common.Services;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
-using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.PriceListHelpers;
-using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -695,10 +692,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     // Si no se puede eliminar, se archiva
                     var (archiveFragment, archiveQuery) = _archivePriceListQuery.Value;
-                    dynamic archiveVars = new ExpandoObject();
-                    archiveVars.UpdateResponseId = id;
-                    archiveVars.UpdateResponseData = new ExpandoObject();
-                    archiveVars.UpdateResponseData.archived = true;
+                    ExpandoObject archiveVars = new GraphQLVariables()
+                        .For(archiveFragment, "id", id)
+                        .For(archiveFragment, "data", new { archived = true })
+                        .Build();
                     UpsertResponseType<PriceListGraphQLModel> archivedPriceList = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(archiveQuery, archiveVars);
 
                     if (!archivedPriceList.Success)
@@ -785,7 +782,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 ShowEmptyState = PriceLists.Count == 0;
                 NotifyOfPropertyChange(nameof(HasRecords));
                 if (ShowEmptyState) return;
-                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
+                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new InvalidOperationException("SelectedPriceList can't be null");
                 LoadItemTypes();
             }
             catch (Exception ex)
@@ -962,17 +959,6 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
 
-        // TEST: Batch price update
-        public decimal BatchTestPrice { get; set; }
-        public void ApplyBatchTestPrice()
-        {
-            if (PriceListItems == null || PriceListItems.Count == 0 || BatchTestPrice <= 0) return;
-            foreach (PriceListItemDTO item in PriceListItems)
-            {
-                item.Price = BatchTestPrice;
-            }
-        }
-
         private ObservableCollection<PriceListItemDTO> ModifiedProduct { get; set; } = [];
         public async Task AddModifiedProductAsync(PriceListItemDTO priceListDetail, string modifiedProperty)
         {
@@ -1082,7 +1068,13 @@ namespace NetErp.Billing.PriceList.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(OnInitializedAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnInitializedAsync)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+                return;
             }
             finally
             {
@@ -1158,22 +1150,22 @@ namespace NetErp.Billing.PriceList.ViewModels
             IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory)
         {
-            Context = context;
-            _priceListItemService = priceListItemService;
-            _backgroundQueueService = backgroundQueueService;
-            _notificationService = notificationService;
-            _calculator = calculator;
-            _dialogService = dialogService;
-            _priceListService = priceListService;
-            _catalogCache = catalogCache;
-            _storageCache = storageCache;
-            _costCenterCache = costCenterCache;
-            _paymentMethodCache = paymentMethodCache;
-            _stringLengthCache = stringLengthCache;
-            _permissionCache = permissionCache;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _priceListItemService = priceListItemService ?? throw new ArgumentNullException(nameof(priceListItemService));
+            _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _calculator = calculator ?? throw new ArgumentNullException(nameof(calculator));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _priceListService = priceListService ?? throw new ArgumentNullException(nameof(priceListService));
+            _catalogCache = catalogCache ?? throw new ArgumentNullException(nameof(catalogCache));
+            _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _paymentMethodCache = paymentMethodCache ?? throw new ArgumentNullException(nameof(paymentMethodCache));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
-            _graphQLClient = graphQLClient;
-            _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -1268,20 +1260,22 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             if (wasBaseList)
             {
+                bool wasSelected = SelectedPriceList?.Id == id;
                 PriceListGraphQLModel? inList = PriceLists.FirstOrDefault(x => x.Id == id);
                 if (inList != null) PriceLists.Remove(inList);
-                if (SelectedPriceList?.Id == id) SelectedPriceList = PriceLists.FirstOrDefault();
+                if (wasSelected) SelectedPriceList = PriceLists.FirstOrDefault();
                 ShowEmptyState = PriceLists.Count == 0;
             }
             else
             {
+                bool wasSelected = SelectedPromotion?.Id == id;
                 PriceListGraphQLModel? inPromos = Promotions.FirstOrDefault(x => x.Id == id);
                 if (inPromos != null)
                 {
                     Promotions.Remove(inPromos);
                     NotifyOfPropertyChange(nameof(HasPromotions));
                 }
-                if (SelectedPromotion?.Id == id) SelectedPromotion = null;
+                if (wasSelected) SelectedPromotion = null;
             }
         }
 

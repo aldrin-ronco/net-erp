@@ -12,7 +12,6 @@ using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
-using NetErp.Billing.PriceList.ViewModels;
 using NetErp.Books.AccountingEntries.DTO;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;

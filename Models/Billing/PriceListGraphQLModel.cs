@@ -73,4 +73,9 @@ namespace Models.Billing
     {
         public UpsertResponseType<PriceListGraphQLModel> ArchivedPriceList { get; set; } = new();
     }
+
+    public class PromotionTempRecordResponseMessage
+    {
+        public SuccessResponseModel Response { get; set; } = new();
+    }
 }
