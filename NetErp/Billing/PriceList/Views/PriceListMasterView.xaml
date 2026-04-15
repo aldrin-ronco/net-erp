@@ -443,6 +443,42 @@
                         </Grid>
                     </Button>
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanCopyPriceList, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding CopyPriceListCommand}"
+                            ToolTip="Copiar la lista de precios seleccionada">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Edit/Copy_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Copiar lista" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasCopyPriceListPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </Grid>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanDeletePriceList, UpdateSourceTrigger=PropertyChanged}"
                             Command="{Binding DeletePriceListCommand}"
                             ToolTip="Eliminar la lista de precios seleccionada">
@@ -536,7 +572,7 @@
                                         </Style>
                                     </Image.Style>
                                 </Image>
-                                <TextBlock Text="Nueva promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                <TextBlock Text="Nueva promo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
                                    Width="14" Height="14"
@@ -547,6 +583,42 @@
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding HasCreatePromotionPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </Grid>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanCopyPromotion, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding CopyPromotionCommand}"
+                            ToolTip="Copiar la promoción seleccionada">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Edit/Copy_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Copiar promo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasCopyPromotionPermission}" Value="False">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -572,7 +644,7 @@
                                         </Style>
                                     </Image.Style>
                                 </Image>
-                                <TextBlock Text="Eliminar promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                <TextBlock Text="Eliminar promo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
                                    Width="14" Height="14"
@@ -597,7 +669,7 @@
                             ToolTip="Gestionar productos y precios de la promoción seleccionada">
                         <Grid>
                             <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/Grid/EditTableStyle_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Number Formats/Percentage_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                                     <Image.Style>
                                         <Style TargetType="Image">
                                             <Style.Triggers>
@@ -608,7 +680,7 @@
                                         </Style>
                                     </Image.Style>
                                 </Image>
-                                <TextBlock Text="Gestionar promoción" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                <TextBlock Text="Gestionar promo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
                                    Width="14" Height="14"
