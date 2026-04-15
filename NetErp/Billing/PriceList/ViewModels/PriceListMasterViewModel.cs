@@ -328,6 +328,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(IsViewingBaseList));
                     NotifyOfPropertyChange(nameof(CanConfigurePriceList));
                     NotifyOfPropertyChange(nameof(CanDeletePriceList));
+                    NotifyOfPropertyChange(nameof(CanCopyPriceList));
                     NotifyOfPropertyChange(nameof(CanCreatePromotion));
 
                     RefreshPromotions();
@@ -363,6 +364,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(InactiveBannerText));
                     NotifyOfPropertyChange(nameof(CanManagePromotion));
                     NotifyOfPropertyChange(nameof(CanDeletePromotion));
+                    NotifyOfPropertyChange(nameof(CanCopyPromotion));
 
                     if (!_isUpdating && _isInitialized)
                     {
@@ -411,17 +413,21 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool HasCreatePriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Create);
         public bool HasEditPriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Edit);
         public bool HasDeletePriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Delete);
+        public bool HasCopyPriceListPermission => _permissionCache.IsAllowed(PermissionCodes.PriceList.Copy);
         public bool HasCreatePromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Create);
         public bool HasEditPromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Edit);
         public bool HasDeletePromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Delete);
+        public bool HasCopyPromotionPermission => _permissionCache.IsAllowed(PermissionCodes.Promotion.Copy);
 
         #endregion
 
         public bool CanCreatePriceList => HasCreatePriceListPermission;
         public bool CanConfigurePriceList => HasEditPriceListPermission && SelectedPriceList != null;
         public bool CanDeletePriceList => HasDeletePriceListPermission && SelectedPriceList != null;
+        public bool CanCopyPriceList => HasCopyPriceListPermission && SelectedPriceList is { Archived: false };
         public bool CanManagePromotion => HasEditPromotionPermission && SelectedPromotion != null;
         public bool CanDeletePromotion => HasDeletePromotionPermission && SelectedPromotion != null;
+        public bool CanCopyPromotion => HasCopyPromotionPermission && SelectedPromotion is { Archived: false };
 
         private void RefreshPromotions()
         {
@@ -485,6 +491,39 @@ namespace NetErp.Billing.PriceList.ViewModels
             finally
             {
                 MainIsBusy = false;
+            }
+        }
+
+        public ICommand CopyPriceListCommand
+        {
+            get
+            {
+                if (field is null) field = new AsyncCommand(CopyPriceListAsync);
+                return field;
+            }
+        }
+
+        public async Task CopyPriceListAsync()
+        {
+            try
+            {
+                if (SelectedPriceList is null) return;
+
+                CopyPriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, _priceListService, _stringLengthCache, _joinableTaskFactory);
+                viewModel.SetForCopy(SelectedPriceList);
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    viewModel.DialogWidth = parentView.ActualWidth * 0.35;
+                    viewModel.DialogHeight = parentView.ActualHeight * 0.40;
+                }
+
+                await _dialogService.ShowDialogAsync(viewModel, "Copiar lista de precios");
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(CopyPriceListAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -555,6 +594,39 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(ManagePromotionAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+        }
+
+        public ICommand CopyPromotionCommand
+        {
+            get
+            {
+                if (field is null) field = new AsyncCommand(CopyPromotionAsync);
+                return field;
+            }
+        }
+
+        public async Task CopyPromotionAsync()
+        {
+            try
+            {
+                if (SelectedPromotion is null) return;
+
+                CopyPromotionModalViewModel viewModel = new(_dialogService, Context.EventAggregator, _priceListService, _stringLengthCache, _joinableTaskFactory);
+                viewModel.SetForCopy(SelectedPromotion, PriceLists);
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    viewModel.DialogWidth = parentView.ActualWidth * 0.35;
+                    viewModel.DialogHeight = parentView.ActualHeight * 0.50;
+                }
+
+                await _dialogService.ShowDialogAsync(viewModel, "Copiar promoción");
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(CopyPromotionAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -971,15 +1043,19 @@ namespace NetErp.Billing.PriceList.ViewModels
             NotifyOfPropertyChange(nameof(HasCreatePriceListPermission));
             NotifyOfPropertyChange(nameof(HasEditPriceListPermission));
             NotifyOfPropertyChange(nameof(HasDeletePriceListPermission));
+            NotifyOfPropertyChange(nameof(HasCopyPriceListPermission));
             NotifyOfPropertyChange(nameof(HasCreatePromotionPermission));
             NotifyOfPropertyChange(nameof(HasEditPromotionPermission));
             NotifyOfPropertyChange(nameof(HasDeletePromotionPermission));
+            NotifyOfPropertyChange(nameof(HasCopyPromotionPermission));
             NotifyOfPropertyChange(nameof(CanCreatePriceList));
             NotifyOfPropertyChange(nameof(CanConfigurePriceList));
             NotifyOfPropertyChange(nameof(CanDeletePriceList));
+            NotifyOfPropertyChange(nameof(CanCopyPriceList));
             NotifyOfPropertyChange(nameof(CanCreatePromotion));
             NotifyOfPropertyChange(nameof(CanDeletePromotion));
             NotifyOfPropertyChange(nameof(CanManagePromotion));
+            NotifyOfPropertyChange(nameof(CanCopyPromotion));
             NotifyOfPropertyChange(nameof(IsGridReadOnly));
         }
 

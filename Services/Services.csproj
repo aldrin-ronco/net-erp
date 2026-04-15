@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Billing\DAL\PostgreSQL\" />
     <Folder Include="Global\DAL\SQLServer\" />
   </ItemGroup>
 

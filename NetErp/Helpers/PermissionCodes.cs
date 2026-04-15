@@ -78,6 +78,7 @@ namespace NetErp.Helpers
             public const string Create = $"{Prefix}.create";
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
+            public const string Copy = $"{Prefix}.copy";
         }
 
         public static class Promotion
@@ -87,6 +88,7 @@ namespace NetErp.Helpers
             public const string Create = $"{Prefix}.create";
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
+            public const string Copy = $"{Prefix}.copy";
         }
 
         public static class Company
