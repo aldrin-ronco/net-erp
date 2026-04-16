@@ -142,9 +142,8 @@ namespace NetErp.Global.Shell.ViewModels
         {
             // Empresa seleccionada - cargar configuración global AWS y permisos, luego navegar al MainMenu
             // TODO: LoadGlobalAwsConfigAsync no se debe cargar aqui    
-            await Task.WhenAll(
-                LoadGlobalAwsConfigAsync(),
-                _permissionCache.EnsureLoadedAsync());
+            await LoadGlobalAwsConfigAsync();
+            await _permissionCache.EnsureLoadedAsync();
             await ActivateItemAsync(MainMenuViewModel, cancellationToken);
         }
 

@@ -14,7 +14,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
-using System.Numerics;
+using static Models.Global.GraphQLResponseTypes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,7 +25,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     public class AccountingEntriesDocumentPreviewViewModel : Screen
     {
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
-        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<DraftAccountingEntryGraphQLModel> _draftAccountingEntryService;
 
 
         private ObservableCollection<AccountingEntryLineGraphQLModel> _accountingEntries;
@@ -45,8 +45,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public AccountingEntriesViewModel Context { get; set; }
 
-        private AccountingEntryMasterDTO _selectedAccountingEntry;
-        public AccountingEntryMasterDTO SelectedAccountingEntry
+        private AccountingEntryDTO _selectedAccountingEntry;
+        public AccountingEntryDTO SelectedAccountingEntry
         {
             get { return _selectedAccountingEntry; }
             set
@@ -55,6 +55,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedAccountingEntry = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingEntry));
+                    NotifyOfPropertyChange(nameof(CanEditAccountingEntry));
                 }
             }
         }
@@ -195,7 +196,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 .Field(e => e.Description)
                 .Field(e => e.DocumentDate)
                 .Field(e => e.DocumentNumber)
-                .Field(e => e.State)
+                .Field(e => e.Status)
                 .Field(e => e.Annulment)
                 .Field(e => e.InsertedAt)
                 .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
@@ -220,12 +221,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService)
+        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryDTO selectedAccountingEntry, IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService, IRepository<DraftAccountingEntryGraphQLModel> accountingEntryDraftMasterService)
         {
             this.Context = context;
             this._accountingEntryMasterService = accountingEntryMasterService;
             this.SelectedAccountingEntry = selectedAccountingEntry;
-            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
+            this._draftAccountingEntryService = accountingEntryDraftMasterService;
             // Nota: este VM no implementa IHandle<> de ningún mensaje, por lo que
             // NO se suscribe al EventAggregator. Solo publica (cancel/delete/edit→draft).
         }
@@ -287,60 +288,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryGraphQLModel> ExecuteCancelAccountingEntryAsync()
+        public Task<AccountingEntryGraphQLModel> ExecuteCancelAccountingEntryAsync()
         {
             throw new NotImplementedException(
-                "Anulación de comprobantes no está implementada en el schema actual. " +
-                "Se aborda en el Bloque 10 del refactor.");
-            // Código legacy eliminado: apuntaba a cancelAccountingEntryMaster (no existe).
-#pragma warning disable CS0162
-            try
-            {
-                string query = @"
-                mutation($data: CancelAccountingEntryMasterInput!) {
-                  UpdateResponse: cancelAccountingEntryMaster(data:$data) {
-                    id
-                    documentNumber
-                    accountingBook {
-                      id
-                      name
-                    }
-                    costCenter {
-                      id
-                      name
-                    }
-                    accountingSource {
-                      id
-                      name
-                    }
-                    documentDate
-                    documentTime
-                    description
-                    createdBy
-                    createdAt
-                    annulment
-                    state
-                  }
-                }";
-
-                object variables = new
-                {
-                    Data = new
-                    {
-                        MasterId = this.SelectedAccountingEntry.Id,
-                        CancelledBy = SessionInfo.UserEmail
-                    }
-                };
-
-                var result = await this._accountingEntryMasterService.UpdateAsync(query, variables);
-
-                return result;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-#pragma warning restore CS0162
+                "Anulación de comprobantes no está implementada en el schema actual.");
         }
 
         // Delete Accounting Entry
@@ -444,19 +395,47 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             get
             {
                 return !this.IsBusy
-                       && string.IsNullOrEmpty(this.SelectedAccountingEntry.State.Trim())
+                       && this.SelectedAccountingEntry.Status is "ACTIVE" or "" or null
                        && !this.SelectedAccountingEntry.Annulment;
             }
         }
 
-        public Task<AccountingEntryDraftGraphQLModel> ExecuteEditAccountingEntryAsync()
+        /// <summary>
+        /// Mutation <c>createDraftFromAccountingEntry(input: CreateDraftFromAccountingEntryInput!)</c>.
+        /// Genera un borrador editable a partir del comprobante publicado actual.
+        /// Solo pide el <c>Id</c> del draft; <see cref="AccountingEntriesViewModel.ActivateDetailViewForEditAsync"/>
+        /// recarga el borrador completo con líneas.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createDraftFromEntryQuery = new(() =>
         {
-            // TODO (Bloque 10 del refactor): el schema actual NO expone createAccountingEntryDraftMasterFromMaster
-            // ni accountingEntryDraftMaster(draftMasterId). La edición de un comprobante publicado desde
-            // el preview queda deshabilitada hasta que el backend exponga el flujo de "re-editar".
-            throw new NotImplementedException(
-                "Edición de comprobantes publicados (re-generar borrador) no está implementada " +
-                "en el schema actual. Se aborda en el Bloque 10 del refactor.");
+            var fields = FieldSpec<UpsertResponseType<DraftAccountingEntryGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "draft", nested: sq => sq
+                    .Field(e => e.Id))
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("createDraftFromAccountingEntry",
+                [new("input", "CreateDraftFromAccountingEntryInput!")],
+                fields, "CreateDraftFromAccountingEntryPayload");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        public async Task<DraftAccountingEntryGraphQLModel> ExecuteEditAccountingEntryAsync()
+        {
+            var (fragment, query) = _createDraftFromEntryQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "input", new { accountingEntryId = (int)this.SelectedAccountingEntry.Id })
+                .Build();
+
+            var payload = await this._draftAccountingEntryService
+                .CreateAsync<UpsertResponseType<DraftAccountingEntryGraphQLModel>>(query, variables);
+
+            if (!payload.Success)
+                throw new Exception(payload.Message);
+
+            return payload.Entity;
         }
 
         #region Paginacion Comprobantes

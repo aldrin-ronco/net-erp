@@ -14,7 +14,7 @@ namespace Models.Books
     public class AccountingEntryGraphQLModel
     {
         public BigInteger Id { get; set; } = 0;
-        public string State { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public DateTime DocumentDate { get; set; } = DateTime.Now.Date;
 
         private DateTime _insertedAt = DateTime.Now;
@@ -24,6 +24,7 @@ namespace Models.Books
             set { _insertedAt = value; }
         }
 
+        public DateTime UpdatedAt { get; set; }
         public string Description { get; set; } = string.Empty;
         public string DocumentNumber { get; set; } = string.Empty;
         public SystemAccountGraphQLModel CreatedBy { get; set; }
@@ -32,6 +33,7 @@ namespace Models.Books
         public AccountingBookGraphQLModel AccountingBook { get; set; }
         public CostCenterGraphQLModel CostCenter { get; set; }
         public AccountingSourceGraphQLModel AccountingSource { get; set; }
+        public CompanyGraphQLModel Company { get; set; }
 
         /// <summary>
         /// Líneas del comprobante publicado (subselección <c>lines</c> del schema).
@@ -46,7 +48,7 @@ namespace Models.Books
         private string GetInfo()
         {
             string _info = "";
-            if (!string.IsNullOrEmpty(State)) _info = "Este documento ha sido anulado";
+            if (Status is "CANCELLED_WITH_DOCUMENT" or "CANCELLED_NO_DOCUMENT") _info = "Este documento ha sido anulado";
             if (Annulment) _info = string.IsNullOrEmpty(_info) ? "Este es un documento de anulación" : $"{_info}\r\nEste es un documento de anulación";
             return _info;
         }
@@ -56,13 +58,13 @@ namespace Models.Books
 
     public class AccountingEntriesDataContext
     {
-        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; }
-        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public PageType<AccountingEntryDraftGraphQLModel> AccountingEntryDraftPage { get; set; }
+        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; } = [];
+        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; } = [];
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; } = [];
+        public PageType<DraftAccountingEntryGraphQLModel> DraftAccountingEntryPage { get; set; } = new();
     }
 
-    public class AccountingEntryMasterDTO : AccountingEntryGraphQLModel
+    public class AccountingEntryDTO : AccountingEntryGraphQLModel
     {
         public bool IsChecked { get; set; } = false;
     }

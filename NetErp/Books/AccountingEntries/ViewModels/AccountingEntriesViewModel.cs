@@ -9,6 +9,7 @@ using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingEntries.DTO;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Ninject.Activation;
 using System;
 using System.Collections.Generic;
@@ -32,8 +33,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private readonly IGraphQLClient _graphQLClient;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        private readonly IRepository<AccountingEntryDraftLineGraphQLModel> _accountingEntryDraftLineService;
-        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<DraftAccountingEntryLineGraphQLModel> _draftAccountingEntryLineService;
+        private readonly IRepository<DraftAccountingEntryGraphQLModel> _draftAccountingEntryService;
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
 
@@ -59,7 +60,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _graphQLClient);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._draftAccountingEntryService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _graphQLClient);
                 return _accountingEntriesMasterViewModel;
             }
         }
@@ -68,8 +69,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                                           IEventAggregator eventAggregator,
                                           Helpers.Services.INotificationService notificationService,
                                           IRepository<AccountingEntityGraphQLModel> accountingEntityService,
-                                          IRepository<AccountingEntryDraftLineGraphQLModel> accountingEntryDraftLineService,
-                                          IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
+                                          IRepository<DraftAccountingEntryLineGraphQLModel> accountingEntryDraftLineService,
+                                          IRepository<DraftAccountingEntryGraphQLModel> accountingEntryDraftMasterService,
                                           IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
@@ -83,8 +84,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this.EventAggregator = eventAggregator;
             this.Mapper = mapper;
             this._accountingEntityService = accountingEntityService;
-            this._accountingEntryDraftLineService = accountingEntryDraftLineService;
-            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
+            this._draftAccountingEntryLineService = accountingEntryDraftLineService;
+            this._draftAccountingEntryService = accountingEntryDraftMasterService;
             this._accountingEntryMasterService = accountingEntryMasterService;
             this._notificationService = notificationService;
             _costCenterCache = costCenterCache;
@@ -122,9 +123,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await ActivateItemAsync(this.AccountingEntriesMasterViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDocumentPreviewViewAsync(AccountingEntryMasterDTO selectedAccountingEntry)
+        public async Task ActivateDocumentPreviewViewAsync(AccountingEntryDTO selectedAccountingEntry)
         {
-            AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry, this._accountingEntryMasterService, this._accountingEntryDraftMasterService);
+            AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry, this._accountingEntryMasterService, this._draftAccountingEntryService);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
@@ -138,8 +139,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             AccountingEntriesDetailViewModel instance = new(this,
                 this._accountingEntryMasterService,
                 this._accountingEntityService,
-                this._accountingEntryDraftMasterService,
-                this._accountingEntryDraftLineService,
+                this._draftAccountingEntryService,
+                this._draftAccountingEntryLineService,
                 this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _dialogService, _graphQLClient);
 
             instance.SetForNew();
@@ -147,59 +148,54 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEditAsync(AccountingEntryDraftGraphQLModel model)
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadDraftWithLinesQuery = new(() =>
         {
-            try
-            {
-                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftLineService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _dialogService, _graphQLClient);
+            var fields = FieldSpec<DraftAccountingEntryGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Description)
+                .Field(f => f.DocumentDate)
+                .Field(f => f.DocumentNumber)
+                .SelectList(f => f.Lines, l => l
+                    .Field(x => x.Id)
+                    .Field(x => x.RecordDetail)
+                    .Field(x => x.Debit)
+                    .Field(x => x.Credit)
+                    .Field(x => x.Base)
+                    .Select(x => x.AccountingAccount, a => a.Field(y => y.Id).Field(y => y.Code).Field(y => y.Name))
+                    .Select(x => x.AccountingEntity, a => a.Field(y => y.Id).Field(y => y.IdentificationNumber).Field(y => y.SearchName))
+                    .Select(x => x.CostCenter, c => c.Field(y => y.Id).Field(y => y.Name)))
+                .Build();
 
-                // Cargar líneas del borrador
-                string query = @"
-                query($draftMasterId:ID) {
-                  ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {
-                    id
-                    costCenter {
-                    id
-                    name
-                    }
-                    accountingEntity {
-                    id
-                    identificationNumber
-                    searchName
-                    }
-                    accountingAccount {
-                    id
-                    code
-                    name
-                    }
-                    draftMasterId
-                    recordDetail
-                    debit
-                    credit
-                    base
-                    }
-                }";
+            var fragment = new GraphQLQueryFragment("draftAccountingEntry",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
 
-                object variables = new { draftMasterId = model.Id };
+        public async Task ActivateDetailViewForEditAsync(DraftAccountingEntryGraphQLModel model)
+        {
+            AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._draftAccountingEntryService, this._draftAccountingEntryLineService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _dialogService, _graphQLClient);
 
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                var entries = await this._accountingEntryDraftLineService.GetListAsync(query, variables);
-                stopwatch.Stop();
+            var (fragment, query) = _loadDraftWithLinesQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "id", (int)model.Id)
+                .Build();
 
-                var mappedEntries = this.Mapper.Map<IEnumerable<AccountingEntryDraftLineDTO>>(entries);
-                decimal totalDebit = entries.Sum(e => e.Debit);
-                decimal totalCredit = entries.Sum(e => e.Credit);
-                string responseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var draft = await this._draftAccountingEntryService.FindByIdAsync(query, variables);
+            stopwatch.Stop();
 
-                instance.SetForEdit(model, mappedEntries, totalDebit, totalCredit, responseTime);
+            IEnumerable<DraftAccountingEntryLineGraphQLModel> lines = draft?.Lines ?? [];
+            var mappedEntries = this.Mapper.Map<IEnumerable<DraftAccountingEntryLineDTO>>(lines);
+            decimal totalDebit = lines.Sum(e => e.Debit);
+            decimal totalCredit = lines.Sum(e => e.Credit);
+            string responseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            instance.SetForEdit(model, mappedEntries, totalDebit, totalCredit, responseTime);
+
+            await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
       

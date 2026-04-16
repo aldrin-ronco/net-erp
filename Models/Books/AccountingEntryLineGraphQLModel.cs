@@ -17,5 +17,6 @@ namespace Models.Books
         public decimal Debit { get; set; } = 0;
         public decimal Credit { get; set; } = 0;
         public decimal Base { get; set; } = 0;
+        public AccountingEntryGraphQLModel AccountingEntry { get; set; }
     }
 }

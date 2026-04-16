@@ -48,17 +48,17 @@ namespace Extensions.Books
             accountingSources.Remove(accountingSoureToReplace);
             accountingSources.Insert(index, updatedAccountingSource);
         }
-        public static void Replace(this ObservableCollection<AccountingEntryDraftDTO> accountingEntriesDraft, AccountingEntryDraftDTO updatedAccountingEntryDraft)
+        public static void Replace(this ObservableCollection<DraftAccountingEntryDTO> accountingEntriesDraft, DraftAccountingEntryDTO updatedAccountingEntryDraft)
         {
-            AccountingEntryDraftDTO accountingEntryDraftToReplace = accountingEntriesDraft.Where(x => x.Id == updatedAccountingEntryDraft.Id).FirstOrDefault();
+            DraftAccountingEntryDTO accountingEntryDraftToReplace = accountingEntriesDraft.Where(x => x.Id == updatedAccountingEntryDraft.Id).FirstOrDefault();
             int index = accountingEntriesDraft.IndexOf(accountingEntryDraftToReplace);
             accountingEntriesDraft.Remove(accountingEntryDraftToReplace);
             accountingEntriesDraft.Insert(index, updatedAccountingEntryDraft);
         }
 
-        public static void Replace(this ObservableCollection<AccountingEntryMasterDTO> accountingEntries, AccountingEntryMasterDTO updatedAccountingEntry)
+        public static void Replace(this ObservableCollection<AccountingEntryDTO> accountingEntries, AccountingEntryDTO updatedAccountingEntry)
         {
-            AccountingEntryMasterDTO accountingEntryToReplace = accountingEntries.Where(x => x.Id == updatedAccountingEntry.Id).FirstOrDefault();
+            AccountingEntryDTO accountingEntryToReplace = accountingEntries.Where(x => x.Id == updatedAccountingEntry.Id).FirstOrDefault();
             int index = accountingEntries.IndexOf(accountingEntryToReplace);
             accountingEntries.Remove(accountingEntryToReplace);
             accountingEntries.Insert(index, updatedAccountingEntry);

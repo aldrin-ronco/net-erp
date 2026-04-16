@@ -7,9 +7,9 @@ namespace Models.Books
 {
     /// <summary>
     /// Borrador de comprobante contable.
-    /// Mapea al tipo <c>AccountingEntryDraft</c> del schema GraphQL.
+    /// Mapea al tipo <c>DraftAccountingEntry</c> del schema GraphQL.
     /// </summary>
-    public class AccountingEntryDraftGraphQLModel
+    public class DraftAccountingEntryGraphQLModel
     {
         public BigInteger Id { get; set; } = 0;
         public DateTime DocumentDate { get; set; } = DateTime.Now.Date;
@@ -20,6 +20,8 @@ namespace Models.Books
             get { return TimeZoneInfo.ConvertTimeFromUtc(_insertedAt.ToUniversalTime(), TimeZoneInfo.Local); }
             set { _insertedAt = value; }
         }
+
+        public DateTime UpdatedAt { get; set; }
 
         private string _documentNumber = string.Empty;
         public string DocumentNumber
@@ -37,27 +39,26 @@ namespace Models.Books
         /// <summary>
         /// Líneas del borrador (subselección <c>lines</c> del schema).
         /// </summary>
-        public IEnumerable<AccountingEntryDraftLineGraphQLModel> Lines { get; set; } = [];
+        public IEnumerable<DraftAccountingEntryLineGraphQLModel> Lines { get; set; } = [];
 
         /// <summary>
         /// Si el borrador ya fue finalizado, apunta al <c>AccountingEntry</c> resultante.
-        /// Reemplaza al antiguo <c>MasterId</c>.
         /// </summary>
         public AccountingEntryGraphQLModel AccountingEntry { get; set; }
     }
 
-    public class AccountingEntryDraftDTO : AccountingEntryDraftGraphQLModel
+    public class DraftAccountingEntryDTO : DraftAccountingEntryGraphQLModel
     {
         public bool IsChecked { get; set; } = false;
     }
 
-    public class AccountingEntryDraftDeleteMessage
+    public class DraftAccountingEntryDeleteMessage
     {
         public BigInteger Id { get; set; }
     }
 
-    public class AccountingEntryDraftUpdateMessage
+    public class DraftAccountingEntryUpdateMessage
     {
-        public AccountingEntryDraftDTO UpdatedAccountingEntryDraft { get; set; }
+        public DraftAccountingEntryDTO UpdatedDraftAccountingEntry { get; set; }
     }
 }

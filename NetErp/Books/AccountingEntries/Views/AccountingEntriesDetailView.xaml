@@ -70,7 +70,7 @@
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="10">
-    <Grid>
+    <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="33"/>
@@ -136,7 +136,7 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center" 
                     Foreground="White" FontSize="14" Margin="0 0 6 0">
                 </TextBlock>
-                <TextBox Text="{Binding SelectedAccountingEntryDraftMaster.DocumentNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" IsReadOnly="True"
+                <TextBox Text="{Binding SelectedDraftAccountingEntry.DocumentNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" IsReadOnly="True"
                     HorizontalAlignment="Center" VerticalAlignment="Center" 
                     Foreground="White" FontSize="18">
                 </TextBox>
@@ -448,15 +448,14 @@
                                     x:Name="BusyIndicator"
                                     IndicatorType="BouncingDot"
                                     BusyContent="Please wait..."
-                                    BusyContentMargin="0,20,0,0"
-                                    IsBusyAtStartup="False">
+                                    BusyContentMargin="0,20,0,0">
                 <!--Nota: edición inline deshabilitada (ver EndRowEditingAsync en el ViewModel).
                     El grid es read-only y solo sirve para mostrar las líneas del borrador y permitir
                     marcarlas con el checkbox para borrarlas en bloque vía deleteDraftLines.-->
                 <dxg:GridControl Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="3"
                                  Margin="0 8 0 0"
                                  ItemsSource="{Binding Path=AccountingEntries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 SelectedItem="{Binding Path=SelectedAccountingEntryDraftDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                 SelectedItem="{Binding Path=SelectedDraftAccountingEntryLine, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:GridControl.View>
                         <dxg:TableView AllowEditing="False"
                                        AllowCascadeUpdate="False"

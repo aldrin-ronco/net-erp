@@ -8,9 +8,9 @@ namespace NetErp.Books.AccountingEntries.DTO
 {
     /// <summary>
     /// DTO editable para una línea de borrador de comprobante contable.
-    /// Corresponde al tipo <c>AccountingEntryDraftLine</c> del schema GraphQL.
+    /// Corresponde al tipo <c>DraftAccountingEntryLine</c> del schema GraphQL.
     /// </summary>
-    public class AccountingEntryDraftLineDTO : PropertyChangedBase
+    public class DraftAccountingEntryLineDTO : PropertyChangedBase
     {
         private BigInteger _id;
         public BigInteger Id
