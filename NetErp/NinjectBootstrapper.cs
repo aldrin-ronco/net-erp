@@ -136,6 +136,18 @@ namespace NetErp
             _ = kernel.Bind<MajorCashDrawerCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MajorCashDrawerCache>());
 
+            _ = kernel.Bind<MinorCashDrawerCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MinorCashDrawerCache>());
+
+            _ = kernel.Bind<AuxiliaryCashDrawerCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuxiliaryCashDrawerCache>());
+
+            _ = kernel.Bind<BankCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<BankCache>());
+
+            _ = kernel.Bind<FranchiseCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<FranchiseCache>());
+
             _ = kernel.Bind<AuxiliaryAccountingAccountCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuxiliaryAccountingAccountCache>());
 
