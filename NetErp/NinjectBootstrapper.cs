@@ -201,6 +201,7 @@ namespace NetErp
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CostCenterValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.StorageValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Treasury.Masters.Validators.BankValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.FranchiseValidator>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.CatalogValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemTypeValidator>().ToSelf().InSingletonScope();
