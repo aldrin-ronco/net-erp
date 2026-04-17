@@ -44,8 +44,6 @@ namespace NetErp.Treasury.Masters.ViewModels
     {
         public TreasuryRootViewModel Context { get; set; }
 
-        private readonly IRepository<CompanyLocationGraphQLModel> _companyLocationService;
-        private readonly IRepository<CostCenterGraphQLModel> _costCenterService;
         private readonly IRepository<CashDrawerGraphQLModel> _cashDrawerService;
         private readonly IRepository<BankGraphQLModel> _bankService;
         private readonly IRepository<BankAccountGraphQLModel> _bankAccountService;
@@ -54,9 +52,14 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly CompanyLocationCache _companyLocationCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly BankAccountCache _bankAccountCache;
         private readonly MajorCashDrawerCache _majorCashDrawerCache;
+        private readonly MinorCashDrawerCache _minorCashDrawerCache;
+        private readonly AuxiliaryCashDrawerCache _auxiliaryCashDrawerCache;
+        private readonly BankCache _bankCache;
+        private readonly FranchiseCache _franchiseCache;
 
         #region Panel Editors
 
@@ -729,259 +732,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #endregion
 
-        #region Load Query Builders
-
-        private static readonly Lazy<string> _loadCompanyLocationsQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<CompanyLocationGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Select(e => e.Company, company => company
-                        .Field(c => c.Id)))
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("companyLocationsPage", [parameter], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadBanksQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<BankGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Code)
-                    .Field(e => e.PaymentMethodPrefix)
-                    .Select(e => e.AccountingEntity, ae => ae
-                        .Field(a => a.Id)
-                        .Field(a => a.SearchName)
-                        .Field(a => a.CaptureType)))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination")
-            };
-            var fragment = new GraphQLQueryFragment("banksPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadBankAccountsQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<BankAccountGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Type)
-                    .Field(e => e.Number)
-                    .Field(e => e.IsActive)
-                    .Field(e => e.Description)
-                    .Field(e => e.Reference)
-                    .Field(e => e.DisplayOrder)
-                    .Field(e => e.Provider)
-                    .Select(e => e.PaymentMethod, pm => pm
-                        .Field(p => p.Id)
-                        .Field(p => p.Abbreviation)
-                        .Field(p => p.Name))
-                    .Select(e => e.AccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Name)
-                        .Field(a => a.Code))
-                    .Select(e => e.Bank, b => b
-                        .Field(bk => bk.Id)
-                        .Select(bk => bk.AccountingEntity, ae => ae
-                            .Field(a => a.SearchName)
-                            .Field(a => a.CaptureType))))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "BankAccountFilters")
-            };
-            var fragment = new GraphQLQueryFragment("bankAccountsPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadCostCentersByLocationQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<CostCenterGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Select(e => e.CompanyLocation, loc => loc
-                        .Field(l => l.Id)))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "CostCenterFilters")
-            };
-            var fragment = new GraphQLQueryFragment("costCentersPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadMajorCashDrawersQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<CashDrawerGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.CashReviewRequired)
-                    .Field(e => e.AutoAdjustBalance)
-                    .Field(e => e.AutoTransfer)
-                    .Field(e => e.IsPettyCash)
-                    .Select(e => e.CostCenter, cc => cc
-                        .Field(c => c.Id)
-                        .Field(c => c.Name))
-                    .Select(e => e.CashAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name))
-                    .Select(e => e.CheckAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name))
-                    .Select(e => e.CardAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name))
-                    .Select(e => e.AutoTransferCashDrawer, cd => cd
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "CashDrawerFilters")
-            };
-            var fragment = new GraphQLQueryFragment("cashDrawersPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadAuxiliaryCashDrawersQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<CashDrawerGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.CashReviewRequired)
-                    .Field(e => e.AutoAdjustBalance)
-                    .Field(e => e.AutoTransfer)
-                    .Field(e => e.IsPettyCash)
-                    .Field(e => e.ComputerName)
-                    .Select(e => e.CashAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name))
-                    .Select(e => e.CheckAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name))
-                    .Select(e => e.CardAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name))
-                    .Select(e => e.AutoTransferCashDrawer, cd => cd
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "CashDrawerFilters")
-            };
-            var fragment = new GraphQLQueryFragment("cashDrawersPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadMinorCashDrawersQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<CashDrawerGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.CashReviewRequired)
-                    .Field(e => e.AutoAdjustBalance)
-                    .Field(e => e.IsPettyCash)
-                    .Select(e => e.CostCenter, cc => cc
-                        .Field(c => c.Id)
-                        .Field(c => c.Name))
-                    .Select(e => e.CashAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Code)
-                        .Field(a => a.Name)))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "CashDrawerFilters")
-            };
-            var fragment = new GraphQLQueryFragment("cashDrawersPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        private static readonly Lazy<string> _loadFranchisesQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<FranchiseGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.Type)
-                    .Field(e => e.CommissionRate)
-                    .Field(e => e.ReteivaRate)
-                    .Field(e => e.ReteicaRate)
-                    .Field(e => e.RetefteRate)
-                    .Field(e => e.TaxRate)
-                    .Field(e => e.FormulaCommission)
-                    .Field(e => e.FormulaReteiva)
-                    .Field(e => e.FormulaReteica)
-                    .Field(e => e.FormulaRetefte)
-                    .Select(e => e.BankAccount, ba => ba
-                        .Field(b => b.Id)
-                        .Field(b => b.Description))
-                    .Select(e => e.CommissionAccountingAccount, aa => aa
-                        .Field(a => a.Id)
-                        .Field(a => a.Name))
-                    .SelectList(e => e.FranchisesByCostCenter, fs => fs
-                        .Field(s => s.Id)
-                        .Select(s => s.CostCenter, cc => cc.Field(c => c.Id))
-                        .Field(s => s.CommissionRate)
-                        .Field(s => s.ReteivaRate)
-                        .Field(s => s.ReteicaRate)
-                        .Field(s => s.RetefteRate)
-                        .Field(s => s.TaxRate)
-                        .Select(s => s.BankAccount, ba => ba.Field(b => b.Id))
-                        .Field(s => s.FormulaCommission)
-                        .Field(s => s.FormulaReteiva)
-                        .Field(s => s.FormulaReteica)
-                        .Field(s => s.FormulaRetefte)
-                        .Select(s => s.CommissionAccountingAccount, caa => caa.Field(x => x.Id))
-                        .Select(s => s.Franchise, fr => fr.Field(x => x.Id))))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination")
-            };
-            var fragment = new GraphQLQueryFragment("franchisesPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
-
-        #endregion
-
         private ICommand _deleteMinorCashDrawerCommand;
         public ICommand DeleteMinorCashDrawerCommand
         {
@@ -1208,458 +958,149 @@ namespace NetErp.Treasury.Masters.ViewModels
         #endregion
 
         /// <summary>
-        /// Método unificado para cargar CompanyLocations tanto para Cajas Generales como Cajas Menores.
-        /// El Type del dummyDTO determina qué tipo de DTO hijo se crea.
+        /// Reconstruye el árbol completo desde los caches ya hidratados.
+        /// Sustituye la carga perezosa previa: ya no se disparan queries cuando el usuario expande nodos.
+        /// Debe ejecutarse en el hilo de UI.
         /// </summary>
-        public async Task LoadCashDrawerCompanyLocations(CashDrawerDummyDTO dummyDTO)
+        private void BuildTreeFromCaches()
         {
-            try
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    dummyDTO.Locations.Remove(dummyDTO.Locations[0]);
-                });
-                Refresh();
-                string query = _loadCompanyLocationsQuery.Value;
+                CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
+                CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
-
-                PageType<CompanyLocationGraphQLModel> result = await _companyLocationService.GetPageAsync(query, variables);
-                var locations = Context.AutoMapper.Map<ObservableCollection<CashDrawerCompanyLocationDTO>>(result.Entries);
-                if (locations.Count > 0)
+                if (majorDummy != null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    majorDummy.Locations.Clear();
+                    foreach (var loc in _companyLocationCache.Items)
                     {
-                        foreach (CashDrawerCompanyLocationDTO location in locations)
+                        var locationDTO = Context.AutoMapper.Map<CashDrawerCompanyLocationDTO>(loc);
+                        locationDTO.Context = this;
+                        locationDTO.DummyParent = majorDummy;
+                        locationDTO.Type = CashDrawerType.Major;
+                        locationDTO.CostCenters.Clear();
+
+                        foreach (var cc in _costCenterCache.Items.Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == loc.Id))
                         {
-                            location.Context = this;
-                            location.DummyParent = dummyDTO;
-                            location.Type = dummyDTO.Type;
-                            location.CostCenters.Add(new CashDrawerCostCenterDTO() { IsDummyChild = true, Name = "Dummy", Type = dummyDTO.Type });
-                            dummyDTO.Locations.Add(location);
+                            var costCenterDTO = Context.AutoMapper.Map<CashDrawerCostCenterDTO>(cc);
+                            costCenterDTO.Context = this;
+                            costCenterDTO.Location = locationDTO;
+                            costCenterDTO.Type = CashDrawerType.Major;
+                            costCenterDTO.CashDrawers.Clear();
+
+                            foreach (var major in _majorCashDrawerCache.Items.Where(m =>
+                                m.CostCenter != null && m.CostCenter.Id == cc.Id && !m.IsPettyCash && m.Parent == null))
+                            {
+                                var majorDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(major);
+                                majorDTO.Context = this;
+                                majorDTO.AuxiliaryCashDrawers.Clear();
+
+                                foreach (var aux in _auxiliaryCashDrawerCache.Items.Where(a =>
+                                    a.Parent != null && a.Parent.Id == major.Id))
+                                {
+                                    var auxDTO = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(aux);
+                                    auxDTO.Context = this;
+                                    majorDTO.AuxiliaryCashDrawers.Add(auxDTO);
+                                }
+                                costCenterDTO.CashDrawers.Add(majorDTO);
+                            }
+                            locationDTO.CostCenters.Add(costCenterDTO);
                         }
-                    });
+                        majorDummy.Locations.Add(locationDTO);
+                    }
                 }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
+
+                if (minorDummy != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    minorDummy.Locations.Clear();
+                    foreach (var loc in _companyLocationCache.Items)
+                    {
+                        var locationDTO = Context.AutoMapper.Map<CashDrawerCompanyLocationDTO>(loc);
+                        locationDTO.Context = this;
+                        locationDTO.DummyParent = minorDummy;
+                        locationDTO.Type = CashDrawerType.Minor;
+                        locationDTO.CostCenters.Clear();
+
+                        foreach (var cc in _costCenterCache.Items.Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == loc.Id))
+                        {
+                            var costCenterDTO = Context.AutoMapper.Map<CashDrawerCostCenterDTO>(cc);
+                            costCenterDTO.Context = this;
+                            costCenterDTO.Location = locationDTO;
+                            costCenterDTO.Type = CashDrawerType.Minor;
+                            costCenterDTO.CashDrawers.Clear();
+
+                            foreach (var minor in _minorCashDrawerCache.Items.Where(m =>
+                                m.CostCenter != null && m.CostCenter.Id == cc.Id && m.IsPettyCash && m.Parent == null))
+                            {
+                                var minorDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(minor);
+                                minorDTO.Context = this;
+                                costCenterDTO.CashDrawers.Add(minorDTO);
+                            }
+                            locationDTO.CostCenters.Add(costCenterDTO);
+                        }
+                        minorDummy.Locations.Add(locationDTO);
+                    }
                 }
-                else
+
+                if (bankDummy != null)
                 {
-                    throw;
+                    bankDummy.Banks.Clear();
+                    foreach (var bank in _bankCache.Items)
+                    {
+                        var bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(bank);
+                        bankDTO.Context = this;
+                        bankDTO.DummyParent = bankDummy;
+                        bankDTO.BankAccounts.Clear();
+
+                        foreach (var ba in _bankAccountCache.Items.Where(x => x.Bank != null && x.Bank.Id == bank.Id))
+                        {
+                            var bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(ba);
+                            bankAccountDTO.Context = this;
+                            bankDTO.BankAccounts.Add(bankAccountDTO);
+                        }
+                        bankDummy.Banks.Add(bankDTO);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCashDrawerCompanyLocations" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
+
+                if (franchiseDummy != null)
+                {
+                    franchiseDummy.Franchises.Clear();
+                    foreach (var franchise in _franchiseCache.Items)
+                    {
+                        var franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(franchise);
+                        franchiseDTO.Context = this;
+                        franchiseDTO.DummyParent = franchiseDummy;
+                        franchiseDummy.Franchises.Add(franchiseDTO);
+                    }
+                }
+            });
         }
+
 
         /// <summary>
-        /// Método unificado para cargar CostCenters tanto para Cajas Generales como Cajas Menores.
-        /// El Type del locationDTO determina qué tipo de DTO hijo se crea.
+        /// Puebla las colecciones usadas por los PanelEditors (combos de cuentas contables,
+        /// centros de costo, cuentas bancarias y cajas de auto-transferencia) a partir de los caches.
+        /// Mantenida porque los callers externos (handlers de create con side-effects de la API)
+        /// la invocan después de <c>_auxiliaryAccountingAccountCache.Clear()</c> para refrescar los combos.
         /// </summary>
-        public async Task LoadCashDrawerCostCenters(CashDrawerCompanyLocationDTO locationDTO)
-        {
-            try
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    locationDTO.CostCenters.Remove(locationDTO.CostCenters[0]);
-                });
-
-                string query = _loadCostCentersByLocationQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.companyLocationId = locationDTO.Id;
-                variables.pageResponsePagination.pageSize = -1;
-
-                PageType<CostCenterGraphQLModel> result = await _costCenterService.GetPageAsync(query, variables);
-                var costCenters = Context.AutoMapper.Map<ObservableCollection<CashDrawerCostCenterDTO>>(result.Entries);
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (CashDrawerCostCenterDTO costCenter in costCenters)
-                    {
-                        costCenter.Context = this;
-                        costCenter.Location = locationDTO;
-                        costCenter.Type = locationDTO.Type;
-                        // El dummy child para CashDrawers - usamos la clase base
-                        costCenter.CashDrawers.Add(new CashDrawerMasterTreeDTO() { IsDummyChild = true, Name = "Dummy" });
-                        locationDTO.CostCenters.Add(costCenter);
-                    }
-                });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCashDrawerCostCenters" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
-        /// <summary>
-        /// Método unificado para cargar CashDrawers tanto Generales como Menores.
-        /// El Type del costCenterDTO determina:
-        /// - Query a usar (Major vs Minor)
-        /// - Filtro isPettyCash (false para Major, true para Minor)
-        /// - Tipo de DTO a mapear (MajorCashDrawerMasterTreeDTO vs MinorCashDrawerMasterTreeDTO)
-        /// - Si agregar AuxiliaryCashDrawers dummy (solo para Major)
-        /// </summary>
-        public async Task LoadCashDrawers(CashDrawerCostCenterDTO costCenterDTO)
-        {
-            try
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    costCenterDTO.CashDrawers.Remove(costCenterDTO.CashDrawers[0]);
-                });
-
-                bool isMajor = costCenterDTO.Type == CashDrawerType.Major;
-                string query = isMajor ? _loadMajorCashDrawersQuery.Value : _loadMinorCashDrawersQuery.Value;
-
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.costCenterId = costCenterDTO.Id;
-                variables.pageResponseFilters.isPettyCash = !isMajor; // false para Major, true para Minor
-                variables.pageResponseFilters.parentId = null;
-
-                PageType<CashDrawerGraphQLModel> result = await _cashDrawerService.GetPageAsync(query, variables);
-
-                if (isMajor)
-                {
-                    var cashDrawers = Context.AutoMapper.Map<ObservableCollection<MajorCashDrawerMasterTreeDTO>>(result.Entries);
-                    if (cashDrawers.Count > 0)
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            foreach (MajorCashDrawerMasterTreeDTO cashDrawerDTO in cashDrawers)
-                            {
-                                cashDrawerDTO.Context = this;
-                                cashDrawerDTO.AuxiliaryCashDrawers.Add(new TreasuryAuxiliaryCashDrawerMasterTreeDTO() { IsDummyChild = true, Name = "Dummy" });
-                                costCenterDTO.CashDrawers.Add(cashDrawerDTO);
-                            }
-                        });
-                    }
-                    else
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            costCenterDTO.IsExpanded = false;
-                        });
-                        _notificationService.ShowInfo("Este centro de costo no tiene cajas generales registradas");
-                    }
-                }
-                else
-                {
-                    var cashDrawers = Context.AutoMapper.Map<ObservableCollection<MinorCashDrawerMasterTreeDTO>>(result.Entries);
-                    if (cashDrawers.Count > 0)
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            foreach (MinorCashDrawerMasterTreeDTO cashDrawerDTO in cashDrawers)
-                            {
-                                costCenterDTO.CashDrawers.Add(cashDrawerDTO);
-                            }
-                        });
-                    }
-                    else
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            costCenterDTO.IsExpanded = false;
-                        });
-                        _notificationService.ShowInfo("Este centro de costo no tiene cajas menores registradas");
-                    }
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCashDrawers" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
-        public async Task LoadBanks()
-        {
-            try
-            {
-                BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(dummy => dummy is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    bankDummyDTO.Banks.Remove(bankDummyDTO.Banks[0]);
-                });
-                Refresh();
-                string query = _loadBanksQuery.Value;
-
-                dynamic variables = new ExpandoObject();
-                variables.banksPagePagination = new ExpandoObject();
-                variables.banksPagePagination.pageSize = -1;
-
-                PageType<BankGraphQLModel> result = await _bankService.GetPageAsync(query, variables);
-                var banks = Context.AutoMapper.Map<ObservableCollection<TreasuryBankMasterTreeDTO>>(result.Entries);
-                if (banks.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (TreasuryBankMasterTreeDTO bank in banks)
-                        {
-                            bank.Context = this;
-                            bank.DummyParent = bankDummyDTO;
-                            bank.BankAccounts.Add(new TreasuryBankAccountMasterTreeDTO() { IsDummyChild = true, Description = "Dummy" });
-                            bankDummyDTO?.Banks.Add(bank);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        bankDummyDTO.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("No hay bancos registrados");
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCompanyLocations" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
-        public async Task LoadBankAccounts(TreasuryBankMasterTreeDTO bank)
-        {
-            try
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    bank.BankAccounts.Remove(bank.BankAccounts[0]);
-                });
-                Refresh();
-                string query = _loadBankAccountsQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.bankAccountsPagePagination = new ExpandoObject();
-                variables.bankAccountsPagePagination.pageSize = -1;
-                variables.bankAccountsPageFilters = new ExpandoObject();
-                variables.bankAccountsPageFilters.bankId = bank.Id;
-
-                PageType<BankAccountGraphQLModel> result = await _bankAccountService.GetPageAsync(query, variables);
-                var bankAccounts = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountMasterTreeDTO>>(result.Entries);
-
-                if (bankAccounts.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (TreasuryBankAccountMasterTreeDTO bankAccount in bankAccounts)
-                        {
-                            bankAccount.Context = this;
-                            bank.BankAccounts.Add(bankAccount);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        bank.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("Este banco no tiene cuentas bancarias registradas");
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCostCenters" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
-        public async Task LoadAuxiliaryCashDrawers(MajorCashDrawerMasterTreeDTO majorCashDrawer)
-        {
-            try
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    majorCashDrawer.AuxiliaryCashDrawers.Remove(majorCashDrawer.AuxiliaryCashDrawers[0]);
-                });
-
-                string query = _loadAuxiliaryCashDrawersQuery.Value;
-
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.parentId = majorCashDrawer.Id;
-                variables.pageResponseFilters.isPettyCash = false;
-
-                PageType<CashDrawerGraphQLModel> result = await _cashDrawerService.GetPageAsync(query, variables);
-                var cashDrawers = Context.AutoMapper.Map<ObservableCollection<TreasuryAuxiliaryCashDrawerMasterTreeDTO>>(result.Entries);
-
-                if (cashDrawers.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer in cashDrawers)
-                        {
-                            majorCashDrawer.AuxiliaryCashDrawers.Add(auxiliaryCashDrawer);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        majorCashDrawer.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("Esta caja general no tiene cajas auxiliares registradas");
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAuxiliaryCashDrawers" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
-        public async Task LoadFranchises(FranchiseDummyDTO franchiseDummyDTO)
-        {
-            try
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises[0]);
-                });
-                Refresh();
-                string query = _loadFranchisesQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.franchisesPagePagination = new ExpandoObject();
-                variables.franchisesPagePagination.pageSize = -1;
-
-                PageType<FranchiseGraphQLModel> result = await _franchiseService.GetPageAsync(query, variables);
-                var franchises = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseMasterTreeDTO>>(result.Entries);
-                if (franchises.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (TreasuryFranchiseMasterTreeDTO franchise in franchises)
-                        {
-                            franchise.Context = this;
-                            franchise.DummyParent = franchiseDummyDTO;
-                            franchiseDummyDTO?.Franchises.Add(franchise);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        franchiseDummyDTO.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("No hay franquicias registradas");
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCompanyLocations" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
         public async Task LoadComboBoxesAsync()
         {
             try
             {
-                // Ensure all caches are loaded
+                // Asegura que todos los caches estén cargados (paralelo, un solo round-trip HTTP)
                 await CacheBatchLoader.LoadAsync(
                     _graphQLClient, default,
-                    _auxiliaryAccountingAccountCache, _costCenterCache, _bankAccountCache, _majorCashDrawerCache);
+                    _auxiliaryAccountingAccountCache,
+                    _companyLocationCache,
+                    _costCenterCache,
+                    _bankAccountCache,
+                    _majorCashDrawerCache,
+                    _minorCashDrawerCache,
+                    _auxiliaryCashDrawerCache,
+                    _bankCache,
+                    _franchiseCache);
 
                 // Cuentas contables auxiliares
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
@@ -1700,8 +1141,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public TreasuryRootMasterViewModel(
             TreasuryRootViewModel context,
-            IRepository<CompanyLocationGraphQLModel> companyLocationService,
-            IRepository<CostCenterGraphQLModel> costCenterService,
             IRepository<CashDrawerGraphQLModel> cashDrawerService,
             IRepository<BankGraphQLModel> bankService,
             IRepository<BankAccountGraphQLModel> bankAccountService,
@@ -1709,13 +1148,16 @@ namespace NetErp.Treasury.Masters.ViewModels
             Helpers.IDialogService dialogService,
             Helpers.Services.INotificationService notificationService,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+            CompanyLocationCache companyLocationCache,
             CostCenterCache costCenterCache,
             BankAccountCache bankAccountCache,
             MajorCashDrawerCache majorCashDrawerCache,
+            MinorCashDrawerCache minorCashDrawerCache,
+            AuxiliaryCashDrawerCache auxiliaryCashDrawerCache,
+            BankCache bankCache,
+            FranchiseCache franchiseCache,
             IGraphQLClient graphQLClient)
         {
-            _companyLocationService = companyLocationService;
-            _costCenterService = costCenterService;
             _cashDrawerService = cashDrawerService;
             _bankService = bankService;
             _bankAccountService = bankAccountService;
@@ -1723,28 +1165,22 @@ namespace NetErp.Treasury.Masters.ViewModels
             _dialogService = dialogService;
             _notificationService = notificationService;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _companyLocationCache = companyLocationCache;
             _costCenterCache = costCenterCache;
             _bankAccountCache = bankAccountCache;
             _majorCashDrawerCache = majorCashDrawerCache;
+            _minorCashDrawerCache = minorCashDrawerCache;
+            _auxiliaryCashDrawerCache = auxiliaryCashDrawerCache;
+            _bankCache = bankCache;
+            _franchiseCache = franchiseCache;
             _graphQLClient = graphQLClient;
 
+            // Los DummyItems se crean con colecciones vacías; BuildTreeFromCaches las llena en OnActivatedAsync.
             DummyItems = [
-            new CashDrawerDummyDTO() {
-                Id = 1, Name = "CAJA GENERAL", Type = CashDrawerType.Major,
-                Locations = [new CashDrawerCompanyLocationDTO() { IsDummyChild = true, Name = "Dummy", Type = CashDrawerType.Major }],
-                Context = this
-            },
-            new CashDrawerDummyDTO() {
-                Id = 2, Name = "CAJA MENOR", Type = CashDrawerType.Minor,
-                Locations = [new CashDrawerCompanyLocationDTO() { IsDummyChild = true, Name = "Dummy", Type = CashDrawerType.Minor }],
-                Context = this
-            },
-            new BankDummyDTO(){
-                Id = 3, Name = "BANCOS", Banks = [new TreasuryBankMasterTreeDTO() { IsDummyChild = true }], Context = this
-            },
-            new FranchiseDummyDTO(){
-                Id = 4, Name = "FRANQUICIAS", Franchises = [new TreasuryFranchiseMasterTreeDTO() { IsDummyChild = true, Name = "Dummy"}], Context = this
-            }
+                new CashDrawerDummyDTO() { Id = 1, Name = "CAJA GENERAL", Type = CashDrawerType.Major, Context = this },
+                new CashDrawerDummyDTO() { Id = 2, Name = "CAJA MENOR", Type = CashDrawerType.Minor, Context = this },
+                new BankDummyDTO() { Id = 3, Name = "BANCOS", Context = this },
+                new FranchiseDummyDTO() { Id = 4, Name = "FRANQUICIAS", Context = this }
             ];
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
@@ -1760,7 +1196,21 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
         {
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient, cancellationToken,
+                _auxiliaryAccountingAccountCache,
+                _companyLocationCache,
+                _costCenterCache,
+                _bankAccountCache,
+                _majorCashDrawerCache,
+                _minorCashDrawerCache,
+                _auxiliaryCashDrawerCache,
+                _bankCache,
+                _franchiseCache);
+
+            BuildTreeFromCaches();
             await LoadComboBoxesAsync();
+
             await base.OnActivatedAsync(cancellationToken);
         }
 
@@ -1774,105 +1224,79 @@ namespace NetErp.Treasury.Masters.ViewModels
             _auxiliaryAccountingAccountCache.Clear();
             await LoadComboBoxesAsync();
 
-            //caja general
-            if (createdCashDrawer.IsPettyCash == false && createdCashDrawer.Parent is null)
+            // Caja general (major)
+            if (!createdCashDrawer.IsPettyCash && createdCashDrawer.Parent is null)
             {
-                MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(createdCashDrawer);
-                CashDrawerDummyDTO majorCashDrawerDummyDTO = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major) ?? throw new Exception("");
-                if (majorCashDrawerDummyDTO is null) return;
-                CashDrawerCompanyLocationDTO majorCashDrawerCompanyLocation = majorCashDrawerDummyDTO.Locations.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.CompanyLocation.Id) ?? throw new Exception("");
-                if (majorCashDrawerCompanyLocation is null) return;
-                CashDrawerCostCenterDTO majorCashDrawerCostCenter = majorCashDrawerCompanyLocation.CostCenters.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.Id) ?? throw new Exception("");
-                if (majorCashDrawerCostCenter is null) return;
-                if (!majorCashDrawerCostCenter.IsExpanded && majorCashDrawerCostCenter.CashDrawers.Count > 0 && majorCashDrawerCostCenter.CashDrawers[0].IsDummyChild)
+                MajorCashDrawerMasterTreeDTO majorDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(createdCashDrawer);
+                majorDTO.Context = this;
+                ITreasuryTreeMasterSelectedItem? inserted = null;
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    await LoadCashDrawers(majorCashDrawerCostCenter);
-                    majorCashDrawerCostCenter.IsExpanded = true;
-                    MajorCashDrawerMasterTreeDTO? majorCashDrawer = majorCashDrawerCostCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.Id);
-                    if (majorCashDrawer is null) return;
-                    SelectedItem = majorCashDrawer;
-                    _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                    return;
-                }
-                if (!majorCashDrawerCostCenter.IsExpanded)
-                {
-                    majorCashDrawerCostCenter.IsExpanded = true;
-                    majorCashDrawerCostCenter.CashDrawers.Add(majorCashDrawerMasterTreeDTO);
-                    SelectedItem = majorCashDrawerMasterTreeDTO;
-                    _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                    return;
-                }
-                majorCashDrawerCostCenter.CashDrawers.Add(majorCashDrawerMasterTreeDTO);
-                SelectedItem = majorCashDrawerMasterTreeDTO;
-                _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                return;
-            }
-            //caja auxiliar
-            if (createdCashDrawer.IsPettyCash == false && createdCashDrawer.Parent != null)
-            {
-                TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawerMasterTreeDTO = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(createdCashDrawer);
-                CashDrawerDummyDTO majorCashDrawerDummyDTO = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major) ?? throw new Exception("");
-                if (majorCashDrawerDummyDTO is null) return;
-                CashDrawerCompanyLocationDTO majorCashDrawerCompanyLocation = majorCashDrawerDummyDTO.Locations.FirstOrDefault(x => x.Id == createdCashDrawer.Parent.CostCenter.CompanyLocation.Id) ?? throw new Exception("");
-                if (majorCashDrawerCompanyLocation is null) return;
-                CashDrawerCostCenterDTO majorCashDrawerCostCenter = majorCashDrawerCompanyLocation.CostCenters.FirstOrDefault(x => x.Id == createdCashDrawer.Parent.CostCenter.Id) ?? throw new Exception("");
-                if (majorCashDrawerCostCenter is null) return;
-                MajorCashDrawerMasterTreeDTO majorCashDrawer = majorCashDrawerCostCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == createdCashDrawer.Parent.Id) ?? throw new Exception("");
-                if (majorCashDrawer == null) return;
-                if (!majorCashDrawer.IsExpanded && majorCashDrawer.AuxiliaryCashDrawers.Count > 0 && majorCashDrawer.AuxiliaryCashDrawers[0].IsDummyChild)
-                {
-                    await LoadAuxiliaryCashDrawers(majorCashDrawer);
-                    majorCashDrawer.IsExpanded = true;
-                    TreasuryAuxiliaryCashDrawerMasterTreeDTO? auxiliaryCashDrawer = majorCashDrawer.AuxiliaryCashDrawers.FirstOrDefault(x => x.Id == auxiliaryCashDrawerMasterTreeDTO.Id);
-                    if (auxiliaryCashDrawerMasterTreeDTO is null) return;
-                    SelectedItem = auxiliaryCashDrawer;
-                    _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                    return;
-                }
-                if (!majorCashDrawer.IsExpanded)
-                {
-                    majorCashDrawer.IsExpanded = true;
-                    majorCashDrawer.AuxiliaryCashDrawers.Add(auxiliaryCashDrawerMasterTreeDTO);
-                    SelectedItem = auxiliaryCashDrawerMasterTreeDTO;
-                    _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                    return;
-                }
-                majorCashDrawer.AuxiliaryCashDrawers.Add(auxiliaryCashDrawerMasterTreeDTO);
-                SelectedItem = auxiliaryCashDrawerMasterTreeDTO;
+                    CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
+                    if (majorDummy is null) return;
+                    CashDrawerCompanyLocationDTO? location = majorDummy.Locations.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.CompanyLocation.Id);
+                    if (location is null) return;
+                    CashDrawerCostCenterDTO? costCenter = location.CostCenters.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.Id);
+                    if (costCenter is null) return;
+                    costCenter.CashDrawers.Add(majorDTO);
+                    majorDummy.IsExpanded = true;
+                    location.IsExpanded = true;
+                    costCenter.IsExpanded = true;
+                    inserted = majorDTO;
+                });
+                if (inserted != null) SelectedItem = inserted;
                 _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
                 return;
             }
 
-            //caja menor
-            MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(createdCashDrawer);
-            CashDrawerDummyDTO minorCashDrawerDummyDTO = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor) ?? throw new Exception("");
-            if (minorCashDrawerDummyDTO is null) return;
-            CashDrawerCompanyLocationDTO minorCashDrawerCompanyLocation = minorCashDrawerDummyDTO.Locations.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.CompanyLocation.Id) ?? throw new Exception("");
-            if (minorCashDrawerCompanyLocation is null) return;
-            CashDrawerCostCenterDTO minorCashDrawerCostCenter = minorCashDrawerCompanyLocation.CostCenters.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.Id) ?? throw new Exception("");
-            if (minorCashDrawerCostCenter is null) return;
-            if (!minorCashDrawerCostCenter.IsExpanded && minorCashDrawerCostCenter.CashDrawers.Count > 0 && minorCashDrawerCostCenter.CashDrawers[0].IsDummyChild)
+            // Caja auxiliar
+            if (!createdCashDrawer.IsPettyCash && createdCashDrawer.Parent != null)
             {
-                await LoadCashDrawers(minorCashDrawerCostCenter);
-                minorCashDrawerCostCenter.IsExpanded = true;
-                MinorCashDrawerMasterTreeDTO? minorCasDrawer = minorCashDrawerCostCenter.CashDrawers.OfType<MinorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.Id);
-                if (minorCasDrawer is null) return;
-                SelectedItem = minorCasDrawer;
+                TreasuryAuxiliaryCashDrawerMasterTreeDTO auxDTO = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(createdCashDrawer);
+                auxDTO.Context = this;
+                ITreasuryTreeMasterSelectedItem? inserted = null;
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
+                    if (majorDummy is null) return;
+                    CashDrawerCompanyLocationDTO? location = majorDummy.Locations.FirstOrDefault(x => x.Id == createdCashDrawer.Parent.CostCenter.CompanyLocation.Id);
+                    if (location is null) return;
+                    CashDrawerCostCenterDTO? costCenter = location.CostCenters.FirstOrDefault(x => x.Id == createdCashDrawer.Parent.CostCenter.Id);
+                    if (costCenter is null) return;
+                    MajorCashDrawerMasterTreeDTO? parent = costCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == createdCashDrawer.Parent.Id);
+                    if (parent is null) return;
+                    parent.AuxiliaryCashDrawers.Add(auxDTO);
+                    majorDummy.IsExpanded = true;
+                    location.IsExpanded = true;
+                    costCenter.IsExpanded = true;
+                    parent.IsExpanded = true;
+                    inserted = auxDTO;
+                });
+                if (inserted != null) SelectedItem = inserted;
                 _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
                 return;
             }
-            if (!minorCashDrawerCostCenter.IsExpanded)
+
+            // Caja menor
+            MinorCashDrawerMasterTreeDTO minorDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(createdCashDrawer);
+            minorDTO.Context = this;
+            ITreasuryTreeMasterSelectedItem? insertedMinor = null;
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                minorCashDrawerCostCenter.IsExpanded = true;
-                minorCashDrawerCostCenter.CashDrawers.Add(minorCashDrawerMasterTreeDTO);
-                SelectedItem = minorCashDrawerMasterTreeDTO;
-                _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                return;
-            }
-            minorCashDrawerCostCenter.CashDrawers.Add(minorCashDrawerMasterTreeDTO);
-            SelectedItem = minorCashDrawerMasterTreeDTO;
+                CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
+                if (minorDummy is null) return;
+                CashDrawerCompanyLocationDTO? location = minorDummy.Locations.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.CompanyLocation.Id);
+                if (location is null) return;
+                CashDrawerCostCenterDTO? costCenter = location.CostCenters.FirstOrDefault(x => x.Id == createdCashDrawer.CostCenter.Id);
+                if (costCenter is null) return;
+                costCenter.CashDrawers.Add(minorDTO);
+                minorDummy.IsExpanded = true;
+                location.IsExpanded = true;
+                costCenter.IsExpanded = true;
+                insertedMinor = minorDTO;
+            });
+            if (insertedMinor != null) SelectedItem = insertedMinor;
             _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-            return;
         }
 
         public Task HandleAsync(TreasuryCashDrawerDeleteMessage message, CancellationToken cancellationToken)
@@ -2008,37 +1432,26 @@ namespace NetErp.Treasury.Masters.ViewModels
             return;
         }
 
-        public async Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
         {
             var createdBank = message.CreatedBank.Entity;
             IsNewRecord = false;
 
             TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(createdBank);
-            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
-            if (bankDummyDTO is null) return;
-            if (!bankDummyDTO.IsExpanded && bankDummyDTO.Banks.Count > 0 && bankDummyDTO.Banks[0].IsDummyChild)
+            bankDTO.Context = this;
+            ITreasuryTreeMasterSelectedItem? inserted = null;
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                await LoadBanks();
-                bankDummyDTO.IsExpanded = true;
-                TreasuryBankMasterTreeDTO? bank = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == bankDTO.Id);
-                if (bank is null) return;
-                SelectedItem = bank;
-                _notificationService.ShowSuccess(message.CreatedBank.Message);
-                return;
-            }
-            if (!bankDummyDTO.IsExpanded)
-            {
-                bankDummyDTO.IsExpanded = true;
-                bankDummyDTO.Banks.Add(bankDTO);
-                SelectedItem = bankDTO;
-                _notificationService.ShowSuccess(message.CreatedBank.Message);
-                return;
-            }
-            bankDummyDTO.Banks.Add(bankDTO);
-            SelectedItem = bankDTO;
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                if (bankDummy is null) return;
+                bankDTO.DummyParent = bankDummy;
+                bankDummy.Banks.Add(bankDTO);
+                bankDummy.IsExpanded = true;
+                inserted = bankDTO;
+            });
+            if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedBank.Message);
-            return;
-
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(BankUpdateMessage message, CancellationToken cancellationToken)
@@ -2079,32 +1492,21 @@ namespace NetErp.Treasury.Masters.ViewModels
             await LoadComboBoxesAsync();
 
             TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(createdBankAccount);
-            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
-            if (bankDummyDTO is null) return;
-            TreasuryBankMasterTreeDTO bankDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == createdBankAccount.Bank.Id) ?? throw new Exception("");
-            if (bankDTO is null) return;
-            if (!bankDTO.IsExpanded && bankDTO.BankAccounts.Count > 0 && bankDTO.BankAccounts[0].IsDummyChild)
+            bankAccountDTO.Context = this;
+            ITreasuryTreeMasterSelectedItem? inserted = null;
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                await LoadBankAccounts(bankDTO);
-                bankDTO.IsExpanded = true;
-                TreasuryBankAccountMasterTreeDTO? bankAccount = bankDTO.BankAccounts.FirstOrDefault(x => x.Id == bankAccountDTO.Id);
-                if (bankAccount is null) return;
-                SelectedItem = bankAccount;
-                _notificationService.ShowSuccess(message.CreatedBankAccount.Message);
-                return;
-            }
-            if (!bankDTO.IsExpanded)
-            {
-                bankDTO.IsExpanded = true;
-                bankDTO.BankAccounts.Add(bankAccountDTO);
-                SelectedItem = bankAccountDTO;
-                _notificationService.ShowSuccess(message.CreatedBankAccount.Message);
-                return;
-            }
-            bankDTO.BankAccounts.Add(bankAccountDTO);
-            SelectedItem = bankAccountDTO;
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                if (bankDummy is null) return;
+                TreasuryBankMasterTreeDTO? bank = bankDummy.Banks.FirstOrDefault(x => x.Id == createdBankAccount.Bank.Id);
+                if (bank is null) return;
+                bank.BankAccounts.Add(bankAccountDTO);
+                bankDummy.IsExpanded = true;
+                bank.IsExpanded = true;
+                inserted = bankAccountDTO;
+            });
+            if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedBankAccount.Message);
-            return;
         }
 
         public async Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
@@ -2155,35 +1557,25 @@ namespace NetErp.Treasury.Masters.ViewModels
             return;
         }
 
-        public async Task HandleAsync(FranchiseCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(FranchiseCreateMessage message, CancellationToken cancellationToken)
         {
             var createdFranchise = message.CreatedFranchise.Entity;
             IsNewRecord = false;
             TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(createdFranchise);
-            FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
-            if (franchiseDummyDTO is null) return;
-            if (!franchiseDummyDTO.IsExpanded && franchiseDummyDTO.Franchises.Count > 0 && franchiseDummyDTO.Franchises[0].IsDummyChild)
+            franchiseDTO.Context = this;
+            ITreasuryTreeMasterSelectedItem? inserted = null;
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                await LoadFranchises(franchiseDummyDTO);
-                franchiseDummyDTO.IsExpanded = true;
-                TreasuryFranchiseMasterTreeDTO? franchise = franchiseDummyDTO.Franchises.FirstOrDefault(x => x.Id == franchiseDTO.Id);
-                if (franchise is null) return;
-                SelectedItem = franchise;
-                _notificationService.ShowSuccess(message.CreatedFranchise.Message);
-                return;
-            }
-            if (!franchiseDummyDTO.IsExpanded)
-            {
-                franchiseDummyDTO.IsExpanded = true;
-                franchiseDummyDTO.Franchises.Add(franchiseDTO);
-                SelectedItem = franchiseDTO;
-                _notificationService.ShowSuccess(message.CreatedFranchise.Message);
-                return;
-            }
-            franchiseDummyDTO.Franchises.Add(franchiseDTO);
-            SelectedItem = franchiseDTO;
+                FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
+                if (franchiseDummy is null) return;
+                franchiseDTO.DummyParent = franchiseDummy;
+                franchiseDummy.Franchises.Add(franchiseDTO);
+                franchiseDummy.IsExpanded = true;
+                inserted = franchiseDTO;
+            });
+            if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedFranchise.Message);
-            return;
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(FranchiseDeleteMessage message, CancellationToken cancellationToken)

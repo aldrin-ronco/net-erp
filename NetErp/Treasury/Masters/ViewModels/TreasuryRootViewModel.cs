@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
 using Models.Treasury;
@@ -19,9 +19,7 @@ namespace NetErp.Treasury.Masters.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
-        
-        private readonly IRepository<CompanyLocationGraphQLModel> _companyLocationService;
-        private readonly IRepository<CostCenterGraphQLModel> _costCenterService;
+
         private readonly IRepository<CashDrawerGraphQLModel> _cashDrawerService;
         private readonly IRepository<BankGraphQLModel> _bankService;
         private readonly IRepository<BankAccountGraphQLModel> _bankAccountService;
@@ -30,9 +28,14 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly INotificationService _notificationService;
         private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly CompanyLocationCache _companyLocationCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly BankAccountCache _bankAccountCache;
         private readonly MajorCashDrawerCache _majorCashDrawerCache;
+        private readonly MinorCashDrawerCache _minorCashDrawerCache;
+        private readonly AuxiliaryCashDrawerCache _auxiliaryCashDrawerCache;
+        private readonly BankCache _bankCache;
+        private readonly FranchiseCache _franchiseCache;
 
         private TreasuryRootMasterViewModel _treasuryRootMasterViewModel;
         public TreasuryRootMasterViewModel TreasuryRootMasterViewModel
@@ -42,8 +45,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (_treasuryRootMasterViewModel is null)
                     _treasuryRootMasterViewModel = new TreasuryRootMasterViewModel(
                         this,
-                        _companyLocationService,
-                        _costCenterService,
                         _cashDrawerService,
                         _bankService,
                         _bankAccountService,
@@ -51,9 +52,14 @@ namespace NetErp.Treasury.Masters.ViewModels
                         _dialogService,
                         _notificationService,
                         _auxiliaryAccountingAccountCache,
+                        _companyLocationCache,
                         _costCenterCache,
                         _bankAccountCache,
                         _majorCashDrawerCache,
+                        _minorCashDrawerCache,
+                        _auxiliaryCashDrawerCache,
+                        _bankCache,
+                        _franchiseCache,
                         _graphQLClient);
                 return _treasuryRootMasterViewModel;
             }
@@ -62,8 +68,6 @@ namespace NetErp.Treasury.Masters.ViewModels
         public TreasuryRootViewModel(
             IMapper mapper,
             IEventAggregator eventAggregator,
-            IRepository<CompanyLocationGraphQLModel> companyLocationService,
-            IRepository<CostCenterGraphQLModel> costCenterService,
             IRepository<CashDrawerGraphQLModel> cashDrawerService,
             IRepository<BankGraphQLModel> bankService,
             IRepository<BankAccountGraphQLModel> bankAccountService,
@@ -71,15 +75,18 @@ namespace NetErp.Treasury.Masters.ViewModels
             NetErp.Helpers.IDialogService dialogService,
             INotificationService notificationService,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+            CompanyLocationCache companyLocationCache,
             CostCenterCache costCenterCache,
             BankAccountCache bankAccountCache,
             MajorCashDrawerCache majorCashDrawerCache,
+            MinorCashDrawerCache minorCashDrawerCache,
+            AuxiliaryCashDrawerCache auxiliaryCashDrawerCache,
+            BankCache bankCache,
+            FranchiseCache franchiseCache,
             IGraphQLClient graphQLClient)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _companyLocationService = companyLocationService;
-            _costCenterService = costCenterService;
             _cashDrawerService = cashDrawerService;
             _bankService = bankService;
             _bankAccountService = bankAccountService;
@@ -87,9 +94,14 @@ namespace NetErp.Treasury.Masters.ViewModels
             _dialogService = dialogService;
             _notificationService = notificationService;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _companyLocationCache = companyLocationCache;
             _costCenterCache = costCenterCache;
             _bankAccountCache = bankAccountCache;
             _majorCashDrawerCache = majorCashDrawerCache;
+            _minorCashDrawerCache = minorCashDrawerCache;
+            _auxiliaryCashDrawerCache = auxiliaryCashDrawerCache;
+            _bankCache = bankCache;
+            _franchiseCache = franchiseCache;
             _graphQLClient = graphQLClient;
             _ = Task.Run(ActivateMasterView);
         }

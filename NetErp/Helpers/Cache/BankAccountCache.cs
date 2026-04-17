@@ -32,7 +32,26 @@ namespace NetErp.Helpers.Cache
                 .Create()
                 .SelectList(x => x.Entries, entries => entries
                     .Field(x => x.Id)
+                    .Field(x => x.Type)
+                    .Field(x => x.Number)
+                    .Field(x => x.IsActive)
                     .Field(x => x.Description)
+                    .Field(x => x.Reference)
+                    .Field(x => x.DisplayOrder)
+                    .Field(x => x.Provider)
+                    .Select(x => x.PaymentMethod, pm => pm
+                        .Field(p => p.Id)
+                        .Field(p => p.Abbreviation)
+                        .Field(p => p.Name))
+                    .Select(x => x.AccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Name)
+                        .Field(a => a.Code))
+                    .Select(x => x.Bank, b => b
+                        .Field(bk => bk.Id)
+                        .Select(bk => bk.AccountingEntity, ae => ae
+                            .Field(a => a.SearchName)
+                            .Field(a => a.CaptureType)))
                 )
                 .Build();
 

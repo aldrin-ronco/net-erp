@@ -37,9 +37,31 @@ namespace NetErp.Helpers.Cache
                 .SelectList(x => x.Entries, entries => entries
                     .Field(x => x.Id)
                     .Field(x => x.Name)
+                    .Field(x => x.CashReviewRequired)
+                    .Field(x => x.AutoAdjustBalance)
+                    .Field(x => x.AutoTransfer)
                     .Field(x => x.IsPettyCash)
-                    .Select(x => x.Parent, nested => nested.Field(p => p.Id))
+                    .Field(x => x.ComputerName)
+                    .Select(x => x.Parent!, nested => nested
+                        .Field(p => p.Id)
+                        .Select(p => p.CostCenter, pcc => pcc
+                            .Field(c => c.Id)))
                     .Select(x => x.CostCenter, nested => nested
+                        .Field(c => c.Id)
+                        .Field(c => c.Name))
+                    .Select(x => x.CashAccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Code)
+                        .Field(a => a.Name))
+                    .Select(x => x.CheckAccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Code)
+                        .Field(a => a.Name))
+                    .Select(x => x.CardAccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Code)
+                        .Field(a => a.Name))
+                    .Select(x => x.AutoTransferCashDrawer!, cd => cd
                         .Field(c => c.Id)
                         .Field(c => c.Name))
                 )

@@ -72,16 +72,6 @@ namespace NetErp.Treasury.Masters.DTO
                 {
                     _isExpanded = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                    if (_franchises != null)
-                    {
-                        if (_isExpanded && _franchises.Count > 0)
-                        {
-                            if (_franchises[0].IsDummyChild)
-                            {
-                                _ = Context.LoadFranchises(this);
-                            }
-                        }
-                    }
                 }
             }
         }

@@ -71,16 +71,6 @@ namespace NetErp.Treasury.Masters.DTO
                 {
                     _isExpanded = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                    if (_banks != null)
-                    {
-                        if (_isExpanded && _banks.Count > 0)
-                        {
-                            if (_banks[0].IsDummyChild)
-                            {
-                                _ = Context.LoadBanks();
-                            }
-                        }
-                    }
                 }
             }
         }

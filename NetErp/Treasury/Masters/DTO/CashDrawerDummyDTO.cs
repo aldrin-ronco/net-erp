@@ -70,11 +70,6 @@ namespace NetErp.Treasury.Masters.DTO
                 {
                     _isExpanded = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-
-                    if (_isExpanded && _locations != null && _locations.Count > 0 && _locations[0].IsDummyChild)
-                    {
-                        _ = Context.LoadCashDrawerCompanyLocations(this);
-                    }
                 }
             }
         }

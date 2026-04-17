@@ -39,16 +39,6 @@ namespace NetErp.Treasury.Masters.DTO
                 {
                     _isExpanded = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                    if (_auxiliaryCashDrawers != null)
-                    {
-                        if (_isExpanded && _auxiliaryCashDrawers.Count > 0)
-                        {
-                            if (_auxiliaryCashDrawers[0].IsDummyChild)
-                            {
-                                _ = Context.LoadAuxiliaryCashDrawers(this);
-                            }
-                        }
-                    }
                 }
             }
         }

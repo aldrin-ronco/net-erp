@@ -42,7 +42,8 @@ namespace NetErp.Helpers.Cache
                         .Field(e => e.Id)
                         .Field(e => e.IdentificationNumber)
                         .Field(e => e.VerificationDigit)
-                        .Field(e => e.SearchName))
+                        .Field(e => e.SearchName)
+                        .Field(e => e.CaptureType))
                 )
                 .Build();
 
