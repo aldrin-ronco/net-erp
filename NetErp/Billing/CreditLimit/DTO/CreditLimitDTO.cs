@@ -1,190 +1,129 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Billing;
-using Models.DTO.Billing;
 using NetErp.Billing.CreditLimit.ViewModels;
-using NetErp.Billing.PriceList.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Billing.CreditLimit.DTO
 {
     public class CreditLimitDTO : PropertyChangedBase
     {
-        private int _id;
+        private bool _suppressLimitChangedEvent;
 
         public int Id
         {
-            get { return _id; }
+            get;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
                 }
             }
         }
-
-        private CustomerGraphQLModel _customer = new();
 
         public CustomerGraphQLModel Customer
         {
-            get { return _customer; }
+            get;
             set
             {
-                if (_customer != value)
+                if (field != value)
                 {
-                    _customer = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Customer));
-
                 }
             }
-        }
-
-        private decimal _originalLimit;
+        } = new();
 
         public decimal OriginalLimit
         {
-            get { return _originalLimit; }
+            get;
             set
             {
-                if (_originalLimit != value)
+                if (field != value)
                 {
-                    _originalLimit = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(OriginalLimit));
-
                 }
             }
         }
-
-        private decimal _creditLimit;
 
         public decimal CreditLimit
         {
-            get { return _creditLimit; }
+            get;
             set
             {
-                if (_creditLimit != value)
+                if (field == value) return;
+                decimal oldValue = field;
+                field = value;
+                NotifyOfPropertyChange(nameof(CreditLimit));
+                NotifyOfPropertyChange(nameof(Available));
+
+                if (_suppressLimitChangedEvent) return;
+                LimitChanged?.Invoke(this, new LimitChangedEventArgs
                 {
-                    decimal oldValue = _creditLimit;
-                    NotifyOfPropertyChange(nameof(CreditLimit));
-
-                    _creditLimit = value;
-                    if (!_suppressNotifications) Context?.AddModifiedLimit(this, nameof(CreditLimit));
-
-                    // Solo notifica el cambio, sin validar ni mostrar UI
-                      LimitChanged?.Invoke(this, new LimitChangedEventArgs
-                      {
-                          OldValue = oldValue,
-                          NewValue = value
-                      }); 
-                }
+                    OldValue = oldValue,
+                    NewValue = value
+                });
             }
         }
-
-        private decimal _used;
 
         public decimal Used
         {
-            get { return _used; }
+            get;
             set
             {
-                if (_used != value)
+                if (field != value)
                 {
-                    _used = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Used));
+                    NotifyOfPropertyChange(nameof(Available));
                 }
             }
         }
 
-        public decimal Available
+        public decimal Available => CreditLimit - Used;
+
+        public event EventHandler<LimitChangedEventArgs>? LimitChanged;
+        public CreditLimitMasterViewModel? Context { get; set; }
+
+        public void SetCreditLimitSilently(decimal value)
         {
-            get
-            {
-                return CreditLimit - Used;
-            }
+            _suppressLimitChangedEvent = true;
+            try { CreditLimit = value; }
+            finally { _suppressLimitChangedEvent = false; }
         }
 
-        public event EventHandler<LimitChangedEventArgs> LimitChanged;
-        public CreditLimitMasterViewModel Context { get; set; }
-
-        private bool _suppressNotifications = false;
-
-        private OperationStatus _status = OperationStatus.Unchanged;
         public OperationStatus Status
         {
-            get { return _status; }
+            get;
             set
             {
-                if (_status != value)
+                if (field != value)
                 {
-                    _status = value;
+                    field = value;
                     NotifyOfPropertyChange();
-                    NotifyOfPropertyChange(nameof(StatusIndicator));
-                    NotifyOfPropertyChange(nameof(StatusTooltip));
 
-                    if (value == OperationStatus.Saved)
-                    {
-                        StatusTooltip = null;
-                        ScheduleResetStatus();
-                    }
-                    else if (value == OperationStatus.Unchanged)
+                    if (value == OperationStatus.Saved || value == OperationStatus.Unchanged)
                     {
                         StatusTooltip = null;
                     }
                 }
             }
-        }
+        } = OperationStatus.Unchanged;
 
-        private string? _statusTooltip;
         public string? StatusTooltip
         {
-            get => _statusTooltip;
+            get;
             set
             {
-                if (_statusTooltip != value)
+                if (field != value)
                 {
-                    _statusTooltip = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(StatusTooltip));
                 }
             }
         }
-
-        // Propiedad para mostrar un indicador visual del estado
-        public Brush StatusIndicator
-        {
-            get
-            {
-                return Status switch
-                {
-                    OperationStatus.Pending => Brushes.Orange,
-                    OperationStatus.Retrying => Brushes.DarkOrange,
-                    OperationStatus.Saved => Brushes.Green,
-                    OperationStatus.Failed => Brushes.Red,
-                    _ => Brushes.Transparent
-                };
-            }
-        }
-
-        // Restaurar el estado visual después de un tiempo
-        private void ScheduleResetStatus()
-        {
-            // Después de 5 segundos, cambiar a Unchanged
-            _ = Task.Delay(5000).ContinueWith(_ =>
-            {
-                Execute.OnUIThread(() =>
-                {
-                    if (Status == OperationStatus.Saved)
-                    {
-                        Status = OperationStatus.Unchanged;
-                    }
-                });
-            });
-        }
-
     }
 
     public enum OperationStatus
@@ -195,9 +134,10 @@ namespace NetErp.Billing.CreditLimit.DTO
         Failed,
         Retrying
     }
+
     public class LimitChangedEventArgs : EventArgs
     {
-        public decimal OldValue { get; set; }
-        public decimal NewValue { get; set; }
+        public decimal OldValue { get; init; }
+        public decimal NewValue { get; init; }
     }
 }
