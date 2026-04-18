@@ -34,7 +34,8 @@
                     <StackPanel>
                         <!-- Caja mayor padre (solo lectura) -->
                         <TextBlock Text="Caja mayor" FontSize="13" Margin="0,0,0,3"/>
-                        <dxe:TextEdit Padding="3" BorderBrush="#C8CED6"
+                        <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
+                                      Padding="3" BorderBrush="#C8CED6"
                                       IsReadOnly="True" Margin="0,0,0,8"
                                       EditValue="{Binding ParentName, Mode=OneWay}"/>
 
@@ -77,12 +78,36 @@
                             <dxe:CheckEdit Content="Requiere arqueo de caja"
                                            Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
                                            IsChecked="{Binding CashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:CheckEdit Content="Ajustar saldo automáticamente"
-                                           Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,0"
-                                           IsChecked="{Binding AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:CheckEdit Content="Transferir saldo automáticamente a otra caja"
-                                           Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,0"
-                                           IsChecked="{Binding AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Al cerrar la jornada, el responsable contará el dinero físico y registrará el resultado del arqueo."
+                                       FontSize="11" Foreground="#6B7280" TextWrapping="Wrap" Margin="24,0,0,0"/>
+
+                            <!-- Children indented + vertical connector to hint dependency on the parent CheckEdit above -->
+                            <Grid Margin="8,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="1"
+                                        HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                                        Background="#C8CED6" Margin="4,2,0,2"/>
+                                <StackPanel Grid.Column="1">
+                                    <dxe:CheckEdit Content="Ajustar saldo automáticamente"
+                                                   Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                                   IsEnabled="{Binding CashReviewRequired}"
+                                                   IsChecked="{Binding AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="Al cerrar el arqueo, si hay sobrante el sistema registra un ingreso por la diferencia y, si hay faltante, registra un egreso. Así el saldo en el sistema siempre queda conciliado con el conteo físico."
+                                               FontSize="11" Foreground="#6B7280" TextWrapping="Wrap" Margin="24,0,0,0"
+                                               IsEnabled="{Binding CashReviewRequired}"/>
+
+                                    <dxe:CheckEdit Content="Transferir saldo automáticamente a otra caja"
+                                                   Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,8,0,0"
+                                                   IsEnabled="{Binding CashReviewRequired}"
+                                                   IsChecked="{Binding AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="Al cerrar la jornada, el dinero recaudado se envía a una caja acumuladora. La caja de ventas queda en cero y disponible para la siguiente jornada."
+                                               FontSize="11" Foreground="#6B7280" TextWrapping="Wrap" Margin="24,0,0,0"
+                                               IsEnabled="{Binding CashReviewRequired}"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
 
                         <!-- Destino auto-transferencia -->
@@ -105,7 +130,7 @@
                                         FilterCondition="Contains"
                                         ImmediatePopup="True"
                                         ClearSelectionOnBackspace="True"
-                                        NullText="Seleccione una cuenta contable..."
+                                        NullText="Dejar vacío para generar automáticamente..."
                                         BorderBrush="#C8CED6"
                                         Margin="0,0,0,8"
                                         ItemsSource="{Binding AccountingAccounts}"
@@ -136,7 +161,7 @@
                                         FilterCondition="Contains"
                                         ImmediatePopup="True"
                                         ClearSelectionOnBackspace="True"
-                                        NullText="Seleccione una cuenta contable..."
+                                        NullText="Dejar vacío para generar automáticamente..."
                                         BorderBrush="#C8CED6"
                                         Margin="0,0,0,8"
                                         ItemsSource="{Binding AccountingAccounts}"
@@ -167,7 +192,7 @@
                                         FilterCondition="Contains"
                                         ImmediatePopup="True"
                                         ClearSelectionOnBackspace="True"
-                                        NullText="Seleccione una cuenta contable..."
+                                        NullText="Dejar vacío para generar automáticamente..."
                                         BorderBrush="#C8CED6"
                                         Margin="0,0,0,8"
                                         ItemsSource="{Binding AccountingAccounts}"
@@ -205,7 +230,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
+                                                <Setter Property="Opacity" Value="0.4"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>

@@ -8,6 +8,7 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              d:DesignHeight="650" d:DesignWidth="900"
@@ -37,7 +38,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,4,0">
                                 <TextBlock Text="Nombre de la franquicia" FontSize="13" Margin="0,0,0,3"/>
-                                <dxe:TextEdit x:Name="Name"
+                                <dxe:TextEdit x:Name="Name" TabIndex="1"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               CharacterCasing="Upper"
                                               Padding="3"
@@ -47,7 +48,7 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="4,0,0,0">
                                 <TextBlock Text="Tipo de tarjeta" FontSize="13" Margin="0,0,0,3"/>
-                                <dxe:ComboBoxEdit Padding="2"
+                                <dxe:ComboBoxEdit Padding="3" TabIndex="2"
                                                   IsTextEditable="False"
                                                   BorderBrush="#C8CED6"
                                                   ItemsSource="{Binding FranchiseTypes}"
@@ -59,7 +60,7 @@
 
                         <!-- Cuentas -->
                         <TextBlock Text="Cuenta bancaria" FontSize="13" Margin="0,0,0,3"/>
-                        <dxg:LookUpEdit Padding="3"
+                        <dxg:LookUpEdit Padding="3" TabIndex="3"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -89,7 +90,7 @@
                         </dxg:LookUpEdit>
 
                         <TextBlock Text="Cuenta de comisiones" FontSize="13" Margin="0,0,0,3"/>
-                        <dxg:LookUpEdit Padding="3"
+                        <dxg:LookUpEdit Padding="3" TabIndex="4"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -120,14 +121,13 @@
                         </dxg:LookUpEdit>
 
                         <!-- Simulador -->
-                        <TextBlock Text="Simulador" FontSize="14" FontWeight="Bold" Margin="0,8,0,6"/>
+                        <TextBlock Text="SIMULADOR" FontSize="14" Margin="0,8,0,6"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" MinWidth="150"/>
-                                <ColumnDefinition Width="Auto" MinWidth="120"/>
+                                <ColumnDefinition Width="Auto" MinWidth="160"/>
                                 <ColumnDefinition Width="Auto" MinWidth="140"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto" MinWidth="80"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto" MinWidth="120"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -141,9 +141,12 @@
                             </Grid.RowDefinitions>
 
                             <!-- Valor tarjeta -->
-                            <TextBlock Text="Valor Tarjetas" Grid.Column="0" Grid.Row="0" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="[VALOR_TARJETA]" Grid.Column="1" Grid.Row="0" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <dxe:TextEdit Grid.Column="2" Grid.Row="0" Margin="0,5,5,5"
+                            <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,5,5,5" VerticalAlignment="Center">
+                                <TextBlock Text="Valor Tarjetas" FontSize="13"/>
+                                <TextBlock Text="[VALOR_TARJETA]" FontSize="11" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <dxe:TextEdit Grid.Column="1" Grid.Row="0" Margin="0,5,5,5" TabIndex="5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6"
                                           HorizontalContentAlignment="Right"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
@@ -151,127 +154,179 @@
                                           EditValue="{Binding CardValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <!-- Margen IVA -->
-                            <TextBlock Text="Margen I.V.A" Grid.Column="0" Grid.Row="1" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="[MARGEN_IVA]" Grid.Column="1" Grid.Row="1" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <dxe:TextEdit Grid.Column="2" Grid.Row="1" Margin="0,5,5,5"
+                            <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,5,5,5" VerticalAlignment="Center">
+                                <TextBlock Text="Margen I.V.A" FontSize="13"/>
+                                <TextBlock Text="[MARGEN_IVA]" FontSize="11" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <dxe:SpinEdit Grid.Column="1" Grid.Row="1" Margin="0,5,5,5" TabIndex="6"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6"
                                           HorizontalContentAlignment="Right"
+                                          EditValueType="{x:Type sys:Decimal}"
+                                          IsFloatValue="True" AllowNullInput="False" MinValue="0"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding TaxRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock Text="Valor I.V.A [VALOR_IVA]" Grid.Column="3" Grid.Row="1" FontWeight="Bold" FontSize="12" Margin="5,5,5,5" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                            <dxe:TextEdit Grid.Column="5" Grid.Row="1" Margin="5,5,0,5"
+                            <StackPanel Grid.Column="2" Grid.Row="1" Margin="5,5,5,5" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <TextBlock Text="Valor I.V.A" FontSize="13" HorizontalAlignment="Right"/>
+                                <TextBlock Text="[VALOR_IVA]" FontSize="11" Foreground="#6B7280" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                            <dxe:TextEdit Grid.Column="4" Grid.Row="1" Margin="5,5,0,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           HorizontalContentAlignment="Right"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding SimulatedIvaValue, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <!-- Comisión -->
-                            <TextBlock Text="Comisión" Grid.Column="0" Grid.Row="2" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="[MARGEN_COMISION]" Grid.Column="1" Grid.Row="2" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <dxe:TextEdit Grid.Column="2" Grid.Row="2" Margin="0,5,5,5"
+                            <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,5,5,5" VerticalAlignment="Center">
+                                <TextBlock Text="Comisión" FontSize="13"/>
+                                <TextBlock Text="[MARGEN_COMISION]" FontSize="11" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <dxe:SpinEdit Grid.Column="1" Grid.Row="2" Margin="0,5,5,5" TabIndex="7"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6"
                                           HorizontalContentAlignment="Right"
+                                          EditValueType="{x:Type sys:Decimal}"
+                                          IsFloatValue="True" AllowNullInput="False" MinValue="0"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding CommissionRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit Grid.Column="3" Grid.Row="2" Margin="5,5,5,5"
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="2" Margin="5,5,5,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           EditValue="{Binding FormulaCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Column="4" Grid.Row="2" Margin="5,5,5,5" Padding="6,3"
+                            <Button Grid.Column="3" Grid.Row="2" Margin="5,5,5,5" Padding="6,3"
+                                    ToolTip="Restaurar fórmula por defecto"
+                                    Focusable="False" IsTabStop="False"
                                     Command="{Binding ResetFormulaCommissionCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Restaurar"/>
-                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}"/>
                             </Button>
-                            <dxe:TextEdit Grid.Column="5" Grid.Row="2" Margin="5,5,0,5"
+                            <dxe:TextEdit Grid.Column="4" Grid.Row="2" Margin="5,5,0,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           HorizontalContentAlignment="Right"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding SimulatedCommission, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <!-- Rete IVA -->
-                            <TextBlock Text="ReteIVA" Grid.Column="0" Grid.Row="3" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="[MARGEN_RETE_IVA]" Grid.Column="1" Grid.Row="3" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <dxe:TextEdit Grid.Column="2" Grid.Row="3" Margin="0,5,5,5"
+                            <StackPanel Grid.Column="0" Grid.Row="3" Margin="0,5,5,5" VerticalAlignment="Center">
+                                <TextBlock Text="ReteIVA" FontSize="13"/>
+                                <TextBlock Text="[MARGEN_RETE_IVA]" FontSize="11" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <dxe:SpinEdit Grid.Column="1" Grid.Row="3" Margin="0,5,5,5" TabIndex="8"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6"
                                           HorizontalContentAlignment="Right"
+                                          EditValueType="{x:Type sys:Decimal}"
+                                          IsFloatValue="True" AllowNullInput="False" MinValue="0"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding ReteivaRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit Grid.Column="3" Grid.Row="3" Margin="5,5,5,5"
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="3" Margin="5,5,5,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           EditValue="{Binding FormulaReteiva, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Column="4" Grid.Row="3" Margin="5,5,5,5" Padding="6,3"
+                            <Button Grid.Column="3" Grid.Row="3" Margin="5,5,5,5" Padding="6,3"
+                                    ToolTip="Restaurar fórmula por defecto"
+                                    Focusable="False" IsTabStop="False"
                                     Command="{Binding ResetFormulaReteivaCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Restaurar"/>
-                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}"/>
                             </Button>
-                            <dxe:TextEdit Grid.Column="5" Grid.Row="3" Margin="5,5,0,5"
+                            <dxe:TextEdit Grid.Column="4" Grid.Row="3" Margin="5,5,0,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           HorizontalContentAlignment="Right"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding SimulatedReteiva, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <!-- Rete ICA -->
-                            <TextBlock Text="ReteICA" Grid.Column="0" Grid.Row="4" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="[MARGEN_RETE_ICA]" Grid.Column="1" Grid.Row="4" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <dxe:TextEdit Grid.Column="2" Grid.Row="4" Margin="0,5,5,5"
+                            <StackPanel Grid.Column="0" Grid.Row="4" Margin="0,5,5,5" VerticalAlignment="Center">
+                                <TextBlock Text="ReteICA" FontSize="13"/>
+                                <TextBlock Text="[MARGEN_RETE_ICA]" FontSize="11" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <dxe:SpinEdit Grid.Column="1" Grid.Row="4" Margin="0,5,5,5" TabIndex="9"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6"
                                           HorizontalContentAlignment="Right"
+                                          EditValueType="{x:Type sys:Decimal}"
+                                          IsFloatValue="True" AllowNullInput="False" MinValue="0"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding ReteicaRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit Grid.Column="3" Grid.Row="4" Margin="5,5,5,5"
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="4" Margin="5,5,5,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           EditValue="{Binding FormulaReteica, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Column="4" Grid.Row="4" Margin="5,5,5,5" Padding="6,3"
+                            <Button Grid.Column="3" Grid.Row="4" Margin="5,5,5,5" Padding="6,3"
+                                    ToolTip="Restaurar fórmula por defecto"
+                                    Focusable="False" IsTabStop="False"
                                     Command="{Binding ResetFormulaReteicaCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Restaurar"/>
-                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}"/>
                             </Button>
-                            <dxe:TextEdit Grid.Column="5" Grid.Row="4" Margin="5,5,0,5"
+                            <dxe:TextEdit Grid.Column="4" Grid.Row="4" Margin="5,5,0,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           HorizontalContentAlignment="Right"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding SimulatedReteica, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <!-- ReteFuente -->
-                            <TextBlock Text="ReteFuente" Grid.Column="0" Grid.Row="5" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <TextBlock Text="[MARGEN_RETE_FUENTE]" Grid.Column="1" Grid.Row="5" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
-                            <dxe:TextEdit Grid.Column="2" Grid.Row="5" Margin="0,5,5,5"
+                            <StackPanel Grid.Column="0" Grid.Row="5" Margin="0,5,5,5" VerticalAlignment="Center">
+                                <TextBlock Text="ReteFuente" FontSize="13"/>
+                                <TextBlock Text="[MARGEN_RETE_FUENTE]" FontSize="11" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <dxe:SpinEdit Grid.Column="1" Grid.Row="5" Margin="0,5,5,5" TabIndex="10"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6"
                                           HorizontalContentAlignment="Right"
+                                          EditValueType="{x:Type sys:Decimal}"
+                                          IsFloatValue="True" AllowNullInput="False" MinValue="0"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding RetefteRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit Grid.Column="3" Grid.Row="5" Margin="5,5,5,5"
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="5" Margin="5,5,5,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           EditValue="{Binding FormulaRetefte, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Column="4" Grid.Row="5" Margin="5,5,5,5" Padding="6,3"
+                            <Button Grid.Column="3" Grid.Row="5" Margin="5,5,5,5" Padding="6,3"
+                                    ToolTip="Restaurar fórmula por defecto"
+                                    Focusable="False" IsTabStop="False"
                                     Command="{Binding ResetFormulaRetefteCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Restaurar"/>
-                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}"/>
                             </Button>
-                            <dxe:TextEdit Grid.Column="5" Grid.Row="5" Margin="5,5,0,5"
+                            <dxe:TextEdit Grid.Column="4" Grid.Row="5" Margin="5,5,0,5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
                                           Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          Focusable="False" IsTabStop="False"
+                                          FontFamily="Consolas" FontSize="14"
                                           HorizontalContentAlignment="Right"
                                           MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                           Mask="{Binding FranchiseDecimalsMask}"
                                           EditValue="{Binding SimulatedRetefte, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <Button Grid.Column="5" Grid.Row="6" Margin="5,8,0,5" Padding="6,3"
+                            <Button Grid.Column="4" Grid.Row="6" Margin="5,8,0,5" Padding="6,3" TabIndex="11"
+                                    ToolTip="Recalcular simulación"
                                     Command="{Binding SimulatorCommand}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="{dx:DXImage 'Images/Chart/ChangeChartSeriesType_16x16.png'}" Margin="0,0,5,0"/>
@@ -294,7 +349,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
+                                                <Setter Property="Opacity" Value="0.4"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>

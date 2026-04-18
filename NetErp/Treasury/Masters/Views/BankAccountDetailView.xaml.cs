@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using NetErp.Treasury.Masters.ViewModels;
 
 namespace NetErp.Treasury.Masters.Views
 {
@@ -14,7 +15,14 @@ namespace NetErp.Treasury.Masters.Views
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             Loaded -= OnLoaded;
-            Number.Focus();
+            if (DataContext is BankAccountDetailViewModel vm && vm.IsDigitalWallet)
+            {
+                NumberWallet.Focus();
+            }
+            else
+            {
+                Number.Focus();
+            }
         }
     }
 }

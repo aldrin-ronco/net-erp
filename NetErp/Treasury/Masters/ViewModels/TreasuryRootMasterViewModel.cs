@@ -264,7 +264,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                     _bankAccountCache, _auxiliaryAccountingAccountCache, _stringLengthCache,
                     _joinableTaskFactory, _franchiseValidator);
                 detail.SetForNew();
-                ApplyDialogDimensions(detail, 900, 650);
+                if (this.GetView() is FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.80;
+                    detail.DialogHeight = parentView.ActualHeight * 0.90;
+                }
                 return detail;
             }, "Nueva franquicia");
         }
@@ -355,7 +359,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                     _bankAccountCache, _auxiliaryAccountingAccountCache, _stringLengthCache,
                     _joinableTaskFactory, _franchiseValidator);
                 detail.SetForEdit(franchise);
-                ApplyDialogDimensions(detail, 900, 650);
+                if (this.GetView() is FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.80;
+                    detail.DialogHeight = parentView.ActualHeight * 0.90;
+                }
                 return detail;
             }, "Editar franquicia");
         }
@@ -917,6 +925,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 MajorCashDrawerMasterTreeDTO majorDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(createdCashDrawer);
                 majorDTO.Context = this;
                 ITreasuryTreeMasterSelectedItem? inserted = null;
+                
+                #pragma warning disable VSTHRD001
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
@@ -931,6 +941,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     costCenter.IsExpanded = true;
                     inserted = majorDTO;
                 });
+                #pragma warning restore VSTHRD001
+
                 if (inserted != null) SelectedItem = inserted;
                 _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
                 return Task.CompletedTask;
@@ -942,6 +954,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 TreasuryAuxiliaryCashDrawerMasterTreeDTO auxDTO = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(createdCashDrawer);
                 auxDTO.Context = this;
                 ITreasuryTreeMasterSelectedItem? inserted = null;
+                
+                #pragma warning disable VSTHRD001
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
@@ -959,6 +973,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     parent.IsExpanded = true;
                     inserted = auxDTO;
                 });
+                #pragma warning restore VSTHRD001
+
                 if (inserted != null) SelectedItem = inserted;
                 _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
                 return Task.CompletedTask;
@@ -968,6 +984,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             MinorCashDrawerMasterTreeDTO minorDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(createdCashDrawer);
             minorDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? insertedMinor = null;
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
@@ -982,6 +1000,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 costCenter.IsExpanded = true;
                 insertedMinor = minorDTO;
             });
+            #pragma warning restore VSTHRD001
+
             if (insertedMinor != null) SelectedItem = insertedMinor;
             _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
             return Task.CompletedTask;
@@ -989,6 +1009,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(TreasuryCashDrawerDeleteMessage message, CancellationToken cancellationToken)
         {
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 int? deletedId = message.DeletedCashDrawer.DeletedId;
@@ -1021,6 +1042,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }
                     }
                 }
+                #pragma warning restore VSTHRD001
 
                 CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
                 if (minorDummy != null)
@@ -1048,6 +1070,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             CashDrawerGraphQLModel updatedCashDrawer = message.UpdatedCashDrawer.Entity;
 
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 // Caja general (major)
@@ -1073,6 +1096,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     cashDrawerToUpdate.AutoTransferCashDrawer = cashDrawerDTO.AutoTransferCashDrawer;
                     return;
                 }
+                #pragma warning restore VSTHRD001
 
                 // Caja auxiliar
                 if (!updatedCashDrawer.IsPettyCash && updatedCashDrawer.Parent != null)
@@ -1128,6 +1152,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(createdBank);
             bankDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? inserted = null;
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
@@ -1137,6 +1163,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 bankDummy.IsExpanded = true;
                 inserted = bankDTO;
             });
+            #pragma warning restore VSTHRD001
+            
             if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedBank.Message);
             return Task.CompletedTask;
@@ -1145,6 +1173,8 @@ namespace NetErp.Treasury.Masters.ViewModels
         public Task HandleAsync(BankUpdateMessage message, CancellationToken cancellationToken)
         {
             BankGraphQLModel updatedBank = message.UpdatedBank.Entity;
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(updatedBank);
@@ -1156,12 +1186,16 @@ namespace NetErp.Treasury.Masters.ViewModels
                 bankToUpdate.AccountingEntity = bankDTO.AccountingEntity;
                 bankToUpdate.PaymentMethodPrefix = bankDTO.PaymentMethodPrefix;
             });
+            #pragma warning restore VSTHRD001
+
             _notificationService.ShowSuccess(message.UpdatedBank.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(BankDeleteMessage message, CancellationToken cancellationToken)
         {
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
@@ -1170,6 +1204,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (bankToDelete is null) return;
                 bankDummy.Banks.Remove(bankToDelete);
             });
+            #pragma warning restore VSTHRD001
+
             _notificationService.ShowSuccess(message.DeletedBank.Message);
             return Task.CompletedTask;
         }
@@ -1184,6 +1220,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(createdBankAccount);
             bankAccountDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? inserted = null;
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
@@ -1195,6 +1233,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 bank.IsExpanded = true;
                 inserted = bankAccountDTO;
             });
+            #pragma warning restore VSTHRD001
+            
             if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedBankAccount.Message);
             return Task.CompletedTask;
@@ -1202,6 +1242,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
         {
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
@@ -1217,6 +1258,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                 }
             });
+            #pragma warning restore VSTHRD001
             _notificationService.ShowSuccess(message.DeletedBankAccount.Message);
             return Task.CompletedTask;
         }
@@ -1224,6 +1266,8 @@ namespace NetErp.Treasury.Masters.ViewModels
         public Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
         {
             BankAccountGraphQLModel updatedBankAccount = message.UpdatedBankAccount.Entity;
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(updatedBankAccount);
@@ -1246,6 +1290,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
                 bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
             });
+            #pragma warning restore VSTHRD001
+
             _notificationService.ShowSuccess(message.UpdatedBankAccount.Message);
             return Task.CompletedTask;
         }
@@ -1256,6 +1302,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(createdFranchise);
             franchiseDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? inserted = null;
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
@@ -1265,6 +1313,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 franchiseDummy.IsExpanded = true;
                 inserted = franchiseDTO;
             });
+            #pragma warning restore VSTHRD001
+
             if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedFranchise.Message);
             return Task.CompletedTask;
@@ -1272,6 +1322,8 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(FranchiseDeleteMessage message, CancellationToken cancellationToken)
         {
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher?.Invoke(() =>
             {
                 FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
@@ -1280,6 +1332,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (franchiseToDelete is null) return;
                 franchiseDummy.Franchises.Remove(franchiseToDelete);
             });
+            #pragma warning restore VSTHRD001
+
             _notificationService.ShowSuccess(message.DeletedFranchise.Message);
             return Task.CompletedTask;
         }

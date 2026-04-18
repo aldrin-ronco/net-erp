@@ -9,12 +9,11 @@
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
-        <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
-        <h:CharToBooleanConverter x:Key="CharToBooleanConverter"/>
         <h:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
 
         <!-- Folder icon switches between open/close based on Row.IsExpanded.
@@ -313,6 +312,11 @@
         </DataTemplate>
     </UserControl.Resources>
 
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid Margin="10">
@@ -370,9 +374,10 @@
                                FontSize="14" FontWeight="SemiBold" Foreground="#4A5568"/>
                     <TextBlock Text="Use el menú contextual (clic derecho) para crear, editar o eliminar bancos, cuentas bancarias, cajas y franquicias."
                                HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
-                               FontSize="12" FontStyle="Italic" Foreground="Gray"/>
+                               FontSize="12" Foreground="#6B7280"/>
                 </StackPanel>
             </Border>
         </Grid>
     </Border>
+    </busyIndicator:BusyMask>
 </UserControl>

@@ -74,6 +74,7 @@
                             </dxmvvm:Interaction.Behaviors>
                         </dxe:TextEdit>
                         <Button Grid.Column="1" Margin="4,0,0,0" Padding="8,3"
+                                ToolTip="Buscar tercero"
                                 Command="{Binding SearchAccountingEntityCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0,0,5,0"/>
@@ -95,7 +96,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
+                                                <Setter Property="Opacity" Value="0.4"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>

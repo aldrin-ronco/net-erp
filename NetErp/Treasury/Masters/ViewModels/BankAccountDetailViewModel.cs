@@ -85,6 +85,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public bool IsNewRecord => Id == 0;
+        public bool IsEditRecord => Id != 0;
 
         public int Id
         {
@@ -96,6 +97,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
+                    NotifyOfPropertyChange(nameof(IsEditRecord));
                     NotifyOfPropertyChange(nameof(ShowAutoCreateDescription));
                     NotifyOfPropertyChange(nameof(ShowAccountingAccountLookUp));
                 }
@@ -143,12 +145,14 @@ namespace NetErp.Treasury.Masters.ViewModels
                     NotifyOfPropertyChange(nameof(BankCaptureType));
                     NotifyOfPropertyChange(nameof(IsTraditionalBank));
                     NotifyOfPropertyChange(nameof(IsDigitalWallet));
+                    NotifyOfPropertyChange(nameof(NumberLabel));
                 }
             }
         } = CaptureTypeEnum.PJ;
 
         public bool IsTraditionalBank => BankCaptureType == CaptureTypeEnum.PJ;
         public bool IsDigitalWallet => BankCaptureType == CaptureTypeEnum.PN;
+        public string NumberLabel => IsDigitalWallet ? "Número de celular" : "Número de cuenta";
 
         public string Type
         {
@@ -283,6 +287,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountAutoCreate));
                     NotifyOfPropertyChange(nameof(ShowAutoCreateDescription));
+                    if (value && AccountingAccountSelectExisting) AccountingAccountSelectExisting = false;
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -298,6 +303,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountSelectExisting));
                     NotifyOfPropertyChange(nameof(ShowAccountingAccountLookUp));
+                    if (value && AccountingAccountAutoCreate) AccountingAccountAutoCreate = false;
                     if (!value) SelectedAccountingAccount = null;
                     ValidateProperty(nameof(BankAccountValidationContext.AccountingAccountId));
                     NotifyOfPropertyChange(nameof(CanSave));
