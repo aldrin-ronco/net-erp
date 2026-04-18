@@ -6,88 +6,52 @@ namespace NetErp.Treasury.Masters.DTO
 {
     /// <summary>
     /// DTO unificado para el nodo raíz de Cajas Generales y Cajas Menores en el árbol.
-    /// Reemplaza MajorCashDrawerDummyDTO y MinorCashDrawerDummyDTO.
     /// </summary>
-    public class CashDrawerDummyDTO : Screen, ITreasuryTreeMasterSelectedItem
+    public class CashDrawerDummyDTO : PropertyChangedBase, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility => false;
-
-        public CashDrawerType Type { get; set; }
-
-        public TreasuryRootMasterViewModel Context { get; set; }
-
         public int Id { get; set; }
+        public CashDrawerType Type { get; set; }
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get => _isDummyChild;
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-        private ObservableCollection<CashDrawerCompanyLocationDTO> _locations = [];
         public ObservableCollection<CashDrawerCompanyLocationDTO> Locations
         {
-            get => _locations;
+            get;
             set
             {
-                if (_locations != value)
+                if (field != value)
                 {
-                    _locations = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Locations));
                 }
             }
-        }
+        } = [];
 
-        private bool _isExpanded;
         public bool IsExpanded
         {
-            get => _isExpanded;
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-
-                    if (_isExpanded && _locations != null && _locations.Count > 0 && _locations[0].IsDummyChild)
-                    {
-                        _ = Context.LoadCashDrawerCompanyLocations(this);
-                    }
                 }
             }
         }
 
-        public CashDrawerDummyDTO()
-        {
-        }
-
-        public CashDrawerDummyDTO(int id, string name, CashDrawerType type)
-        {
-            Id = id;
-            Name = name;
-            Type = type;
-        }
+        public bool AllowContentControlVisibility => false;
     }
 }

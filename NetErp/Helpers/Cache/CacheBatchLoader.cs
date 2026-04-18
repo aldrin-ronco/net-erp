@@ -38,27 +38,51 @@ namespace NetErp.Helpers.Cache
                 return;
             }
 
-            // Construir query combinada: cada fragment usa alias vacío para que
-            // el Name sea la clave en el JSON de respuesta y los nombres de variables sean únicos
+            // Construir query combinada:
+            // - Caso común (un solo cache por root field): alias vacío → Name actúa como clave
+            //   JSON y semilla de nombres de variable (banksPagePagination, countriesPagePagination).
+            // - Caso con colisión (varios caches apuntan al mismo root field, p.ej. los 3 caches
+            //   de cash drawers usan "cashDrawersPage" con filtros distintos): se asigna un alias
+            //   único sufijado (cashDrawersPage, cashDrawersPage2, cashDrawersPage3) para que
+            //   GraphQL no colisione los campos y cada fragment produzca su propia clave JSON.
             var fragments = new List<GraphQLQueryFragment>();
             var nameToCache = new Dictionary<string, IBatchLoadableCache>();
             var variables = new GraphQLVariables();
+            var usedKeys = new HashSet<string>();
 
             foreach (var cache in pending)
             {
                 var original = cache.LoadFragment;
 
-                // Fragment sin alias: Name será la clave en la respuesta JSON
-                // y generará variables como countriesPagePagination, zonesPagePagination, etc.
+                // Si el Name aún no está tomado, usa alias vacío (ruta estándar).
+                // Si ya está tomado, suma sufijo numérico hasta encontrar uno libre.
+                string effectiveAlias;
+                string responseKey;
+                if (usedKeys.Add(original.Name))
+                {
+                    effectiveAlias = string.Empty;
+                    responseKey = original.Name;
+                }
+                else
+                {
+                    int suffix = 2;
+                    string candidate;
+                    do
+                    {
+                        candidate = $"{original.Name}{suffix++}";
+                    } while (!usedKeys.Add(candidate));
+                    effectiveAlias = candidate;
+                    responseKey = candidate;
+                }
+
                 var batchFragment = new GraphQLQueryFragment(
                     original.Name,
                     original.Parameters,
                     original.Fields,
-                    alias: string.Empty
-                );
+                    alias: effectiveAlias);
 
                 fragments.Add(batchFragment);
-                nameToCache[original.Name] = cache;
+                nameToCache[responseKey] = cache;
                 cache.ApplyVariables(variables, batchFragment);
             }
 

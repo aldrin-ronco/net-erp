@@ -4,60 +4,51 @@ namespace NetErp.Treasury.Masters.DTO
 {
     /// <summary>
     /// DTO unificado para CostCenter en el árbol de Cajas.
-    /// Reemplaza TreasuryMajorCashDrawerCostCenterMasterTreeDTO y TreasuryMinorCashDrawerCostCenterMasterTreeDTO.
     /// </summary>
     public class CashDrawerCostCenterDTO : TreasuryCostCenterMasterTreeDTO, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility => false;
-
         public CashDrawerType Type { get; set; }
 
-        private CashDrawerCompanyLocationDTO _location;
-        public CashDrawerCompanyLocationDTO Location
+        public CashDrawerCompanyLocationDTO? Location
         {
-            get => _location;
+            get;
             set
             {
-                if (_location != value)
+                if (field != value)
                 {
-                    _location = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Location));
                 }
             }
         }
 
-        // Usamos la clase base para poder contener tanto Major como Minor CashDrawers
-        private ObservableCollection<CashDrawerMasterTreeDTO> _cashDrawers = [];
+        // Usa la clase base para poder contener tanto Major como Minor cash drawers
         public ObservableCollection<CashDrawerMasterTreeDTO> CashDrawers
         {
-            get => _cashDrawers;
+            get;
             set
             {
-                if (_cashDrawers != value)
+                if (field != value)
                 {
-                    _cashDrawers = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CashDrawers));
                 }
             }
-        }
+        } = [];
 
-        private bool _isExpanded;
         public bool IsExpanded
         {
-            get => _isExpanded;
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-
-                    if (_isExpanded && _cashDrawers != null && _cashDrawers.Count > 0 && _cashDrawers[0].IsDummyChild)
-                    {
-                        _ = Context.LoadCashDrawers(this);
-                    }
                 }
             }
         }
+
+        public bool AllowContentControlVisibility => false;
     }
 }

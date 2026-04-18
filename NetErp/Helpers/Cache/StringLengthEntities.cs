@@ -3,6 +3,7 @@ using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
+using Models.Treasury;
 using System;
 using System.Collections.Generic;
 
@@ -78,5 +79,15 @@ namespace NetErp.Helpers.Cache
 
         // Global
         public static readonly Type[] MenuItem = [typeof(MenuItemGraphQLModel)];
+
+        // Treasury
+        public static readonly Type[] Treasury = [
+            typeof(BankGraphQLModel),
+            typeof(BankAccountGraphQLModel),
+            typeof(FranchiseGraphQLModel),
+            typeof(CashDrawerGraphQLModel),
+            typeof(CostCenterGraphQLModel),
+            typeof(CompanyLocationGraphQLModel)
+        ];
     }
 }

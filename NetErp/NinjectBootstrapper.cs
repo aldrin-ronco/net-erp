@@ -136,6 +136,18 @@ namespace NetErp
             _ = kernel.Bind<MajorCashDrawerCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MajorCashDrawerCache>());
 
+            _ = kernel.Bind<MinorCashDrawerCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MinorCashDrawerCache>());
+
+            _ = kernel.Bind<AuxiliaryCashDrawerCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuxiliaryCashDrawerCache>());
+
+            _ = kernel.Bind<BankCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<BankCache>());
+
+            _ = kernel.Bind<FranchiseCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<FranchiseCache>());
+
             _ = kernel.Bind<AuxiliaryAccountingAccountCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuxiliaryAccountingAccountCache>());
 
@@ -188,6 +200,12 @@ namespace NetErp
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CompanyLocationValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CostCenterValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.StorageValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.BankValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.FranchiseValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.BankAccountValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.MajorCashDrawerValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.MinorCashDrawerValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Treasury.Masters.Validators.AuxiliaryCashDrawerValidator>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.CatalogValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemTypeValidator>().ToSelf().InSingletonScope();

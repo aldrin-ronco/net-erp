@@ -1,71 +1,53 @@
-using Models.Books;
 using System.Collections.ObjectModel;
 
 namespace NetErp.Treasury.Masters.DTO
 {
     /// <summary>
     /// DTO unificado para CompanyLocation en el árbol de Cajas.
-    /// Reemplaza TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO y TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO.
     /// </summary>
     public class CashDrawerCompanyLocationDTO : TreasuryCompanyLocationMasterTreeDTO, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility => false;
-
         public CashDrawerType Type { get; set; }
 
-        private CashDrawerDummyDTO _dummyParent;
-        public CashDrawerDummyDTO DummyParent
+        public CashDrawerDummyDTO? DummyParent
         {
-            get => _dummyParent;
+            get;
             set
             {
-                if (_dummyParent != value)
+                if (field != value)
                 {
-                    _dummyParent = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DummyParent));
                 }
             }
         }
 
-        private ObservableCollection<CashDrawerCostCenterDTO> _costCenters = [];
         public ObservableCollection<CashDrawerCostCenterDTO> CostCenters
         {
-            get => _costCenters;
+            get;
             set
             {
-                if (_costCenters != value)
+                if (field != value)
                 {
-                    _costCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
-        }
+        } = [];
 
-        private bool _isExpanded;
         public bool IsExpanded
         {
-            get => _isExpanded;
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-
-                    if (_isExpanded && _costCenters != null && _costCenters.Count > 0 && _costCenters[0].IsDummyChild)
-                    {
-                        _ = Context.LoadCashDrawerCostCenters(this);
-                    }
                 }
             }
         }
 
-        // Propiedad dummy para evitar comportamiento poco probable en el árbol
-        private AccountingEntityGraphQLModel _accountingEntity = new();
-        public AccountingEntityGraphQLModel AccountingEntity
-        {
-            get => _accountingEntity;
-            set => _accountingEntity = value;
-        }
+        public bool AllowContentControlVisibility => false;
     }
 }

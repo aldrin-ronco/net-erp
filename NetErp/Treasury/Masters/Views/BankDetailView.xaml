@@ -1,0 +1,121 @@
+<UserControl x:Class="NetErp.Treasury.Masters.Views.BankDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             mc:Ignorable="d"
+             d:DesignHeight="350" d:DesignWidth="500"
+             Background="#EEF1F5">
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                            <TextBlock Text="Código" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit x:Name="Code"
+                                          Style="{StaticResource FocusedHighlightStyle}"
+                                          CharacterCasing="Upper"
+                                          Padding="3"
+                                          MaxLength="{Binding CodeMaxLength}"
+                                          BorderBrush="#C8CED6"
+                                          EditValue="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                            <TextBlock Text="Prefijo método de pago" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
+                                          CharacterCasing="Upper"
+                                          Padding="3"
+                                          MaxLength="{Binding PaymentMethodPrefixMaxLength}"
+                                          BorderBrush="#C8CED6"
+                                          EditValue="{Binding PaymentMethodPrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Tercero correspondiente a este banco" FontSize="13" Margin="0,0,0,3"/>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <dxe:TextEdit Grid.Column="0"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Padding="3"
+                                      BorderBrush="#C8CED6"
+                                      IsReadOnly="True"
+                                      Cursor="Hand"
+                                      ForceCursor="True"
+                                      EditValue="{Binding AccountingEntityName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand EventName="MouseDoubleClick" Command="{Binding SearchAccountingEntityCommand}"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxe:TextEdit>
+                        <Button Grid.Column="1" Margin="4,0,0,0" Padding="8,3"
+                                Command="{Binding SearchAccountingEntityCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <Image Source="{dx:DXImage 'Images/Find/Find_16x16.png'}" Stretch="None"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>

@@ -1,0 +1,320 @@
+<UserControl x:Class="NetErp.Treasury.Masters.Views.FranchiseDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             mc:Ignorable="d"
+             d:DesignHeight="650" d:DesignWidth="900"
+             Background="#EEF1F5">
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Identificación -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="Nombre de la franquicia" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:TextEdit x:Name="Name"
+                                              Style="{StaticResource FocusedHighlightStyle}"
+                                              CharacterCasing="Upper"
+                                              Padding="3"
+                                              MaxLength="{Binding NameMaxLength}"
+                                              BorderBrush="#C8CED6"
+                                              EditValue="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="Tipo de tarjeta" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:ComboBoxEdit Padding="2"
+                                                  IsTextEditable="False"
+                                                  BorderBrush="#C8CED6"
+                                                  ItemsSource="{Binding FranchiseTypes}"
+                                                  DisplayMember="Display"
+                                                  ValueMember="Code"
+                                                  EditValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Cuentas -->
+                        <TextBlock Text="Cuenta bancaria" FontSize="13" Margin="0,0,0,3"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta bancaria..."
+                                        BorderBrush="#C8CED6"
+                                        Margin="0,0,0,8"
+                                        ItemsSource="{Binding BankAccounts}"
+                                        EditValue="{Binding SelectedBankAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="Description">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Descripción" FieldName="Description"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+
+                        <TextBlock Text="Cuenta de comisiones" FontSize="13" Margin="0,0,0,3"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta contable..."
+                                        BorderBrush="#C8CED6"
+                                        Margin="0,0,0,8"
+                                        ItemsSource="{Binding CommissionAccountingAccounts}"
+                                        EditValue="{Binding SelectedCommissionAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="FullName">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Código" FieldName="Code" Width="100"/>
+                                            <dxg:GridColumn Header="Nombre" FieldName="Name"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+
+                        <!-- Simulador -->
+                        <TextBlock Text="Simulador" FontSize="14" FontWeight="Bold" Margin="0,8,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="150"/>
+                                <ColumnDefinition Width="Auto" MinWidth="120"/>
+                                <ColumnDefinition Width="Auto" MinWidth="140"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" MinWidth="80"/>
+                                <ColumnDefinition Width="Auto" MinWidth="120"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Valor tarjeta -->
+                            <TextBlock Text="Valor Tarjetas" Grid.Column="0" Grid.Row="0" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <TextBlock Text="[VALOR_TARJETA]" Grid.Column="1" Grid.Row="0" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="0" Margin="0,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding CardValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Margen IVA -->
+                            <TextBlock Text="Margen I.V.A" Grid.Column="0" Grid.Row="1" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <TextBlock Text="[MARGEN_IVA]" Grid.Column="1" Grid.Row="1" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="1" Margin="0,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding TaxRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Valor I.V.A [VALOR_IVA]" Grid.Column="3" Grid.Row="1" FontWeight="Bold" FontSize="12" Margin="5,5,5,5" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <dxe:TextEdit Grid.Column="5" Grid.Row="1" Margin="5,5,0,5"
+                                          Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding SimulatedIvaValue, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Comisión -->
+                            <TextBlock Text="Comisión" Grid.Column="0" Grid.Row="2" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <TextBlock Text="[MARGEN_COMISION]" Grid.Column="1" Grid.Row="2" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="2" Margin="0,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding CommissionRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <dxe:TextEdit Grid.Column="3" Grid.Row="2" Margin="5,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          EditValue="{Binding FormulaCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="4" Grid.Row="2" Margin="5,5,5,5" Padding="6,3"
+                                    Command="{Binding ResetFormulaCommissionCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Restaurar"/>
+                                </StackPanel>
+                            </Button>
+                            <dxe:TextEdit Grid.Column="5" Grid.Row="2" Margin="5,5,0,5"
+                                          Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding SimulatedCommission, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Rete IVA -->
+                            <TextBlock Text="ReteIVA" Grid.Column="0" Grid.Row="3" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <TextBlock Text="[MARGEN_RETE_IVA]" Grid.Column="1" Grid.Row="3" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="3" Margin="0,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding ReteivaRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <dxe:TextEdit Grid.Column="3" Grid.Row="3" Margin="5,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          EditValue="{Binding FormulaReteiva, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="4" Grid.Row="3" Margin="5,5,5,5" Padding="6,3"
+                                    Command="{Binding ResetFormulaReteivaCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Restaurar"/>
+                                </StackPanel>
+                            </Button>
+                            <dxe:TextEdit Grid.Column="5" Grid.Row="3" Margin="5,5,0,5"
+                                          Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding SimulatedReteiva, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Rete ICA -->
+                            <TextBlock Text="ReteICA" Grid.Column="0" Grid.Row="4" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <TextBlock Text="[MARGEN_RETE_ICA]" Grid.Column="1" Grid.Row="4" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="4" Margin="0,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding ReteicaRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <dxe:TextEdit Grid.Column="3" Grid.Row="4" Margin="5,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          EditValue="{Binding FormulaReteica, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="4" Grid.Row="4" Margin="5,5,5,5" Padding="6,3"
+                                    Command="{Binding ResetFormulaReteicaCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Restaurar"/>
+                                </StackPanel>
+                            </Button>
+                            <dxe:TextEdit Grid.Column="5" Grid.Row="4" Margin="5,5,0,5"
+                                          Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding SimulatedReteica, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- ReteFuente -->
+                            <TextBlock Text="ReteFuente" Grid.Column="0" Grid.Row="5" FontSize="13" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <TextBlock Text="[MARGEN_RETE_FUENTE]" Grid.Column="1" Grid.Row="5" FontWeight="Bold" FontSize="12" Margin="0,5,5,5" VerticalAlignment="Center"/>
+                            <dxe:TextEdit Grid.Column="2" Grid.Row="5" Margin="0,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding RetefteRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <dxe:TextEdit Grid.Column="3" Grid.Row="5" Margin="5,5,5,5"
+                                          Padding="3" BorderBrush="#C8CED6" CharacterCasing="Upper"
+                                          EditValue="{Binding FormulaRetefte, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="4" Grid.Row="5" Margin="5,5,5,5" Padding="6,3"
+                                    Command="{Binding ResetFormulaRetefteCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Restaurar"/>
+                                </StackPanel>
+                            </Button>
+                            <dxe:TextEdit Grid.Column="5" Grid.Row="5" Margin="5,5,0,5"
+                                          Padding="3" BorderBrush="#C8CED6" IsReadOnly="True"
+                                          HorizontalContentAlignment="Right"
+                                          MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                          Mask="{Binding FranchiseDecimalsMask}"
+                                          EditValue="{Binding SimulatedRetefte, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <Button Grid.Column="5" Grid.Row="6" Margin="5,8,0,5" Padding="6,3"
+                                    Command="{Binding SimulatorCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{dx:DXImage 'Images/Chart/ChangeChartSeriesType_16x16.png'}" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Simular"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>

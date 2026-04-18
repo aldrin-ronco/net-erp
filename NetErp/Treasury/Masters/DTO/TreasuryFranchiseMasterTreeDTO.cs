@@ -1,250 +1,213 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Treasury;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Treasury.Masters.ViewModels;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class TreasuryFranchiseMasterTreeDTO: Screen, ITreasuryTreeMasterSelectedItem
+    public class TreasuryFranchiseMasterTreeDTO : PropertyChangedBase, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility { get => true; }
         public int Id { get; set; }
-        public TreasuryRootMasterViewModel Context { get; set; }
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _type = string.Empty;
         public string Type
         {
-            get { return _type; }
+            get;
             set
             {
-                if (_type != value)
+                if (field != value)
                 {
-                    _type = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Type));
                 }
             }
-        }
+        } = string.Empty;
 
-        private decimal _commissionRate;
         public decimal CommissionRate
         {
-            get { return _commissionRate; }
+            get;
             set
             {
-                if (_commissionRate != value)
+                if (field != value)
                 {
-                    _commissionRate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CommissionRate));
                 }
             }
         }
 
-        private decimal _reteivaRate;
         public decimal ReteivaRate
         {
-            get { return _reteivaRate; }
+            get;
             set
             {
-                if (_reteivaRate != value)
+                if (field != value)
                 {
-                    _reteivaRate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ReteivaRate));
                 }
             }
         }
 
-        private decimal _reteicaRate;
         public decimal ReteicaRate
         {
-            get { return _reteicaRate; }
+            get;
             set
             {
-                if (_reteicaRate != value)
+                if (field != value)
                 {
-                    _reteicaRate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ReteicaRate));
                 }
             }
         }
 
-        private decimal _retefteRate;
         public decimal RetefteRate
         {
-            get { return _retefteRate; }
+            get;
             set
             {
-                if (_retefteRate != value)
+                if (field != value)
                 {
-                    _retefteRate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(RetefteRate));
                 }
             }
         }
 
-        private decimal _taxRate;
         public decimal TaxRate
         {
-            get { return _taxRate; }
+            get;
             set
             {
-                if (_taxRate != value)
+                if (field != value)
                 {
-                    _taxRate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TaxRate));
                 }
             }
         }
 
-        private AccountingAccountDTO _commissionAccountingAccount = new();
         public AccountingAccountDTO CommissionAccountingAccount
         {
-            get { return _commissionAccountingAccount; }
+            get;
             set
             {
-                if (_commissionAccountingAccount != value)
+                if (field != value)
                 {
-                    _commissionAccountingAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CommissionAccountingAccount));
                 }
             }
-        }
-
-        private TreasuryBankAccountMasterTreeDTO _bankAccount = new();
+        } = new();
 
         public TreasuryBankAccountMasterTreeDTO BankAccount
         {
-            get { return _bankAccount; }
-            set 
+            get;
+            set
             {
-                if (_bankAccount != value)
+                if (field != value)
                 {
-                    _bankAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(BankAccount));
                 }
             }
-        }
+        } = new();
 
-
-        private string _formulaCommission = string.Empty;
         public string FormulaCommission
         {
-            get { return _formulaCommission; }
+            get;
             set
             {
-                if (_formulaCommission != value)
+                if (field != value)
                 {
-                    _formulaCommission = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FormulaCommission));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _formulaReteiva = string.Empty;
         public string FormulaReteiva
         {
-            get { return _formulaReteiva; }
+            get;
             set
             {
-                if (_formulaReteiva != value)
+                if (field != value)
                 {
-                    _formulaReteiva = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FormulaReteiva));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _formulaReteica = string.Empty;
         public string FormulaReteica
         {
-            get { return _formulaReteica; }
+            get;
             set
             {
-                if (_formulaReteica != value)
+                if (field != value)
                 {
-                    _formulaReteica = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FormulaReteica));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _formulaRetefte = string.Empty;
         public string FormulaRetefte
         {
-            get { return _formulaRetefte; }
+            get;
             set
             {
-                if (_formulaRetefte != value)
+                if (field != value)
                 {
-                    _formulaRetefte = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FormulaRetefte));
                 }
             }
-        }
-
-        private bool _isDummyChild = false;
-
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-        private bool _isExpanded = false;
+        } = string.Empty;
 
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
                 }
             }
         }
 
-        private FranchiseDummyDTO _dummyParent = new();
-
-        public FranchiseDummyDTO DummyParent
+        public FranchiseDummyDTO? DummyParent
         {
-            get { return _dummyParent; }
+            get;
             set
             {
-                if (_dummyParent != value)
+                if (field != value)
                 {
-                    _dummyParent = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DummyParent));
                 }
             }
         }
 
-        public List<FranchiseByCostCenterGraphQLModel> FranchisesByCostCenter { get; set; }
+        public List<FranchiseByCostCenterGraphQLModel> FranchisesByCostCenter { get; set; } = [];
+
+        public bool AllowContentControlVisibility => true;
     }
 }

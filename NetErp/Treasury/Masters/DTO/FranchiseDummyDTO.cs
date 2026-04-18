@@ -1,91 +1,54 @@
-﻿using Caliburn.Micro;
-using NetErp.Books.AccountingAccounts.DTO;
+using Caliburn.Micro;
 using NetErp.Treasury.Masters.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class FranchiseDummyDTO : Screen, ITreasuryTreeMasterSelectedItem
+    public class FranchiseDummyDTO : PropertyChangedBase, ITreasuryTreeMasterSelectedItem
     {
         public int Id { get; set; }
 
-        public TreasuryRootMasterViewModel Context { get; set; }
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                 }
             }
-        }
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-
-        private ObservableCollection<TreasuryFranchiseMasterTreeDTO> _franchises = [];
+        } = string.Empty;
 
         public ObservableCollection<TreasuryFranchiseMasterTreeDTO> Franchises
         {
-            get { return _franchises; }
+            get;
             set
             {
-                if (_franchises != value)
+                if (field != value)
                 {
-                    _franchises = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Franchises));
                 }
             }
-        }
-
-
-        private bool _isExpanded;
+        } = [];
 
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                    if (_franchises != null)
-                    {
-                        if (_isExpanded && _franchises.Count > 0)
-                        {
-                            if (_franchises[0].IsDummyChild)
-                            {
-                                _ = Context.LoadFranchises(this);
-                            }
-                        }
-                    }
                 }
             }
         }
 
-        public bool AllowContentControlVisibility { get => false; }
+        public bool AllowContentControlVisibility => false;
     }
 }

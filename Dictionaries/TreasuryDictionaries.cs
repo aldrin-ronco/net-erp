@@ -8,7 +8,7 @@ namespace Dictionaries
 {
     public class TreasuryDictionaries
     {
-        public static Dictionary<char, string> BankAccountTypeDictionary = new Dictionary<char, string>()
+        public readonly static Dictionary<char, string> BankAccountTypeDictionary = new()
         {
             {'D',"DÉBITO" },
             {'C',"CRÉDITO" }

@@ -1,0 +1,126 @@
+<UserControl x:Class="NetErp.Treasury.Masters.Views.MinorCashDrawerDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="550"
+             Background="#EEF1F5">
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <!-- Centro de costo (solo lectura) -->
+                    <TextBlock Text="Centro de costo" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:TextEdit Padding="3" BorderBrush="#C8CED6"
+                                  IsReadOnly="True" Margin="0,0,0,8"
+                                  EditValue="{Binding CostCenterName, Mode=OneWay}"/>
+
+                    <!-- Nombre -->
+                    <TextBlock Text="Nombre de la caja menor" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:TextEdit x:Name="Name"
+                                  Style="{StaticResource FocusedHighlightStyle}"
+                                  CharacterCasing="Upper"
+                                  Padding="3"
+                                  MaxLength="{Binding NameMaxLength}"
+                                  BorderBrush="#C8CED6"
+                                  Margin="0,0,0,8"
+                                  EditValue="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <!-- Flags -->
+                    <StackPanel Margin="0,0,0,8">
+                        <dxe:CheckEdit Content="Requiere arqueo de caja"
+                                       Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                       IsChecked="{Binding CashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:CheckEdit Content="Ajustar saldo automáticamente"
+                                       Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,0"
+                                       IsChecked="{Binding AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <!-- Cuenta contable de efectivo -->
+                    <TextBlock Text="Cuenta contable de efectivo" FontSize="13" Margin="0,0,0,3"/>
+                    <dxg:LookUpEdit Padding="3"
+                                    AutoPopulateColumns="False"
+                                    IsCaseSensitiveSearch="False"
+                                    FilterCondition="Contains"
+                                    ImmediatePopup="True"
+                                    ClearSelectionOnBackspace="True"
+                                    NullText="Seleccione una cuenta contable..."
+                                    BorderBrush="#C8CED6"
+                                    Margin="0,0,0,8"
+                                    ItemsSource="{Binding AccountingAccounts}"
+                                    EditValue="{Binding SelectedCashAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    DisplayMember="FullName">
+                        <dxg:LookUpEdit.PopupContentTemplate>
+                            <ControlTemplate>
+                                <dxg:GridControl Name="PART_GridControl">
+                                    <dxg:GridControl.View>
+                                        <dxg:TableView AutoWidth="True"/>
+                                    </dxg:GridControl.View>
+                                    <dxg:GridControl.Columns>
+                                        <dxg:GridColumn Header="Código" FieldName="Code" Width="100"/>
+                                        <dxg:GridColumn Header="Nombre" FieldName="Name"/>
+                                    </dxg:GridControl.Columns>
+                                </dxg:GridControl>
+                            </ControlTemplate>
+                        </dxg:LookUpEdit.PopupContentTemplate>
+                        <dxg:LookUpEdit.ItemsPanel>
+                            <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                        </dxg:LookUpEdit.ItemsPanel>
+                    </dxg:LookUpEdit>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>

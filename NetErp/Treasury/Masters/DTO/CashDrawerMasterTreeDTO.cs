@@ -1,209 +1,171 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Books;
 using Models.Global;
 using Models.Treasury;
 using NetErp.Treasury.Masters.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class CashDrawerMasterTreeDTO: Screen
+    public class CashDrawerMasterTreeDTO : PropertyChangedBase
     {
         public int Id { get; set; }
 
-        public TreasuryRootMasterViewModel Context { get; set; }
-
-
-        private string _name = string.Empty;
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                 }
             }
-        }
+        } = string.Empty;
 
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-        private bool _cashReviewRequired;
         public bool CashReviewRequired
         {
-            get { return _cashReviewRequired; }
+            get;
             set
             {
-                if (_cashReviewRequired != value)
+                if (field != value)
                 {
-                    _cashReviewRequired = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CashReviewRequired));
                 }
             }
         }
 
-        private bool _autoAdjustBalance;
         public bool AutoAdjustBalance
         {
-            get { return _autoAdjustBalance; }
+            get;
             set
             {
-                if (_autoAdjustBalance != value)
+                if (field != value)
                 {
-                    _autoAdjustBalance = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AutoAdjustBalance));
                 }
             }
         }
 
-        private bool _autoTransfer;
         public bool AutoTransfer
         {
-            get { return _autoTransfer; }
+            get;
             set
             {
-                if (_autoTransfer != value)
+                if (field != value)
                 {
-                    _autoTransfer = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AutoTransfer));
                 }
             }
         }
 
-        private bool _isPettyCash;
         public bool IsPettyCash
         {
-            get { return _isPettyCash; }
+            get;
             set
             {
-                if (_isPettyCash != value)
+                if (field != value)
                 {
-                    _isPettyCash = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsPettyCash));
                 }
             }
         }
 
-        private CashDrawerGraphQLModel _parent;
-
-        public CashDrawerGraphQLModel Parent
+        public CashDrawerGraphQLModel? Parent
         {
-            get { return _parent; }
-            set 
+            get;
+            set
             {
-                if (_parent != value)
+                if (field != value)
                 {
-                    _parent = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Parent));
                 }
             }
         }
 
-
-        private CashDrawerGraphQLModel _autoTransferCashDrawer;
-        public CashDrawerGraphQLModel AutoTransferCashDrawer
+        public CashDrawerGraphQLModel? AutoTransferCashDrawer
         {
-            get { return _autoTransferCashDrawer; }
+            get;
             set
             {
-                if (_autoTransferCashDrawer != value)
+                if (field != value)
                 {
-                    _autoTransferCashDrawer = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AutoTransferCashDrawer));
                 }
             }
         }
 
-        private CostCenterGraphQLModel _costCenter;
-        public CostCenterGraphQLModel CostCenter
+        public CostCenterGraphQLModel? CostCenter
         {
-            get { return _costCenter; }
+            get;
             set
             {
-                if (_costCenter != value)
+                if (field != value)
                 {
-                    _costCenter = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenter));
                 }
             }
         }
 
-        private AccountingAccountGraphQLModel _cashAccountingAccount;
-        public AccountingAccountGraphQLModel CashAccountingAccount
+        public AccountingAccountGraphQLModel? CashAccountingAccount
         {
-            get { return _cashAccountingAccount; }
+            get;
             set
             {
-                if (_cashAccountingAccount != value)
+                if (field != value)
                 {
-                    _cashAccountingAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CashAccountingAccount));
                 }
             }
         }
 
-        private AccountingAccountGraphQLModel _checkAccountingAccount;
-        public AccountingAccountGraphQLModel CheckAccountingAccount
+        public AccountingAccountGraphQLModel? CheckAccountingAccount
         {
-            get { return _checkAccountingAccount; }
+            get;
             set
             {
-                if (_checkAccountingAccount != value)
+                if (field != value)
                 {
-                    _checkAccountingAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CheckAccountingAccount));
                 }
             }
         }
 
-        private AccountingAccountGraphQLModel _cardAccountingAccount;
-        public AccountingAccountGraphQLModel CardAccountingAccount
+        public AccountingAccountGraphQLModel? CardAccountingAccount
         {
-            get { return _cardAccountingAccount; }
+            get;
             set
             {
-                if (_cardAccountingAccount != value)
+                if (field != value)
                 {
-                    _cardAccountingAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CardAccountingAccount));
                 }
             }
         }
 
-        private string _computerName;
-
         public string ComputerName
         {
-            get { return _computerName; }
-            set 
+            get;
+            set
             {
-                if (_computerName != value)
+                if (field != value)
                 {
-                    _computerName = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ComputerName));
                 }
             }
-        }
-
+        } = string.Empty;
     }
 }

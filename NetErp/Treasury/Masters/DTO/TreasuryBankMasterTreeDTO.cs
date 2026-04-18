@@ -1,142 +1,94 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Books;
 using NetErp.Treasury.Masters.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class TreasuryBankMasterTreeDTO: Screen, ITreasuryTreeMasterSelectedItem
+    public class TreasuryBankMasterTreeDTO : PropertyChangedBase, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility { get => true; }
         public int Id { get; set; }
 
-        //Propiedad creada para no tener errores de binding en la vista
-        public string Name { get; set; } = string.Empty;
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
-        private string _code = string.Empty;
         public string Code
         {
-            get { return _code; }
+            get;
             set
             {
-                if (_code != value)
+                if (field != value)
                 {
-                    _code = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Code));
                 }
             }
-        }
-        public TreasuryRootMasterViewModel Context { get; set; }
-
-        private AccountingEntityDTO _accountingEntity = new();
+        } = string.Empty;
 
         public AccountingEntityDTO AccountingEntity
         {
-            get { return _accountingEntity; }
-            set 
+            get;
+            set
             {
-                if(_accountingEntity != value)
+                if (field != value)
                 {
-                    _accountingEntity = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingEntity));
                 }
             }
-        }
-
-        private string _paymentMethodPrefix = string.Empty;
+        } = new();
 
         public string PaymentMethodPrefix
         {
-            get { return _paymentMethodPrefix; }
-            set 
+            get;
+            set
             {
-                if (_paymentMethodPrefix != value)
+                if (field != value)
                 {
-                    _paymentMethodPrefix = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PaymentMethodPrefix));
                 }
             }
-        }
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-        private ObservableCollection<TreasuryBankAccountMasterTreeDTO> _bankAccounts = [];
+        } = string.Empty;
 
         public ObservableCollection<TreasuryBankAccountMasterTreeDTO> BankAccounts
         {
-            get { return _bankAccounts; }
+            get;
             set
             {
-                if (_bankAccounts != value)
+                if (field != value)
                 {
-                    _bankAccounts = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(BankAccounts));
                 }
             }
-        }
-
-        private bool _isExpanded;
+        } = [];
 
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                    if (_bankAccounts != null)
-                    {
-                        if (_isExpanded && _bankAccounts.Count > 0)
-                        {
-                            if (_bankAccounts[0].IsDummyChild)
-                            {
-                                _ = Context.LoadBankAccounts(this);
-                            }
-                        }
-                    }
                 }
             }
         }
 
-        private BankDummyDTO _dummyParent = new();
-
-        public BankDummyDTO DummyParent
+        public BankDummyDTO? DummyParent
         {
-            get { return _dummyParent; }
+            get;
             set
             {
-                if (_dummyParent != value)
+                if (field != value)
                 {
-                    _dummyParent = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DummyParent));
                 }
             }
         }
 
-
-        public TreasuryBankMasterTreeDTO()
-        {
-
-        }
-
+        public bool AllowContentControlVisibility => true;
     }
 }

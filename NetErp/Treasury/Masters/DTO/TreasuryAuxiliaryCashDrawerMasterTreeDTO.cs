@@ -1,29 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace NetErp.Treasury.Masters.DTO
 {
     public class TreasuryAuxiliaryCashDrawerMasterTreeDTO : CashDrawerMasterTreeDTO, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility { get => true; }
-
-        private bool _isExpanded = false;
-
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
                 }
             }
         }
 
+        public bool AllowContentControlVisibility => true;
     }
 }
