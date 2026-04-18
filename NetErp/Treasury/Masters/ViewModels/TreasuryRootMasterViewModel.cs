@@ -68,29 +68,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
-        #region Legacy compile-compat members (PanelEditors retire in PR 10)
-        // Estos miembros se mantienen SOLO para que los PanelEditors legacy sigan
-        // compilando hasta su eliminación en PR 10. Ninguno se usa en runtime porque
-        // el Master ya no instancia PanelEditors ni los expone a la vista.
-        public bool CanEdit { get; set; }
-        public bool CanUndo { get; set; }
-        public bool CanSave => false;
-        public bool IsEditing { get; set; }
-        public int SelectedIndex { get; set; }
-        public ICommand UndoCommand { get; } = new DelegateCommand(() => { });
-        public ICommand SaveCommand { get; } = new DelegateCommand(() => { });
-        public void RefreshCanSave() { }
-
-        public ObservableCollection<AccountingAccountGraphQLModel> CashDrawerAccountingAccounts { get; set; } = [];
-        public ObservableCollection<CashDrawerGraphQLModel> MajorAutoTransferCashDrawerCashDrawers { get; set; } = [];
-        public ObservableCollection<CashDrawerGraphQLModel> AuxiliaryAutoTransferCashDrawerCashDrawers { get; set; } = [];
-        public ObservableCollection<AccountingAccountGraphQLModel> BankAccountAccountingAccounts { get; set; } = [];
-        public ObservableCollection<TreasuryBankAccountCostCenterDTO> BankAccountCostCenters { get; set; } = [];
-        public ObservableCollection<AccountingAccountGraphQLModel> FranchiseAccountingAccountsCommission { get; set; } = [];
-        public ObservableCollection<BankAccountGraphQLModel> FranchiseBankAccounts { get; set; } = [];
-        public ObservableCollection<TreasuryFranchiseCostCenterDTO> FranchiseCostCenters { get; set; } = [];
-        #endregion
-
         private ITreasuryTreeMasterSelectedItem? _selectedItem;
         public ITreasuryTreeMasterSelectedItem? SelectedItem
         {
