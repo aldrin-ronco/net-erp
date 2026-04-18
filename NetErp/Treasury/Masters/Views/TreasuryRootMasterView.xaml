@@ -9,8 +9,6 @@
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:editors="clr-namespace:NetErp.Treasury.Masters.Views.Editors"
-             xmlns:pe="clr-namespace:NetErp.Treasury.Masters.PanelEditors"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -166,6 +164,12 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Editar banco">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Command="{Binding Data.DeleteBankCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -279,6 +283,12 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Editar caja general">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Command="{Binding Data.CreateAuxiliaryCashDrawerCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -312,6 +322,12 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Editar caja auxiliar">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Command="{Binding Data.DeleteAuxiliaryCashDrawerCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -333,6 +349,12 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Editar caja menor">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Command="{Binding Data.DeleteMinorCashDrawerCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -354,6 +376,12 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Editar cuenta bancaria">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Command="{Binding Data.DeleteBankAccountCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -375,6 +403,12 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Editar franquicia">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Command="{Binding Data.DeleteFranchiseCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -417,8 +451,7 @@
                         ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         TreeDerivationMode="HierarchicalDataTemplate"
-                        AllowEditing="False"
-                        IsEnabled="{Binding TreeViewIsEnable, UpdateSourceTrigger=PropertyChanged}">
+                        AllowEditing="False">
 
                 <dxg:TreeViewControl.Resources>
                     <Style TargetType="TextBlock">
@@ -446,29 +479,14 @@
         </Grid>
 
             <Grid Grid.Column="1" Margin="10,0,0,0">
-            <ContentControl Content="{Binding CurrentPanelEditor, UpdateSourceTrigger=PropertyChanged}"
-                Visibility="{Binding ContentControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
-                <ContentControl.Resources>
-                    <DataTemplate DataType="{x:Type pe:MajorCashDrawerPanelEditor}">
-                        <editors:MajorCashDrawerEditorView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type pe:MinorCashDrawerPanelEditor}">
-                        <editors:MinorCashDrawerEditorView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type pe:AuxiliaryCashDrawerPanelEditor}">
-                        <editors:AuxiliaryCashDrawerEditorView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type pe:BankPanelEditor}">
-                        <editors:BankEditorView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type pe:BankAccountPanelEditor}">
-                        <editors:BankAccountEditorView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type pe:FranchisePanelEditor}">
-                        <editors:FranchiseEditorView/>
-                    </DataTemplate>
-                </ContentControl.Resources>
-            </ContentControl>
+                <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                        CornerRadius="8">
+                    <TextBlock Text="Seleccione un elemento del árbol y use el menú contextual para editarlo o eliminarlo."
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center"
+                               MaxWidth="360"
+                               FontSize="13" Foreground="Gray" Margin="20"/>
+                </Border>
             </Grid>
         </Grid>
     </Border>

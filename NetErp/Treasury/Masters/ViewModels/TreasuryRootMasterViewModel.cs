@@ -1,29 +1,26 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Models.Treasury;
-using NetErp.Global.CostCenters.DTO;
-using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
-using NetErp.Treasury.Masters.PanelEditors;
+using NetErp.Treasury.Masters.Validators;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
-using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.ViewModels
@@ -60,463 +57,58 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly AuxiliaryCashDrawerCache _auxiliaryCashDrawerCache;
         private readonly BankCache _bankCache;
         private readonly FranchiseCache _franchiseCache;
-
-        #region Panel Editors
-
-        public MajorCashDrawerPanelEditor MajorCashDrawerEditor { get; private set; }
-        public MinorCashDrawerPanelEditor MinorCashDrawerEditor { get; private set; }
-        public AuxiliaryCashDrawerPanelEditor AuxiliaryCashDrawerEditor { get; private set; }
-        public BankPanelEditor BankEditor { get; private set; }
-        public BankAccountPanelEditor BankAccountEditor { get; private set; }
-        public FranchisePanelEditor FranchiseEditor { get; private set; }
-
-        private ITreasuryMastersPanelEditor? _currentPanelEditor;
-        public ITreasuryMastersPanelEditor? CurrentPanelEditor
-        {
-            get => _currentPanelEditor;
-            private set
-            {
-                if (_currentPanelEditor != value)
-                {
-                    _currentPanelEditor = value;
-                    NotifyOfPropertyChange(nameof(CurrentPanelEditor));
-                }
-            }
-        }
-
-        #endregion
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly BankValidator _bankValidator;
+        private readonly BankAccountValidator _bankAccountValidator;
+        private readonly FranchiseValidator _franchiseValidator;
+        private readonly MajorCashDrawerValidator _majorCashDrawerValidator;
+        private readonly MinorCashDrawerValidator _minorCashDrawerValidator;
+        private readonly AuxiliaryCashDrawerValidator _auxiliaryCashDrawerValidator;
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
-        private bool _isNewRecord = false;
+        #region Legacy compile-compat members (PanelEditors retire in PR 10)
+        // Estos miembros se mantienen SOLO para que los PanelEditors legacy sigan
+        // compilando hasta su eliminación en PR 10. Ninguno se usa en runtime porque
+        // el Master ya no instancia PanelEditors ni los expone a la vista.
+        public bool CanEdit { get; set; }
+        public bool CanUndo { get; set; }
+        public bool CanSave => false;
+        public bool IsEditing { get; set; }
+        public int SelectedIndex { get; set; }
+        public ICommand UndoCommand { get; } = new DelegateCommand(() => { });
+        public ICommand SaveCommand { get; } = new DelegateCommand(() => { });
+        public void RefreshCanSave() { }
 
-        public bool IsNewRecord
-        {
-            get { return _isNewRecord; }
-            set
-            {
-                if (_isNewRecord != value)
-                {
-                    _isNewRecord = value;
-                    NotifyOfPropertyChange(nameof(IsNewRecord));
-                }
-            }
-        }
+        public ObservableCollection<AccountingAccountGraphQLModel> CashDrawerAccountingAccounts { get; set; } = [];
+        public ObservableCollection<CashDrawerGraphQLModel> MajorAutoTransferCashDrawerCashDrawers { get; set; } = [];
+        public ObservableCollection<CashDrawerGraphQLModel> AuxiliaryAutoTransferCashDrawerCashDrawers { get; set; } = [];
+        public ObservableCollection<AccountingAccountGraphQLModel> BankAccountAccountingAccounts { get; set; } = [];
+        public ObservableCollection<TreasuryBankAccountCostCenterDTO> BankAccountCostCenters { get; set; } = [];
+        public ObservableCollection<AccountingAccountGraphQLModel> FranchiseAccountingAccountsCommission { get; set; } = [];
+        public ObservableCollection<BankAccountGraphQLModel> FranchiseBankAccounts { get; set; } = [];
+        public ObservableCollection<TreasuryFranchiseCostCenterDTO> FranchiseCostCenters { get; set; } = [];
+        #endregion
 
         private ITreasuryTreeMasterSelectedItem? _selectedItem;
-
         public ITreasuryTreeMasterSelectedItem? SelectedItem
         {
-            get { return _selectedItem; }
+            get => _selectedItem;
             set
             {
                 if (_selectedItem != value)
                 {
                     _selectedItem = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
-                    NotifyOfPropertyChange(nameof(ContentControlVisibility));
-                    HandleSelectedItemChanged();
                 }
-            }
-        }
-
-        public void HandleSelectedItemChanged()
-        {
-            if (_selectedItem != null)
-            {
-                // Determine which Panel Editor to use based on selected item type
-                CurrentPanelEditor = _selectedItem switch
-                {
-                    MajorCashDrawerMasterTreeDTO => MajorCashDrawerEditor,
-                    MinorCashDrawerMasterTreeDTO => MinorCashDrawerEditor,
-                    TreasuryAuxiliaryCashDrawerMasterTreeDTO => AuxiliaryCashDrawerEditor,
-                    TreasuryBankMasterTreeDTO => BankEditor,
-                    TreasuryBankAccountMasterTreeDTO => BankAccountEditor,
-                    TreasuryFranchiseMasterTreeDTO => FranchiseEditor,
-                    _ => null
-                };
-
-                if (!IsNewRecord)
-                {
-                    IsEditing = false;
-                    CanEdit = true;
-                    CanUndo = false;
-                    SelectedIndex = 0;
-                    if (_selectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
-                    {
-                        MajorCashDrawerEditor.SetForEdit(majorCashDrawerMasterTreeDTO);
-                        return;
-                    }
-                    if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-                    {
-                        MinorCashDrawerEditor.SetForEdit(minorCashDrawerMasterTreeDTO);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
-                    {
-                        AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawer);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryBankMasterTreeDTO bank)
-                    {
-                        BankEditor.SetForEdit(bank);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
-                    {
-                        BankAccountEditor.SetForEdit(bankAccount);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryFranchiseMasterTreeDTO franchise)
-                    {
-                        FranchiseEditor.SetForEdit(franchise);
-                        return;
-                    }
-                }
-                else
-                {
-                    IsEditing = true;
-                    CanUndo = true;
-                    CanEdit = false;
-                    if (_selectedItem is MajorCashDrawerMasterTreeDTO)
-                    {
-                        MajorCashDrawerEditor.SetForNew(MajorCostCenterBeforeNewCashDrawer);
-                        return;
-                    }
-                    if (_selectedItem is MinorCashDrawerMasterTreeDTO)
-                    {
-                        MinorCashDrawerEditor.SetForNew(MinorCostCenterBeforeNewCashDrawer);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
-                    {
-                        AuxiliaryCashDrawerEditor.SetForNew(MajorCashDrawerBeforeNewAuxiliary);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryBankMasterTreeDTO)
-                    {
-                        BankEditor.SetForNew(null!);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryBankAccountMasterTreeDTO)
-                    {
-                        BankAccountEditor.SetForNew(BankBeforeNewBankAccount);
-                        return;
-                    }
-                    if (_selectedItem is TreasuryFranchiseMasterTreeDTO)
-                    {
-                        FranchiseEditor.SetForNew(null!);
-                        return;
-                    }
-                }
-            }
-            else
-            {
-                CurrentPanelEditor = null;
-            }
-        }
-        public bool TreeViewIsEnable => !IsEditing;
-
-        private bool _isEditing = false;
-
-        public bool IsEditing
-        {
-            get { return _isEditing; }
-            set
-            {
-                if (_isEditing != value)
-                {
-                    _isEditing = value;
-                    NotifyOfPropertyChange(nameof(IsEditing));
-                    NotifyOfPropertyChange(nameof(TreeViewIsEnable));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private ICommand _editCommand;
-        public ICommand EditCommand
-        {
-            get
-            {
-                if (_editCommand is null) _editCommand = new DelegateCommand(Edit);
-                return _editCommand;
-            }
-        }
-
-        public void Edit()
-        {
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-
-            // Set Panel Editor's IsEditing property
-            if (CurrentPanelEditor != null)
-            {
-                CurrentPanelEditor.IsEditing = true;
-            }
-
-            if (SelectedItem is MajorCashDrawerMasterTreeDTO) this.SetFocus("MajorCashDrawerName");
-            if (SelectedItem is MinorCashDrawerMasterTreeDTO) this.SetFocus("MinorCashDrawerName");
-            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO) this.SetFocus("AuxiliaryCashDrawerName");
-        }
-
-        private bool _canEdit = true;
-
-        public bool CanEdit
-        {
-            get { return _canEdit; }
-            set
-            {
-                if (_canEdit != value)
-                {
-                    _canEdit = value;
-                    NotifyOfPropertyChange(nameof(CanEdit));
-                }
-            }
-        }
-
-        private ICommand _undoCommand;
-
-        public ICommand UndoCommand
-        {
-            get
-            {
-                if (_undoCommand is null) _undoCommand = new DelegateCommand(Undo);
-                return _undoCommand;
-            }
-        }
-
-        public void Undo()
-        {
-            // Call Panel Editor's Undo - restores original values
-            CurrentPanelEditor?.Undo();
-
-            if (IsNewRecord)
-            {
-                SelectedItem = null;
-            }
-            IsEditing = false;
-            CanUndo = false;
-            CanEdit = true;
-            IsNewRecord = false;
-            SelectedIndex = 0;
-        }
-
-        private bool _canUndo = false;
-        public bool CanUndo
-        {
-            get { return _canUndo; }
-            set
-            {
-                if (_canUndo != value)
-                {
-                    _canUndo = value;
-                    NotifyOfPropertyChange(nameof(CanUndo));
-                }
-            }
-        }
-
-        private ICommand _createMajorCashDrawerCommand;
-        public ICommand CreateMajorCashDrawerCommand
-        {
-            get
-            {
-                if (_createMajorCashDrawerCommand is null) _createMajorCashDrawerCommand = new AsyncCommand(CreateMajorCashDrawer, CanCreateMajorCashDrawer);
-                return _createMajorCashDrawerCommand;
-            }
-        }
-
-        public async Task CreateMajorCashDrawer()
-        {
-            IsNewRecord = true;
-            SelectedIndex = 0;
-            SelectedItem = new MajorCashDrawerMasterTreeDTO();
-
-            await Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                this.SetFocus("MajorCashDrawerName");
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-        public bool CanCreateMajorCashDrawer => true;
-
-
-
-        private ICommand _createMinorCashDrawerCommand;
-        public ICommand CreateMinorCashDrawerCommand
-        {
-            get
-            {
-                if (_createMinorCashDrawerCommand is null) _createMinorCashDrawerCommand = new AsyncCommand(CreateMinorCashDrawer, CanCreateMinorCashDrawer);
-                return _createMinorCashDrawerCommand;
-            }
-        }
-
-        public async Task CreateMinorCashDrawer()
-        {
-            IsNewRecord = true;
-            SelectedIndex = 0;
-            SelectedItem = new MinorCashDrawerMasterTreeDTO();
-
-            await Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                this.SetFocus("MinorCashDrawerName");
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-        public bool CanCreateMinorCashDrawer => true;
-
-
-        private ICommand _createAuxiliaryCashDrawerCommand;
-        public ICommand CreateAuxiliaryCashDrawerCommand
-        {
-            get
-            {
-                if (_createAuxiliaryCashDrawerCommand is null) _createAuxiliaryCashDrawerCommand = new AsyncCommand(CreateAuxiliaryCashDrawer, CanCreateAuxiliaryCashDrawer);
-                return _createAuxiliaryCashDrawerCommand;
-            }
-        }
-
-        public async Task CreateAuxiliaryCashDrawer()
-        {
-            IsNewRecord = true;
-            SelectedIndex = 0;
-            SelectedItem = new TreasuryAuxiliaryCashDrawerMasterTreeDTO();
-
-            await Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                this.SetFocus("AuxiliaryCashDrawerName");
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-        public bool CanCreateAuxiliaryCashDrawer => true;
-
-        private ICommand _createBankCommand;
-        public ICommand CreateBankCommand
-        {
-            get
-            {
-                if (_createBankCommand is null) _createBankCommand = new AsyncCommand(CreateBank, CanCreateBank);
-                return _createBankCommand;
-            }
-        }
-
-        public async Task CreateBank()
-        {
-            IsNewRecord = true;
-            SelectedIndex = 0;
-            SelectedItem = new TreasuryBankMasterTreeDTO();
-
-            await Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                this.SetFocus("BankCode");
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-        public bool CanCreateBank => true;
-
-        private ICommand _createBankAccountCommand;
-        public ICommand CreateBankAccountCommand
-        {
-            get
-            {
-                if (_createBankAccountCommand is null) _createBankAccountCommand = new AsyncCommand(CreateBankAccount, CanCreateBankAccount);
-                return _createBankAccountCommand;
-            }
-        }
-
-        public async Task CreateBankAccount()
-        {
-            IsNewRecord = true;
-            SelectedIndex = 0;
-            SelectedItem = new TreasuryBankAccountMasterTreeDTO();
-
-            await Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                this.SetFocus("BankAccountNumber");
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-        public bool CanCreateBankAccount => true;
-
-        private ICommand _createFranchiseCommand;
-        public ICommand CreateFranchiseCommand
-        {
-            get
-            {
-                if (_createFranchiseCommand is null) _createFranchiseCommand = new DelegateCommand(CreateFranchise);
-                return _createFranchiseCommand;
-            }
-        }
-
-        public void CreateFranchise()
-        {
-            IsNewRecord = true;
-            SelectedIndex = 0;
-            SelectedItem = new TreasuryFranchiseMasterTreeDTO();
-            _ = Application.Current.Dispatcher.BeginInvoke(()  =>
-                {
-                this.SetFocus("FranchiseName");
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-        private ObservableCollection<AccountingAccountGraphQLModel> _cashDrawerAccountingAccounts;
-
-        public ObservableCollection<AccountingAccountGraphQLModel> CashDrawerAccountingAccounts
-        {
-            get { return _cashDrawerAccountingAccounts; }
-            set
-            {
-                if (_cashDrawerAccountingAccounts != value)
-                {
-                    _cashDrawerAccountingAccounts = value;
-                    NotifyOfPropertyChange(nameof(CashDrawerAccountingAccounts));
-                }
-            }
-        }
-
-
-        private int _selectedIndex = 0;
-
-        public int SelectedIndex
-        {
-            get { return _selectedIndex; }
-            set
-            {
-                if (_selectedIndex != value)
-                {
-                    _selectedIndex = value;
-                    NotifyOfPropertyChange(nameof(SelectedIndex));
-                }
-            }
-        }
-
-        public bool ContentControlVisibility
-        {
-            get
-            {
-                if (_selectedItem != null && _selectedItem.AllowContentControlVisibility)
-                {
-                    if (_selectedItem is MajorCashDrawerMasterTreeDTO majorcashDrawer) MajorCashDrawerBeforeNewAuxiliary = majorcashDrawer;
-                    if (_selectedItem is TreasuryBankMasterTreeDTO bank) BankBeforeNewBankAccount = bank;
-                    return true;
-                }
-                if (_selectedItem is CashDrawerCostCenterDTO costCenterDTO)
-                {
-                    if (costCenterDTO.Type == CashDrawerType.Major) MajorCostCenterBeforeNewCashDrawer = costCenterDTO;
-                    else if (costCenterDTO.Type == CashDrawerType.Minor) MinorCostCenterBeforeNewCashDrawer = costCenterDTO;
-                }
-                SelectedItem = null;
-                return false;
             }
         }
 
         private bool _isBusy;
-
         public bool IsBusy
         {
-            get { return _isBusy; }
+            get => _isBusy;
             set
             {
                 if (_isBusy != value)
@@ -527,55 +119,373 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private ICommand _saveCommand;
-        public ICommand SaveCommand
+        #region Create Commands (tree context menus)
+
+        private ICommand _createMajorCashDrawerCommand;
+        public ICommand CreateMajorCashDrawerCommand =>
+            _createMajorCashDrawerCommand ??= new AsyncCommand(CreateMajorCashDrawerAsync);
+
+        public async Task CreateMajorCashDrawerAsync()
         {
-            get
+            if (SelectedItem is not CashDrawerCostCenterDTO costCenterDTO || costCenterDTO.Type != CashDrawerType.Major)
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save);
-                return _saveCommand;
+                _notificationService.ShowInfo("Seleccione un centro de costo de caja general antes de crear una caja general.");
+                return;
+            }
+
+            CostCenterGraphQLModel? costCenter = _costCenterCache.Items.FirstOrDefault(c => c.Id == costCenterDTO.Id);
+            if (costCenter is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar el centro de costo seleccionado.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                MajorCashDrawerDetailViewModel detail = new(_cashDrawerService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _majorCashDrawerCache, _stringLengthCache,
+                    _joinableTaskFactory, _majorCashDrawerValidator);
+                detail.SetForNew(costCenter);
+                ApplyDialogDimensions(detail, 650, 550);
+                return detail;
+            }, "Nueva caja general");
+        }
+
+        private ICommand _createMinorCashDrawerCommand;
+        public ICommand CreateMinorCashDrawerCommand =>
+            _createMinorCashDrawerCommand ??= new AsyncCommand(CreateMinorCashDrawerAsync);
+
+        public async Task CreateMinorCashDrawerAsync()
+        {
+            if (SelectedItem is not CashDrawerCostCenterDTO costCenterDTO || costCenterDTO.Type != CashDrawerType.Minor)
+            {
+                _notificationService.ShowInfo("Seleccione un centro de costo de caja menor antes de crear una caja menor.");
+                return;
+            }
+
+            CostCenterGraphQLModel? costCenter = _costCenterCache.Items.FirstOrDefault(c => c.Id == costCenterDTO.Id);
+            if (costCenter is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar el centro de costo seleccionado.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                MinorCashDrawerDetailViewModel detail = new(_cashDrawerService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _stringLengthCache, _joinableTaskFactory, _minorCashDrawerValidator);
+                detail.SetForNew(costCenter);
+                ApplyDialogDimensions(detail, 550, 400);
+                return detail;
+            }, "Nueva caja menor");
+        }
+
+        private ICommand _createAuxiliaryCashDrawerCommand;
+        public ICommand CreateAuxiliaryCashDrawerCommand =>
+            _createAuxiliaryCashDrawerCommand ??= new AsyncCommand(CreateAuxiliaryCashDrawerAsync);
+
+        public async Task CreateAuxiliaryCashDrawerAsync()
+        {
+            if (SelectedItem is not MajorCashDrawerMasterTreeDTO majorDTO)
+            {
+                _notificationService.ShowInfo("Seleccione una caja general antes de crear una caja auxiliar.");
+                return;
+            }
+
+            CashDrawerGraphQLModel? major = _majorCashDrawerCache.Items.FirstOrDefault(c => c.Id == majorDTO.Id);
+            if (major is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar la caja general seleccionada.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                AuxiliaryCashDrawerDetailViewModel detail = new(_cashDrawerService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _auxiliaryCashDrawerCache, _stringLengthCache,
+                    _joinableTaskFactory, _auxiliaryCashDrawerValidator);
+                detail.SetForNew(major);
+                ApplyDialogDimensions(detail, 650, 600);
+                return detail;
+            }, "Nueva caja auxiliar");
+        }
+
+        private ICommand _createBankCommand;
+        public ICommand CreateBankCommand =>
+            _createBankCommand ??= new AsyncCommand(CreateBankAsync);
+
+        public async Task CreateBankAsync()
+        {
+            await OpenDialogAsync(() =>
+            {
+                BankDetailViewModel detail = new(_bankService, Context.EventAggregator, _dialogService,
+                    _stringLengthCache, _joinableTaskFactory, _bankValidator);
+                detail.SetForNew();
+                ApplyDialogDimensions(detail, 500, 350);
+                return detail;
+            }, "Nuevo banco");
+        }
+
+        private ICommand _createBankAccountCommand;
+        public ICommand CreateBankAccountCommand =>
+            _createBankAccountCommand ??= new AsyncCommand(CreateBankAccountAsync);
+
+        public async Task CreateBankAccountAsync()
+        {
+            if (SelectedItem is not TreasuryBankMasterTreeDTO bankDTO)
+            {
+                _notificationService.ShowInfo("Seleccione un banco antes de crear una cuenta bancaria.");
+                return;
+            }
+
+            BankGraphQLModel? bank = _bankCache.Items.FirstOrDefault(b => b.Id == bankDTO.Id);
+            if (bank is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar el banco seleccionado.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                BankAccountDetailViewModel detail = new(_bankAccountService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _stringLengthCache, _joinableTaskFactory, _bankAccountValidator);
+                detail.SetForNew(bank);
+                ApplyDialogDimensions(detail, 650, 550);
+                return detail;
+            }, "Nueva cuenta bancaria");
+        }
+
+        private ICommand _createFranchiseCommand;
+        public ICommand CreateFranchiseCommand =>
+            _createFranchiseCommand ??= new AsyncCommand(CreateFranchiseAsync);
+
+        public async Task CreateFranchiseAsync()
+        {
+            await OpenDialogAsync(() =>
+            {
+                FranchiseDetailViewModel detail = new(_franchiseService, Context.EventAggregator,
+                    _bankAccountCache, _auxiliaryAccountingAccountCache, _stringLengthCache,
+                    _joinableTaskFactory, _franchiseValidator);
+                detail.SetForNew();
+                ApplyDialogDimensions(detail, 900, 650);
+                return detail;
+            }, "Nueva franquicia");
+        }
+
+        #endregion
+
+        #region Edit Command
+
+        private ICommand _editCommand;
+        public ICommand EditCommand => _editCommand ??= new AsyncCommand(EditAsync);
+
+        public async Task EditAsync()
+        {
+            if (SelectedItem is null) return;
+
+            switch (SelectedItem)
+            {
+                case TreasuryBankMasterTreeDTO bankDTO:
+                    await EditBankAsync(bankDTO);
+                    break;
+                case TreasuryBankAccountMasterTreeDTO bankAccountDTO:
+                    await EditBankAccountAsync(bankAccountDTO);
+                    break;
+                case TreasuryFranchiseMasterTreeDTO franchiseDTO:
+                    await EditFranchiseAsync(franchiseDTO);
+                    break;
+                case MajorCashDrawerMasterTreeDTO majorDTO:
+                    await EditMajorCashDrawerAsync(majorDTO);
+                    break;
+                case MinorCashDrawerMasterTreeDTO minorDTO:
+                    await EditMinorCashDrawerAsync(minorDTO);
+                    break;
+                case TreasuryAuxiliaryCashDrawerMasterTreeDTO auxDTO:
+                    await EditAuxiliaryCashDrawerAsync(auxDTO);
+                    break;
             }
         }
 
-        public async Task Save()
+        private async Task EditBankAsync(TreasuryBankMasterTreeDTO dto)
         {
-            if (CurrentPanelEditor == null) return;
+            BankGraphQLModel? bank = _bankCache.Items.FirstOrDefault(b => b.Id == dto.Id);
+            if (bank is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar el banco seleccionado.");
+                return;
+            }
 
+            await OpenDialogAsync(() =>
+            {
+                BankDetailViewModel detail = new(_bankService, Context.EventAggregator, _dialogService,
+                    _stringLengthCache, _joinableTaskFactory, _bankValidator);
+                detail.SetForEdit(bank);
+                ApplyDialogDimensions(detail, 500, 350);
+                return detail;
+            }, "Editar banco");
+        }
+
+        private async Task EditBankAccountAsync(TreasuryBankAccountMasterTreeDTO dto)
+        {
+            BankAccountGraphQLModel? bankAccount = _bankAccountCache.Items.FirstOrDefault(b => b.Id == dto.Id);
+            if (bankAccount is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar la cuenta bancaria seleccionada.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                BankAccountDetailViewModel detail = new(_bankAccountService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _stringLengthCache, _joinableTaskFactory, _bankAccountValidator);
+                detail.SetForEdit(bankAccount);
+                ApplyDialogDimensions(detail, 650, 550);
+                return detail;
+            }, "Editar cuenta bancaria");
+        }
+
+        private async Task EditFranchiseAsync(TreasuryFranchiseMasterTreeDTO dto)
+        {
+            FranchiseGraphQLModel? franchise = _franchiseCache.Items.FirstOrDefault(f => f.Id == dto.Id);
+            if (franchise is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar la franquicia seleccionada.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                FranchiseDetailViewModel detail = new(_franchiseService, Context.EventAggregator,
+                    _bankAccountCache, _auxiliaryAccountingAccountCache, _stringLengthCache,
+                    _joinableTaskFactory, _franchiseValidator);
+                detail.SetForEdit(franchise);
+                ApplyDialogDimensions(detail, 900, 650);
+                return detail;
+            }, "Editar franquicia");
+        }
+
+        private async Task EditMajorCashDrawerAsync(MajorCashDrawerMasterTreeDTO dto)
+        {
+            CashDrawerGraphQLModel? cashDrawer = _majorCashDrawerCache.Items.FirstOrDefault(c => c.Id == dto.Id);
+            if (cashDrawer is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar la caja general seleccionada.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                MajorCashDrawerDetailViewModel detail = new(_cashDrawerService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _majorCashDrawerCache, _stringLengthCache,
+                    _joinableTaskFactory, _majorCashDrawerValidator);
+                detail.SetForEdit(cashDrawer);
+                ApplyDialogDimensions(detail, 650, 550);
+                return detail;
+            }, "Editar caja general");
+        }
+
+        private async Task EditMinorCashDrawerAsync(MinorCashDrawerMasterTreeDTO dto)
+        {
+            CashDrawerGraphQLModel? cashDrawer = _minorCashDrawerCache.Items.FirstOrDefault(c => c.Id == dto.Id);
+            if (cashDrawer is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar la caja menor seleccionada.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                MinorCashDrawerDetailViewModel detail = new(_cashDrawerService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _stringLengthCache, _joinableTaskFactory, _minorCashDrawerValidator);
+                detail.SetForEdit(cashDrawer);
+                ApplyDialogDimensions(detail, 550, 400);
+                return detail;
+            }, "Editar caja menor");
+        }
+
+        private async Task EditAuxiliaryCashDrawerAsync(TreasuryAuxiliaryCashDrawerMasterTreeDTO dto)
+        {
+            CashDrawerGraphQLModel? cashDrawer = _auxiliaryCashDrawerCache.Items.FirstOrDefault(c => c.Id == dto.Id);
+            if (cashDrawer is null)
+            {
+                _notificationService.ShowInfo("No se pudo ubicar la caja auxiliar seleccionada.");
+                return;
+            }
+
+            await OpenDialogAsync(() =>
+            {
+                AuxiliaryCashDrawerDetailViewModel detail = new(_cashDrawerService, Context.EventAggregator,
+                    _auxiliaryAccountingAccountCache, _auxiliaryCashDrawerCache, _stringLengthCache,
+                    _joinableTaskFactory, _auxiliaryCashDrawerValidator);
+                detail.SetForEdit(cashDrawer);
+                ApplyDialogDimensions(detail, 650, 600);
+                return detail;
+            }, "Editar caja auxiliar");
+        }
+
+        #endregion
+
+        #region Dialog helpers
+
+        /// <summary>
+        /// Aplica dimensiones al modal escalando contra la vista padre cuando es posible.
+        /// </summary>
+        private void ApplyDialogDimensions<T>(T detail, double defaultWidth, double defaultHeight)
+            where T : Screen
+        {
+            dynamic dynDetail = detail!;
+            dynDetail.DialogWidth = defaultWidth;
+            dynDetail.DialogHeight = defaultHeight;
+            if (this.GetView() is FrameworkElement parent)
+            {
+                dynDetail.DialogWidth = Math.Min(parent.ActualWidth * 0.7, defaultWidth);
+                dynDetail.DialogHeight = Math.Min(parent.ActualHeight * 0.9, defaultHeight);
+            }
+        }
+
+        /// <summary>
+        /// Abre un modal tras un breve estado IsBusy que cubre la construcción síncrona
+        /// del VM. Se libera IsBusy ANTES de await ShowDialogAsync para que el overlay
+        /// no permanezca visible detrás del diálogo. Setup puede retornar null para abortar.
+        /// </summary>
+        private async Task OpenDialogAsync<T>(Func<T?> setup, string title) where T : Screen
+        {
+            T? detail = null;
             try
             {
                 IsBusy = true;
-                Refresh();
-
-                // Delegate save to the current Panel Editor
-                bool saveSuccessful = await CurrentPanelEditor.SaveAsync();
-
-                if (saveSuccessful)
-                {
-                    IsEditing = false;
-                    CanUndo = false;
-                    CanEdit = true;
-                    IsNewRecord = false;
-                    SelectedIndex = 0;
-                }
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                detail = setup();
             }
             catch (Exception ex)
             {
-                // Panel Editor already handles GraphQL errors, this catches any remaining exceptions
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.Save \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{title}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+                return;
             }
             finally
             {
                 IsBusy = false;
             }
+
+            if (detail is null) return;
+
+            try
+            {
+                await _dialogService.ShowDialogAsync(detail, title);
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{title}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
         }
 
-        public bool CanSave => CurrentPanelEditor?.CanSave ?? false;
+        #endregion
 
-        public void RefreshCanSave() => NotifyOfPropertyChange(nameof(CanSave));
+        #region Delete Commands
 
         private async Task DeleteEntityAsync<TModel>(
             string displayName,
@@ -660,27 +570,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private ICommand _deleteMajorCashDrawerCommand;
-        public ICommand DeleteMajorCashDrawerCommand
-        {
-            get
-            {
-                if (_deleteMajorCashDrawerCommand is null) _deleteMajorCashDrawerCommand = new AsyncCommand(DeleteMajorCashDrawer);
-                return _deleteMajorCashDrawerCommand;
-            }
-        }
-
-        public async Task DeleteMajorCashDrawer()
-        {
-            var selected = (MajorCashDrawerMasterTreeDTO)SelectedItem;
-            await DeleteEntityAsync(selected.Name, selected.Id,
-                "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
-                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
-                    new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
-        }
-
-        #region Delete Query Builders
-
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _canDeleteQueryCache = new();
 
         private static string BuildCanDeleteQuery(string fragmentName)
@@ -716,10 +605,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             });
         }
 
-        #endregion
-
-        #region Execute Delete Methods
-
         private async Task<DeleteResponseType> ExecuteDeleteAsync<TModel>(
             IRepository<TModel> service, string deleteFragmentName, int id)
         {
@@ -730,21 +615,26 @@ namespace NetErp.Treasury.Masters.ViewModels
             return result;
         }
 
-        #endregion
+        private ICommand _deleteMajorCashDrawerCommand;
+        public ICommand DeleteMajorCashDrawerCommand =>
+            _deleteMajorCashDrawerCommand ??= new AsyncCommand(DeleteMajorCashDrawer);
+
+        public async Task DeleteMajorCashDrawer()
+        {
+            if (SelectedItem is not MajorCashDrawerMasterTreeDTO selected) return;
+            await DeleteEntityAsync(selected.Name, selected.Id,
+                "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
+        }
 
         private ICommand _deleteMinorCashDrawerCommand;
-        public ICommand DeleteMinorCashDrawerCommand
-        {
-            get
-            {
-                if (_deleteMinorCashDrawerCommand is null) _deleteMinorCashDrawerCommand = new AsyncCommand(DeleteMinorCashDrawer);
-                return _deleteMinorCashDrawerCommand;
-            }
-        }
+        public ICommand DeleteMinorCashDrawerCommand =>
+            _deleteMinorCashDrawerCommand ??= new AsyncCommand(DeleteMinorCashDrawer);
 
         public async Task DeleteMinorCashDrawer()
         {
-            var selected = (MinorCashDrawerMasterTreeDTO)SelectedItem;
+            if (SelectedItem is not MinorCashDrawerMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.Name, selected.Id,
                 "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
                 async result => await Context.EventAggregator.PublishOnUIThreadAsync(
@@ -752,18 +642,12 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         private ICommand _deleteAuxiliaryCashDrawerCommand;
-        public ICommand DeleteAuxiliaryCashDrawerCommand
-        {
-            get
-            {
-                if (_deleteAuxiliaryCashDrawerCommand is null) _deleteAuxiliaryCashDrawerCommand = new AsyncCommand(DeleteAuxiliaryCashDrawer);
-                return _deleteAuxiliaryCashDrawerCommand;
-            }
-        }
+        public ICommand DeleteAuxiliaryCashDrawerCommand =>
+            _deleteAuxiliaryCashDrawerCommand ??= new AsyncCommand(DeleteAuxiliaryCashDrawer);
 
         public async Task DeleteAuxiliaryCashDrawer()
         {
-            var selected = (TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem;
+            if (SelectedItem is not TreasuryAuxiliaryCashDrawerMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.Name, selected.Id,
                 "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
                 async result => await Context.EventAggregator.PublishOnUIThreadAsync(
@@ -771,18 +655,11 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         private ICommand _deleteBankCommand;
-        public ICommand DeleteBankCommand
-        {
-            get
-            {
-                if (_deleteBankCommand is null) _deleteBankCommand = new AsyncCommand(DeleteBank);
-                return _deleteBankCommand;
-            }
-        }
+        public ICommand DeleteBankCommand => _deleteBankCommand ??= new AsyncCommand(DeleteBank);
 
         public async Task DeleteBank()
         {
-            var selected = (TreasuryBankMasterTreeDTO)SelectedItem;
+            if (SelectedItem is not TreasuryBankMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.AccountingEntity.SearchName, selected.Id,
                 "canDeleteBank", "deleteBank", _bankService,
                 async result => await Context.EventAggregator.PublishOnUIThreadAsync(
@@ -790,14 +667,8 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         private ICommand _deleteBankAccountCommand;
-        public ICommand DeleteBankAccountCommand
-        {
-            get
-            {
-                if (_deleteBankAccountCommand is null) _deleteBankAccountCommand = new AsyncCommand(DeleteBankAccount);
-                return _deleteBankAccountCommand;
-            }
-        }
+        public ICommand DeleteBankAccountCommand =>
+            _deleteBankAccountCommand ??= new AsyncCommand(DeleteBankAccount);
 
         public async Task DeleteBankAccount()
         {
@@ -809,157 +680,24 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         private ICommand _deleteFranchiseCommand;
-        public ICommand DeleteFranchiseCommand
-        {
-            get
-            {
-                if (_deleteFranchiseCommand is null) _deleteFranchiseCommand = new AsyncCommand(DeleteFranchise);
-                return _deleteFranchiseCommand;
-            }
-        }
+        public ICommand DeleteFranchiseCommand =>
+            _deleteFranchiseCommand ??= new AsyncCommand(DeleteFranchise);
 
         public async Task DeleteFranchise()
         {
-            var selected = (TreasuryFranchiseMasterTreeDTO)SelectedItem;
+            if (SelectedItem is not TreasuryFranchiseMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.Name, selected.Id,
                 "canDeleteFranchise", "deleteFranchise", _franchiseService,
                 async result => await Context.EventAggregator.PublishOnUIThreadAsync(
                     new FranchiseDeleteMessage { DeletedFranchise = result }));
         }
 
-        #region "MajorCashDrawer Context Properties"
-
-        public CashDrawerCostCenterDTO MajorCostCenterBeforeNewCashDrawer { get; set; } = new() { Type = CashDrawerType.Major };
-
-        // Collection used by MajorCashDrawerPanelEditor
-        private ObservableCollection<CashDrawerGraphQLModel> _majorAutoTransferCashDrawerCashDrawers;
-        public ObservableCollection<CashDrawerGraphQLModel> MajorAutoTransferCashDrawerCashDrawers
-        {
-            get { return _majorAutoTransferCashDrawerCashDrawers; }
-            set
-            {
-                if (_majorAutoTransferCashDrawerCashDrawers != value)
-                {
-                    _majorAutoTransferCashDrawerCashDrawers = value;
-                    NotifyOfPropertyChange(nameof(MajorAutoTransferCashDrawerCashDrawers));
-                }
-            }
-        }
-
         #endregion
 
-        #region "MinorCashDrawer Context Properties"
-
-        public CashDrawerCostCenterDTO MinorCostCenterBeforeNewCashDrawer { get; set; } = new() { Type = CashDrawerType.Minor };
-
-        #endregion
-
-        #region "AuxiliaryCashDrawer Context Properties"
-
-        public MajorCashDrawerMasterTreeDTO? MajorCashDrawerBeforeNewAuxiliary { get; set; }
-
-        // Collection used by AuxiliaryCashDrawerPanelEditor
-        private ObservableCollection<CashDrawerGraphQLModel> _auxiliaryAutoTransferCashDrawerCashDrawers = [];
-        public ObservableCollection<CashDrawerGraphQLModel> AuxiliaryAutoTransferCashDrawerCashDrawers
-        {
-            get { return _auxiliaryAutoTransferCashDrawerCashDrawers; }
-            set
-            {
-                if (_auxiliaryAutoTransferCashDrawerCashDrawers != value)
-                {
-                    _auxiliaryAutoTransferCashDrawerCashDrawers = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryAutoTransferCashDrawerCashDrawers));
-                }
-            }
-        }
-
-        #endregion
-
-        #region "BankAccount Context Properties"
-
-        public TreasuryBankMasterTreeDTO BankBeforeNewBankAccount { get; set; } = new();
-
-        // Collections used by BankAccountPanelEditor
-        private ObservableCollection<AccountingAccountGraphQLModel> _bankAccountAccountingAccounts;
-        public ObservableCollection<AccountingAccountGraphQLModel> BankAccountAccountingAccounts
-        {
-            get { return _bankAccountAccountingAccounts; }
-            set
-            {
-                if (_bankAccountAccountingAccounts != value)
-                {
-                    _bankAccountAccountingAccounts = value;
-                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccounts));
-                }
-            }
-        }
-
-        private ObservableCollection<TreasuryBankAccountCostCenterDTO> _bankAccountCostCenters;
-        public ObservableCollection<TreasuryBankAccountCostCenterDTO> BankAccountCostCenters
-        {
-            get { return _bankAccountCostCenters; }
-            set
-            {
-                if (_bankAccountCostCenters != value)
-                {
-                    _bankAccountCostCenters = value;
-                    NotifyOfPropertyChange(nameof(BankAccountCostCenters));
-                }
-            }
-        }
-
-        #endregion
-
-        #region "Franchise Collections"
-
-        // Collections used by FranchisePanelEditor
-        private ObservableCollection<AccountingAccountGraphQLModel> _franchiseAccountingAccountsCommission;
-        public ObservableCollection<AccountingAccountGraphQLModel> FranchiseAccountingAccountsCommission
-        {
-            get { return _franchiseAccountingAccountsCommission; }
-            set
-            {
-                if (_franchiseAccountingAccountsCommission != value)
-                {
-                    _franchiseAccountingAccountsCommission = value;
-                    NotifyOfPropertyChange(nameof(FranchiseAccountingAccountsCommission));
-                }
-            }
-        }
-
-        private ObservableCollection<BankAccountGraphQLModel> _franchiseBankAccounts;
-        public ObservableCollection<BankAccountGraphQLModel> FranchiseBankAccounts
-        {
-            get { return _franchiseBankAccounts; }
-            set
-            {
-                if (_franchiseBankAccounts != value)
-                {
-                    _franchiseBankAccounts = value;
-                    NotifyOfPropertyChange(nameof(FranchiseBankAccounts));
-                }
-            }
-        }
-
-        private ObservableCollection<TreasuryFranchiseCostCenterDTO> _franchiseCostCenters;
-        public ObservableCollection<TreasuryFranchiseCostCenterDTO> FranchiseCostCenters
-        {
-            get { return _franchiseCostCenters; }
-            set
-            {
-                if (_franchiseCostCenters != value)
-                {
-                    _franchiseCostCenters = value;
-                    NotifyOfPropertyChange(nameof(FranchiseCostCenters));
-                }
-            }
-        }
-
-        #endregion
+        #region Tree hydration
 
         /// <summary>
         /// Reconstruye el árbol completo desde los caches ya hidratados.
-        /// Sustituye la carga perezosa previa: ya no se disparan queries cuando el usuario expande nodos.
         /// Debe ejecutarse en el hilo de UI.
         /// </summary>
         private void BuildTreeFromCaches()
@@ -1078,66 +816,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             });
         }
 
+        #endregion
 
-        /// <summary>
-        /// Puebla las colecciones usadas por los PanelEditors (combos de cuentas contables,
-        /// centros de costo, cuentas bancarias y cajas de auto-transferencia) a partir de los caches.
-        /// Mantenida porque los callers externos (handlers de create con side-effects de la API)
-        /// la invocan después de <c>_auxiliaryAccountingAccountCache.Clear()</c> para refrescar los combos.
-        /// </summary>
-        public async Task LoadComboBoxesAsync()
-        {
-            try
-            {
-                // Asegura que todos los caches estén cargados (paralelo, un solo round-trip HTTP)
-                await CacheBatchLoader.LoadAsync(
-                    _graphQLClient, default,
-                    _auxiliaryAccountingAccountCache,
-                    _companyLocationCache,
-                    _costCenterCache,
-                    _bankAccountCache,
-                    _majorCashDrawerCache,
-                    _minorCashDrawerCache,
-                    _auxiliaryCashDrawerCache,
-                    _bankCache,
-                    _franchiseCache);
-
-                // Cuentas contables auxiliares
-                CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-                BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-
-                FranchiseAccountingAccountsCommission = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-
-                // Centros de costo
-                BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(_costCenterCache.Items);
-                FranchiseCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseCostCenterDTO>>(_costCenterCache.Items);
-                FranchiseCostCenters.Insert(0, new TreasuryFranchiseCostCenterDTO() { Id = 0, Name = "[ APLICACIÓN GENERAL ]" });
-
-                // Cuentas bancarias
-                FranchiseBankAccounts = new ObservableCollection<BankAccountGraphQLModel>(_bankAccountCache.Items);
-
-                // Cajas para auto-transferencia
-                MajorAutoTransferCashDrawerCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
-
-                AuxiliaryAutoTransferCashDrawerCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
-            }
-            catch (AsyncException ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.LoadComboBoxesAsync {ex.Message}\r\n{ex.InnerException?.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.LoadComboBoxesAsync \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-        }
+        #region Constructor and lifecycle
 
         public TreasuryRootMasterViewModel(
             TreasuryRootViewModel context,
@@ -1156,7 +837,15 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryCashDrawerCache auxiliaryCashDrawerCache,
             BankCache bankCache,
             FranchiseCache franchiseCache,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory,
+            BankValidator bankValidator,
+            BankAccountValidator bankAccountValidator,
+            FranchiseValidator franchiseValidator,
+            MajorCashDrawerValidator majorCashDrawerValidator,
+            MinorCashDrawerValidator minorCashDrawerValidator,
+            AuxiliaryCashDrawerValidator auxiliaryCashDrawerValidator)
         {
             _cashDrawerService = cashDrawerService;
             _bankService = bankService;
@@ -1174,6 +863,14 @@ namespace NetErp.Treasury.Masters.ViewModels
             _bankCache = bankCache;
             _franchiseCache = franchiseCache;
             _graphQLClient = graphQLClient;
+            _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
+            _bankValidator = bankValidator;
+            _bankAccountValidator = bankAccountValidator;
+            _franchiseValidator = franchiseValidator;
+            _majorCashDrawerValidator = majorCashDrawerValidator;
+            _minorCashDrawerValidator = minorCashDrawerValidator;
+            _auxiliaryCashDrawerValidator = auxiliaryCashDrawerValidator;
 
             // Los DummyItems se crean con colecciones vacías; BuildTreeFromCaches las llena en OnActivatedAsync.
             DummyItems = [
@@ -1184,14 +881,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             ];
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
-
-            // Initialize Panel Editors
-            MajorCashDrawerEditor = new MajorCashDrawerPanelEditor(this, _cashDrawerService);
-            MinorCashDrawerEditor = new MinorCashDrawerPanelEditor(this, _cashDrawerService);
-            AuxiliaryCashDrawerEditor = new AuxiliaryCashDrawerPanelEditor(this, _cashDrawerService);
-            BankEditor = new BankPanelEditor(this, _bankService, _dialogService);
-            BankAccountEditor = new BankAccountPanelEditor(this, _bankAccountService);
-            FranchiseEditor = new FranchisePanelEditor(this, _franchiseService, _notificationService);
         }
 
         protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
@@ -1209,20 +898,26 @@ namespace NetErp.Treasury.Masters.ViewModels
                 _franchiseCache);
 
             BuildTreeFromCaches();
-            await LoadComboBoxesAsync();
 
             await base.OnActivatedAsync(cancellationToken);
         }
 
-        public async Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        #endregion
+
+        #region Event Handlers (Create/Update/Delete)
+
+        public Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
         {
             var createdCashDrawer = message.CreatedCashDrawer.Entity;
-            IsNewRecord = false;
-
-            // Recargar combos antes de asignar SelectedItem (que dispara SetForEdit),
-            // porque la API puede crear cuentas contables como side-effect
-            _auxiliaryAccountingAccountCache.Clear();
-            await LoadComboBoxesAsync();
 
             // Caja general (major)
             if (!createdCashDrawer.IsPettyCash && createdCashDrawer.Parent is null)
@@ -1246,7 +941,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
                 if (inserted != null) SelectedItem = inserted;
                 _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                return;
+                return Task.CompletedTask;
             }
 
             // Caja auxiliar
@@ -1274,7 +969,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
                 if (inserted != null) SelectedItem = inserted;
                 _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
-                return;
+                return Task.CompletedTask;
             }
 
             // Caja menor
@@ -1297,6 +992,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             });
             if (insertedMinor != null) SelectedItem = insertedMinor;
             _notificationService.ShowSuccess(message.CreatedCashDrawer.Message);
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(TreasuryCashDrawerDeleteMessage message, CancellationToken cancellationToken)
@@ -1305,7 +1001,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 int? deletedId = message.DeletedCashDrawer.DeletedId;
 
-                // Buscar en cajas generales y auxiliares
                 CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
                 if (majorDummy != null)
                 {
@@ -1335,7 +1030,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                 }
 
-                // Buscar en cajas menores
                 CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
                 if (minorDummy != null)
                 {
@@ -1358,84 +1052,86 @@ namespace NetErp.Treasury.Masters.ViewModels
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(TreasuryCashDrawerUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(TreasuryCashDrawerUpdateMessage message, CancellationToken cancellationToken)
         {
             var updatedCashDrawer = message.UpdatedCashDrawer.Entity;
 
-            if (updatedCashDrawer.IsPettyCash is false && updatedCashDrawer.Parent is null)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                MajorCashDrawerMasterTreeDTO cashDrawerDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(updatedCashDrawer);
-                CashDrawerDummyDTO majorCashDrawerDummyDTO = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major) ?? throw new Exception("");
-                if (majorCashDrawerDummyDTO is null) return;
-                CashDrawerCompanyLocationDTO majorCashDrawerCompanyLocation = majorCashDrawerDummyDTO.Locations.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.CompanyLocation.Id) ?? throw new Exception("");
-                if (majorCashDrawerCompanyLocation is null) return;
-                CashDrawerCostCenterDTO majorCashDrawerCostCenter = majorCashDrawerCompanyLocation.CostCenters.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.Id) ?? throw new Exception("");
-                if (majorCashDrawerCostCenter is null) return;
-                MajorCashDrawerMasterTreeDTO cashDrawerToUpdate = majorCashDrawerCostCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == updatedCashDrawer.Id) ?? throw new Exception("");
-                if (cashDrawerToUpdate is null) return;
-                cashDrawerToUpdate.Id = cashDrawerDTO.Id;
-                cashDrawerToUpdate.Name = cashDrawerDTO.Name;
-                cashDrawerToUpdate.CashAccountingAccount = cashDrawerDTO.CashAccountingAccount;
-                cashDrawerToUpdate.CheckAccountingAccount = cashDrawerDTO.CheckAccountingAccount;
-                cashDrawerToUpdate.CardAccountingAccount = cashDrawerDTO.CardAccountingAccount;
-                cashDrawerToUpdate.CashReviewRequired = cashDrawerDTO.CashReviewRequired;
-                cashDrawerToUpdate.AutoAdjustBalance = cashDrawerDTO.AutoAdjustBalance;
-                cashDrawerToUpdate.AutoTransfer = cashDrawerDTO.AutoTransfer;
-                cashDrawerToUpdate.AutoTransferCashDrawer = cashDrawerDTO.AutoTransferCashDrawer;
-                await Task.Run(() => MajorCashDrawerEditor.SetForEdit(cashDrawerToUpdate), cancellationToken);
-                _notificationService.ShowSuccess(message.UpdatedCashDrawer.Message);
-                return;
-            }
-            if(updatedCashDrawer.IsPettyCash is false && updatedCashDrawer.Parent != null)
-            {
-                TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(updatedCashDrawer);
-                CashDrawerDummyDTO majorCashDrawerDummyDTO = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major) ?? throw new Exception("");
-                if (majorCashDrawerDummyDTO is null) return;
-                CashDrawerCompanyLocationDTO majorCashDrawerCompanyLocation = majorCashDrawerDummyDTO.Locations.FirstOrDefault(x => x.Id == updatedCashDrawer.Parent.CostCenter.CompanyLocation.Id) ?? throw new Exception("");
-                if (majorCashDrawerCompanyLocation is null) return;
-                CashDrawerCostCenterDTO majorCashDrawerCostCenter = majorCashDrawerCompanyLocation.CostCenters.FirstOrDefault(x => x.Id == updatedCashDrawer.Parent.CostCenter.Id) ?? throw new Exception("");
-                if (majorCashDrawerCostCenter is null) return;
-                MajorCashDrawerMasterTreeDTO majorCashDrawer = majorCashDrawerCostCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == updatedCashDrawer.Parent.Id) ?? throw new Exception("");
-                if (majorCashDrawer is null) return;
-                TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawerToUpdate = majorCashDrawer.AuxiliaryCashDrawers.FirstOrDefault(x => x.Id == updatedCashDrawer.Id) ?? throw new Exception("");
-                if (auxiliaryCashDrawerToUpdate is null) return;
-                auxiliaryCashDrawerToUpdate.Id = auxiliaryCashDrawer.Id;
-                auxiliaryCashDrawerToUpdate.Name = auxiliaryCashDrawer.Name;
-                auxiliaryCashDrawerToUpdate.CashAccountingAccount = auxiliaryCashDrawer.CashAccountingAccount;
-                auxiliaryCashDrawerToUpdate.CheckAccountingAccount = auxiliaryCashDrawer.CheckAccountingAccount;
-                auxiliaryCashDrawerToUpdate.CardAccountingAccount = auxiliaryCashDrawer.CardAccountingAccount;
-                auxiliaryCashDrawerToUpdate.CashReviewRequired = auxiliaryCashDrawer.CashReviewRequired;
-                auxiliaryCashDrawerToUpdate.AutoAdjustBalance = auxiliaryCashDrawer.AutoAdjustBalance;
-                auxiliaryCashDrawerToUpdate.AutoTransfer = auxiliaryCashDrawer.AutoTransfer;
-                auxiliaryCashDrawerToUpdate.AutoTransferCashDrawer = auxiliaryCashDrawer.AutoTransferCashDrawer;
-                auxiliaryCashDrawerToUpdate.ComputerName = auxiliaryCashDrawer.ComputerName;
-                await Task.Run(() => AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
-                _notificationService.ShowSuccess(message.UpdatedCashDrawer.Message);
-                return;
-            }
-            MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(updatedCashDrawer);
-            CashDrawerDummyDTO minorCashDrawerDummyDTO = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor) ?? throw new Exception("");
-            if (minorCashDrawerDummyDTO is null) return;
-            CashDrawerCompanyLocationDTO minorCashDrawerCompanyLocation = minorCashDrawerDummyDTO.Locations.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.CompanyLocation.Id) ?? throw new Exception("");
-            if (minorCashDrawerCompanyLocation is null) return;
-            CashDrawerCostCenterDTO minorCashDrawerCostCenter = minorCashDrawerCompanyLocation.CostCenters.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.Id) ?? throw new Exception("");
-            if (minorCashDrawerCostCenter is null) return;
-            MinorCashDrawerMasterTreeDTO minorCashDrawerToUpdate = minorCashDrawerCostCenter.CashDrawers.OfType<MinorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == updatedCashDrawer.Id) ?? throw new Exception("");
-            if (minorCashDrawerToUpdate is null) return;
-            minorCashDrawerToUpdate.Id = minorCashDrawerMasterTreeDTO.Id;
-            minorCashDrawerToUpdate.Name = minorCashDrawerMasterTreeDTO.Name;
-            minorCashDrawerToUpdate.CashAccountingAccount = minorCashDrawerMasterTreeDTO.CashAccountingAccount;
-            minorCashDrawerToUpdate.CashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
-            minorCashDrawerToUpdate.AutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            await Task.Run(() => MinorCashDrawerEditor.SetForEdit(minorCashDrawerToUpdate), cancellationToken);
+                // Caja general (major)
+                if (!updatedCashDrawer.IsPettyCash && updatedCashDrawer.Parent is null)
+                {
+                    MajorCashDrawerMasterTreeDTO cashDrawerDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(updatedCashDrawer);
+                    CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
+                    if (majorDummy is null) return;
+                    CashDrawerCompanyLocationDTO? location = majorDummy.Locations.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.CompanyLocation.Id);
+                    if (location is null) return;
+                    CashDrawerCostCenterDTO? costCenter = location.CostCenters.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.Id);
+                    if (costCenter is null) return;
+                    MajorCashDrawerMasterTreeDTO? cashDrawerToUpdate = costCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == updatedCashDrawer.Id);
+                    if (cashDrawerToUpdate is null) return;
+                    cashDrawerToUpdate.Id = cashDrawerDTO.Id;
+                    cashDrawerToUpdate.Name = cashDrawerDTO.Name;
+                    cashDrawerToUpdate.CashAccountingAccount = cashDrawerDTO.CashAccountingAccount;
+                    cashDrawerToUpdate.CheckAccountingAccount = cashDrawerDTO.CheckAccountingAccount;
+                    cashDrawerToUpdate.CardAccountingAccount = cashDrawerDTO.CardAccountingAccount;
+                    cashDrawerToUpdate.CashReviewRequired = cashDrawerDTO.CashReviewRequired;
+                    cashDrawerToUpdate.AutoAdjustBalance = cashDrawerDTO.AutoAdjustBalance;
+                    cashDrawerToUpdate.AutoTransfer = cashDrawerDTO.AutoTransfer;
+                    cashDrawerToUpdate.AutoTransferCashDrawer = cashDrawerDTO.AutoTransferCashDrawer;
+                    return;
+                }
+
+                // Caja auxiliar
+                if (!updatedCashDrawer.IsPettyCash && updatedCashDrawer.Parent != null)
+                {
+                    TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(updatedCashDrawer);
+                    CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
+                    if (majorDummy is null) return;
+                    CashDrawerCompanyLocationDTO? location = majorDummy.Locations.FirstOrDefault(x => x.Id == updatedCashDrawer.Parent.CostCenter.CompanyLocation.Id);
+                    if (location is null) return;
+                    CashDrawerCostCenterDTO? costCenter = location.CostCenters.FirstOrDefault(x => x.Id == updatedCashDrawer.Parent.CostCenter.Id);
+                    if (costCenter is null) return;
+                    MajorCashDrawerMasterTreeDTO? majorCashDrawer = costCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == updatedCashDrawer.Parent.Id);
+                    if (majorCashDrawer is null) return;
+                    TreasuryAuxiliaryCashDrawerMasterTreeDTO? auxiliaryCashDrawerToUpdate = majorCashDrawer.AuxiliaryCashDrawers.FirstOrDefault(x => x.Id == updatedCashDrawer.Id);
+                    if (auxiliaryCashDrawerToUpdate is null) return;
+                    auxiliaryCashDrawerToUpdate.Id = auxiliaryCashDrawer.Id;
+                    auxiliaryCashDrawerToUpdate.Name = auxiliaryCashDrawer.Name;
+                    auxiliaryCashDrawerToUpdate.CashAccountingAccount = auxiliaryCashDrawer.CashAccountingAccount;
+                    auxiliaryCashDrawerToUpdate.CheckAccountingAccount = auxiliaryCashDrawer.CheckAccountingAccount;
+                    auxiliaryCashDrawerToUpdate.CardAccountingAccount = auxiliaryCashDrawer.CardAccountingAccount;
+                    auxiliaryCashDrawerToUpdate.CashReviewRequired = auxiliaryCashDrawer.CashReviewRequired;
+                    auxiliaryCashDrawerToUpdate.AutoAdjustBalance = auxiliaryCashDrawer.AutoAdjustBalance;
+                    auxiliaryCashDrawerToUpdate.AutoTransfer = auxiliaryCashDrawer.AutoTransfer;
+                    auxiliaryCashDrawerToUpdate.AutoTransferCashDrawer = auxiliaryCashDrawer.AutoTransferCashDrawer;
+                    auxiliaryCashDrawerToUpdate.ComputerName = auxiliaryCashDrawer.ComputerName;
+                    return;
+                }
+
+                // Caja menor
+                MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(updatedCashDrawer);
+                CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
+                if (minorDummy is null) return;
+                CashDrawerCompanyLocationDTO? minorLocation = minorDummy.Locations.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.CompanyLocation.Id);
+                if (minorLocation is null) return;
+                CashDrawerCostCenterDTO? minorCostCenter = minorLocation.CostCenters.FirstOrDefault(x => x.Id == updatedCashDrawer.CostCenter.Id);
+                if (minorCostCenter is null) return;
+                MinorCashDrawerMasterTreeDTO? minorCashDrawerToUpdate = minorCostCenter.CashDrawers.OfType<MinorCashDrawerMasterTreeDTO>().FirstOrDefault(x => x.Id == updatedCashDrawer.Id);
+                if (minorCashDrawerToUpdate is null) return;
+                minorCashDrawerToUpdate.Id = minorCashDrawerMasterTreeDTO.Id;
+                minorCashDrawerToUpdate.Name = minorCashDrawerMasterTreeDTO.Name;
+                minorCashDrawerToUpdate.CashAccountingAccount = minorCashDrawerMasterTreeDTO.CashAccountingAccount;
+                minorCashDrawerToUpdate.CashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
+                minorCashDrawerToUpdate.AutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
+            });
             _notificationService.ShowSuccess(message.UpdatedCashDrawer.Message);
-            return;
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
         {
             var createdBank = message.CreatedBank.Entity;
-            IsNewRecord = false;
 
             TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(createdBank);
             bankDTO.Context = this;
@@ -1457,14 +1153,17 @@ namespace NetErp.Treasury.Masters.ViewModels
         public Task HandleAsync(BankUpdateMessage message, CancellationToken cancellationToken)
         {
             var updatedBank = message.UpdatedBank.Entity;
-            TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(updatedBank);
-            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
-            if (bankDummyDTO is null) return Task.CompletedTask;
-            TreasuryBankMasterTreeDTO bankToUpdate = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == updatedBank.Id) ?? throw new Exception("");
-            if (bankToUpdate is null) return Task.CompletedTask;
-            bankToUpdate.Id = bankDTO.Id;
-            bankToUpdate.AccountingEntity = bankDTO.AccountingEntity;
-            bankToUpdate.PaymentMethodPrefix = bankDTO.PaymentMethodPrefix;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(updatedBank);
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                if (bankDummy is null) return;
+                TreasuryBankMasterTreeDTO? bankToUpdate = bankDummy.Banks.FirstOrDefault(x => x.Id == updatedBank.Id);
+                if (bankToUpdate is null) return;
+                bankToUpdate.Id = bankDTO.Id;
+                bankToUpdate.AccountingEntity = bankDTO.AccountingEntity;
+                bankToUpdate.PaymentMethodPrefix = bankDTO.PaymentMethodPrefix;
+            });
             _notificationService.ShowSuccess(message.UpdatedBank.Message);
             return Task.CompletedTask;
         }
@@ -1473,23 +1172,22 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
-                if (bankDummyDTO is null) return;
-                bankDummyDTO.Banks.Remove(bankDummyDTO.Banks.Where(x => x.Id == message.DeletedBank.DeletedId).First());
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                if (bankDummy is null) return;
+                TreasuryBankMasterTreeDTO? bankToDelete = bankDummy.Banks.FirstOrDefault(x => x.Id == message.DeletedBank.DeletedId);
+                if (bankToDelete is null) return;
+                bankDummy.Banks.Remove(bankToDelete);
             });
             _notificationService.ShowSuccess(message.DeletedBank.Message);
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
         {
             var createdBankAccount = message.CreatedBankAccount.Entity;
-            IsNewRecord = false;
 
-            // Recargar combos antes de asignar SelectedItem (que dispara SetForEdit),
-            // porque la API puede crear cuentas contables como side-effect
+            // La API puede crear cuentas contables como side-effect.
             _auxiliaryAccountingAccountCache.Clear();
-            await LoadComboBoxesAsync();
 
             TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(createdBankAccount);
             bankAccountDTO.Context = this;
@@ -1507,16 +1205,17 @@ namespace NetErp.Treasury.Masters.ViewModels
             });
             if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedBankAccount.Message);
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                var bankDummyDTO = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
-                if (bankDummyDTO is null) return;
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                if (bankDummy is null) return;
 
-                foreach (var bank in bankDummyDTO.Banks)
+                foreach (var bank in bankDummy.Banks)
                 {
                     var bankAccount = bank.BankAccounts.FirstOrDefault(x => x.Id == message.DeletedBankAccount.DeletedId);
                     if (bankAccount != null)
@@ -1526,41 +1225,42 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                 }
             });
-            await LoadComboBoxesAsync();
             _notificationService.ShowSuccess(message.DeletedBankAccount.Message);
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
         {
             var updatedBankAccount = message.UpdatedBankAccount.Entity;
-            TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(updatedBankAccount);
-            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
-            if (bankDummyDTO is null) return;
-            TreasuryBankMasterTreeDTO bankDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == updatedBankAccount.Bank.Id) ?? throw new Exception("");
-            if (bankDTO is null) return;
-            TreasuryBankAccountMasterTreeDTO bankAccountToUpdate = bankDTO.BankAccounts.FirstOrDefault(x => x.Id == updatedBankAccount.Id) ?? throw new Exception("");
-            if (bankAccountToUpdate is null) return;
-            bankAccountToUpdate.Id = bankAccountDTO.Id;
-            bankAccountToUpdate.Type = bankAccountDTO.Type;
-            bankAccountToUpdate.Number = bankAccountDTO.Number;
-            bankAccountToUpdate.IsActive = bankAccountDTO.IsActive;
-            bankAccountToUpdate.Description = bankAccountDTO.Description;
-            bankAccountToUpdate.Reference = bankAccountDTO.Reference;
-            bankAccountToUpdate.DisplayOrder = bankAccountDTO.DisplayOrder;
-            bankAccountToUpdate.AccountingAccount = bankAccountDTO.AccountingAccount;
-            bankAccountToUpdate.Bank = bankAccountDTO.Bank;
-            bankAccountToUpdate.Provider = bankAccountDTO.Provider;
-            bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
-            bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
-            await Task.Run(() => BankAccountEditor.SetForEdit(bankAccountToUpdate));
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(updatedBankAccount);
+                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
+                if (bankDummy is null) return;
+                TreasuryBankMasterTreeDTO? bank = bankDummy.Banks.FirstOrDefault(x => x.Id == updatedBankAccount.Bank.Id);
+                if (bank is null) return;
+                TreasuryBankAccountMasterTreeDTO? bankAccountToUpdate = bank.BankAccounts.FirstOrDefault(x => x.Id == updatedBankAccount.Id);
+                if (bankAccountToUpdate is null) return;
+                bankAccountToUpdate.Id = bankAccountDTO.Id;
+                bankAccountToUpdate.Type = bankAccountDTO.Type;
+                bankAccountToUpdate.Number = bankAccountDTO.Number;
+                bankAccountToUpdate.IsActive = bankAccountDTO.IsActive;
+                bankAccountToUpdate.Description = bankAccountDTO.Description;
+                bankAccountToUpdate.Reference = bankAccountDTO.Reference;
+                bankAccountToUpdate.DisplayOrder = bankAccountDTO.DisplayOrder;
+                bankAccountToUpdate.AccountingAccount = bankAccountDTO.AccountingAccount;
+                bankAccountToUpdate.Bank = bankAccountDTO.Bank;
+                bankAccountToUpdate.Provider = bankAccountDTO.Provider;
+                bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
+                bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
+            });
             _notificationService.ShowSuccess(message.UpdatedBankAccount.Message);
-            return;
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(FranchiseCreateMessage message, CancellationToken cancellationToken)
         {
             var createdFranchise = message.CreatedFranchise.Entity;
-            IsNewRecord = false;
             TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(createdFranchise);
             franchiseDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? inserted = null;
@@ -1582,49 +1282,45 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
-                if (franchiseDummyDTO is null) return;
-                franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises.Where(x => x.Id == message.DeletedFranchise.DeletedId).First());
+                FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
+                if (franchiseDummy is null) return;
+                TreasuryFranchiseMasterTreeDTO? franchiseToDelete = franchiseDummy.Franchises.FirstOrDefault(x => x.Id == message.DeletedFranchise.DeletedId);
+                if (franchiseToDelete is null) return;
+                franchiseDummy.Franchises.Remove(franchiseToDelete);
             });
             _notificationService.ShowSuccess(message.DeletedFranchise.Message);
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(FranchiseUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(FranchiseUpdateMessage message, CancellationToken cancellationToken)
         {
             var updatedFranchise = message.UpdatedFranchise.Entity;
-            TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(updatedFranchise);
-            FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
-            if (franchiseDummyDTO is null) return;
-            TreasuryFranchiseMasterTreeDTO franchiseToUpdate = franchiseDummyDTO.Franchises.FirstOrDefault(x => x.Id == updatedFranchise.Id) ?? throw new Exception("");
-            if (franchiseToUpdate is null) return;
-            franchiseToUpdate.Id = franchiseDTO.Id;
-            franchiseToUpdate.Name = franchiseDTO.Name;
-            franchiseToUpdate.FormulaCommission = franchiseDTO.FormulaCommission;
-            franchiseToUpdate.FormulaReteiva = franchiseDTO.FormulaReteiva;
-            franchiseToUpdate.FormulaReteica = franchiseDTO.FormulaReteica;
-            franchiseToUpdate.FormulaRetefte = franchiseDTO.FormulaRetefte;
-            franchiseToUpdate.CommissionRate = franchiseDTO.CommissionRate;
-            franchiseToUpdate.ReteivaRate = franchiseDTO.ReteivaRate;
-            franchiseToUpdate.ReteicaRate = franchiseDTO.ReteicaRate;
-            franchiseToUpdate.RetefteRate = franchiseDTO.RetefteRate;
-            franchiseToUpdate.TaxRate = franchiseDTO.TaxRate;
-            franchiseToUpdate.BankAccount = franchiseDTO.BankAccount;
-            franchiseToUpdate.CommissionAccountingAccount = franchiseDTO.CommissionAccountingAccount;
-            franchiseToUpdate.FranchisesByCostCenter = franchiseDTO.FranchisesByCostCenter;
-            await Task.Run(() => FranchiseEditor.SetForEdit(franchiseToUpdate));
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(updatedFranchise);
+                FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
+                if (franchiseDummy is null) return;
+                TreasuryFranchiseMasterTreeDTO? franchiseToUpdate = franchiseDummy.Franchises.FirstOrDefault(x => x.Id == updatedFranchise.Id);
+                if (franchiseToUpdate is null) return;
+                franchiseToUpdate.Id = franchiseDTO.Id;
+                franchiseToUpdate.Name = franchiseDTO.Name;
+                franchiseToUpdate.FormulaCommission = franchiseDTO.FormulaCommission;
+                franchiseToUpdate.FormulaReteiva = franchiseDTO.FormulaReteiva;
+                franchiseToUpdate.FormulaReteica = franchiseDTO.FormulaReteica;
+                franchiseToUpdate.FormulaRetefte = franchiseDTO.FormulaRetefte;
+                franchiseToUpdate.CommissionRate = franchiseDTO.CommissionRate;
+                franchiseToUpdate.ReteivaRate = franchiseDTO.ReteivaRate;
+                franchiseToUpdate.ReteicaRate = franchiseDTO.ReteicaRate;
+                franchiseToUpdate.RetefteRate = franchiseDTO.RetefteRate;
+                franchiseToUpdate.TaxRate = franchiseDTO.TaxRate;
+                franchiseToUpdate.BankAccount = franchiseDTO.BankAccount;
+                franchiseToUpdate.CommissionAccountingAccount = franchiseDTO.CommissionAccountingAccount;
+                franchiseToUpdate.FranchisesByCostCenter = franchiseDTO.FranchisesByCostCenter;
+            });
             _notificationService.ShowSuccess(message.UpdatedFranchise.Message);
-            return;
+            return Task.CompletedTask;
         }
 
-        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
-        {
-            if (close)
-            {
-                Messenger.Default.Unregister<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this);
-                Context.EventAggregator.Unsubscribe(this);
-            }
-            return base.OnDeactivateAsync(close, cancellationToken);
-        }
+        #endregion
     }
 }

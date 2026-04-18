@@ -1,16 +1,13 @@
 using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
+using Microsoft.VisualStudio.Threading;
 using Models.Treasury;
-using Models.Global;
-using NetErp.Global.CostCenters.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.Services;
+using NetErp.Treasury.Masters.Validators;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.ViewModels
@@ -36,6 +33,14 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly AuxiliaryCashDrawerCache _auxiliaryCashDrawerCache;
         private readonly BankCache _bankCache;
         private readonly FranchiseCache _franchiseCache;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly BankValidator _bankValidator;
+        private readonly BankAccountValidator _bankAccountValidator;
+        private readonly FranchiseValidator _franchiseValidator;
+        private readonly MajorCashDrawerValidator _majorCashDrawerValidator;
+        private readonly MinorCashDrawerValidator _minorCashDrawerValidator;
+        private readonly AuxiliaryCashDrawerValidator _auxiliaryCashDrawerValidator;
 
         private TreasuryRootMasterViewModel _treasuryRootMasterViewModel;
         public TreasuryRootMasterViewModel TreasuryRootMasterViewModel
@@ -60,7 +65,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                         _auxiliaryCashDrawerCache,
                         _bankCache,
                         _franchiseCache,
-                        _graphQLClient);
+                        _graphQLClient,
+                        _stringLengthCache,
+                        _joinableTaskFactory,
+                        _bankValidator,
+                        _bankAccountValidator,
+                        _franchiseValidator,
+                        _majorCashDrawerValidator,
+                        _minorCashDrawerValidator,
+                        _auxiliaryCashDrawerValidator);
                 return _treasuryRootMasterViewModel;
             }
         }
@@ -83,7 +96,15 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryCashDrawerCache auxiliaryCashDrawerCache,
             BankCache bankCache,
             FranchiseCache franchiseCache,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory,
+            BankValidator bankValidator,
+            BankAccountValidator bankAccountValidator,
+            FranchiseValidator franchiseValidator,
+            MajorCashDrawerValidator majorCashDrawerValidator,
+            MinorCashDrawerValidator minorCashDrawerValidator,
+            AuxiliaryCashDrawerValidator auxiliaryCashDrawerValidator)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
@@ -103,6 +124,14 @@ namespace NetErp.Treasury.Masters.ViewModels
             _bankCache = bankCache;
             _franchiseCache = franchiseCache;
             _graphQLClient = graphQLClient;
+            _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
+            _bankValidator = bankValidator;
+            _bankAccountValidator = bankAccountValidator;
+            _franchiseValidator = franchiseValidator;
+            _majorCashDrawerValidator = majorCashDrawerValidator;
+            _minorCashDrawerValidator = minorCashDrawerValidator;
+            _auxiliaryCashDrawerValidator = auxiliaryCashDrawerValidator;
             _ = Task.Run(ActivateMasterView);
         }
 
