@@ -30,7 +30,8 @@
                 <StackPanel Grid.Row="0">
                     <!-- Centro de costo (solo lectura) -->
                     <TextBlock Text="Centro de costo" FontSize="13" Margin="0,0,0,3"/>
-                    <dxe:TextEdit Padding="3" BorderBrush="#C8CED6"
+                    <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
+                                  Padding="3" BorderBrush="#C8CED6"
                                   IsReadOnly="True" Margin="0,0,0,8"
                                   EditValue="{Binding CostCenterName, Mode=OneWay}"/>
 
@@ -45,16 +46,6 @@
                                   Margin="0,0,0,8"
                                   EditValue="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <!-- Flags -->
-                    <StackPanel Margin="0,0,0,8">
-                        <dxe:CheckEdit Content="Requiere arqueo de caja"
-                                       Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
-                                       IsChecked="{Binding CashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:CheckEdit Content="Ajustar saldo automáticamente"
-                                       Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,0"
-                                       IsChecked="{Binding AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-
                     <!-- Cuenta contable de efectivo -->
                     <TextBlock Text="Cuenta contable de efectivo" FontSize="13" Margin="0,0,0,3"/>
                     <dxg:LookUpEdit Padding="3"
@@ -63,7 +54,7 @@
                                     FilterCondition="Contains"
                                     ImmediatePopup="True"
                                     ClearSelectionOnBackspace="True"
-                                    NullText="Seleccione una cuenta contable..."
+                                    NullText="Dejar vacío para generar automáticamente..."
                                     BorderBrush="#C8CED6"
                                     Margin="0,0,0,8"
                                     ItemsSource="{Binding AccountingAccounts}"
@@ -100,7 +91,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
+                                                <Setter Property="Opacity" Value="0.4"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>

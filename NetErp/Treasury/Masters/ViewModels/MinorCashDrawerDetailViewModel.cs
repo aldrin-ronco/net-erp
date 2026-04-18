@@ -143,6 +143,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(CashReviewRequired));
                     this.TrackChange(nameof(CashReviewRequired), value);
+                    if (!value) AutoAdjustBalance = false;
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }

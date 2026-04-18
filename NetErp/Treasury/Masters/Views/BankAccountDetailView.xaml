@@ -73,13 +73,22 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                <TextBlock Text="Número de cuenta" FontSize="13" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding NumberLabel}" FontSize="13" Margin="0,0,0,3"/>
                                 <dxe:TextEdit x:Name="Number"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               CharacterCasing="Upper"
                                               Padding="3"
                                               MaxLength="{Binding NumberMaxLength}"
                                               BorderBrush="#C8CED6"
+                                              Visibility="{Binding IsTraditionalBank, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                              EditValue="{Binding Number, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <dxe:TextEdit x:Name="NumberWallet"
+                                              Style="{StaticResource FocusedHighlightStyle}"
+                                              Padding="3"
+                                              BorderBrush="#C8CED6"
+                                              MaskType="Simple" Mask="000 000 00 00"
+                                              MaskUseAsDisplayFormat="True"
+                                              Visibility="{Binding IsDigitalWallet, Converter={StaticResource BooleanToVisibilityConverter}}"
                                               EditValue="{Binding Number, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="4,0,0,0">
@@ -93,46 +102,28 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Orden + Activa -->
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                <TextBlock Text="Orden de presentación" FontSize="13" Margin="0,0,0,3"/>
-                                <dxe:SpinEdit Padding="2" BorderBrush="#C8CED6"
-                                              EditValueType="{x:Type sys:Int32}"
-                                              IsFloatValue="False"
-                                              MaskType="Numeric" Mask="d"
-                                              AllowNullInput="False"
-                                              MinValue="0"
-                                              EditValue="{Binding DisplayOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="4,0,0,0" VerticalAlignment="Bottom">
-                                <dxe:CheckEdit Content="Cuenta activa"
-                                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
-                                               IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                        </Grid>
-
                         <!-- Descripción computada -->
                         <TextBlock Text="Descripción" FontSize="13" Margin="0,0,0,3"/>
-                        <dxe:TextEdit Padding="3" BorderBrush="#C8CED6"
+                        <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
+                                      Padding="3" BorderBrush="#C8CED6"
                                       IsReadOnly="True" Margin="0,0,0,8"
                                       EditValue="{Binding Description, Mode=OneWay}"/>
 
-                        <!-- Cuenta contable: crear automática vs seleccionar existente -->
-                        <TextBlock Text="Cuenta contable" FontSize="13" FontWeight="Bold" Margin="0,4,0,3"/>
+                        <!-- Cuenta contable: crear automática vs seleccionar existente (opciones excluyentes) -->
+                        <TextBlock Text="Cuenta contable" FontSize="13" Margin="0,4,0,3"/>
                         <StackPanel Margin="0,0,0,6" Visibility="{Binding IsNewRecord, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <dxe:CheckEdit Content="Crear cuenta contable automáticamente"
-                                           Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
-                                           IsChecked="{Binding AccountingAccountAutoCreate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:CheckEdit Content="Seleccionar una cuenta contable existente"
-                                           Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,0"
-                                           IsChecked="{Binding AccountingAccountSelectExisting, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="Crear cuenta contable automáticamente"
+                                             GroupName="AccountingAccountMode" Padding="4,0,0,0"
+                                             Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                             IsChecked="{Binding AccountingAccountAutoCreate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <RadioButton Content="Seleccionar una cuenta contable existente"
+                                             GroupName="AccountingAccountMode" Padding="4,0,0,0" Margin="20,0,0,0"
+                                             Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                             IsChecked="{Binding AccountingAccountSelectExisting, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
                             <TextBlock Text="La cuenta será creada automáticamente al guardar, con el código siguiente disponible."
-                                       FontSize="11" FontStyle="Italic" Foreground="Gray" Margin="0,4,0,0"
+                                       FontSize="11" Foreground="#6B7280" Margin="20,4,0,0"
                                        Visibility="{Binding ShowAutoCreateDescription, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         </StackPanel>
 
@@ -169,48 +160,56 @@
 
                         <!-- Método de pago -->
                         <dxe:CheckEdit Content="Habilitar como método de pago"
-                                       Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,6"
+                                       Style="{StaticResource BlueCheckedTextStyle}" Padding="2" Margin="0,4,0,8"
                                        IsChecked="{Binding EnablePaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBlock Text="Nombre generado del método de pago:" FontSize="11" Foreground="Gray" Margin="0,0,0,3"
+                        <TextBlock Text="Nombre generado del método de pago:" FontSize="11" Foreground="#6B7280" Margin="0,0,0,3"
                                    Visibility="{Binding EnablePaymentMethod, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <dxe:TextEdit Padding="3" BorderBrush="#C8CED6" IsReadOnly="True" Margin="0,0,0,8"
+                        <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
+                                      Padding="3" BorderBrush="#C8CED6" IsReadOnly="True" Margin="0,0,0,8"
                                       EditValue="{Binding PaymentMethodName, Mode=OneWay}"
                                       Visibility="{Binding EnablePaymentMethod, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </StackPanel>
                 </ScrollViewer>
 
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsCancel="True">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <Grid Grid.Row="1" Margin="0,5,0,10">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                            </dxmvvm:Interaction.Behaviors>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsCancel="True">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                            </dxmvvm:Interaction.Behaviors>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <dxe:CheckEdit Content="Cuenta activa"
+                                   Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Visibility="{Binding IsEditRecord, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
             </Grid>
         </Border>
     </busyIndicator:BusyMask>
