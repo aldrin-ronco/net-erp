@@ -630,9 +630,9 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public ICommand DeleteAuxiliaryCashDrawerCommand =>
-            field ??= new AsyncCommand(DeleteAuxiliaryCashDrawer);
+            field ??= new AsyncCommand(DeleteAuxiliaryCashDrawerAsync);
 
-        public async Task DeleteAuxiliaryCashDrawer()
+        public async Task DeleteAuxiliaryCashDrawerAsync()
         {
             if (SelectedItem is not TreasuryAuxiliaryCashDrawerMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.Name, selected.Id,
@@ -641,9 +641,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                     new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
 
-        public ICommand DeleteBankCommand => field ??= new AsyncCommand(DeleteBank);
+        public ICommand DeleteBankCommand => field ??= new AsyncCommand(DeleteBankAsync);
 
-        public async Task DeleteBank()
+        public async Task DeleteBankAsync()
         {
             if (SelectedItem is not TreasuryBankMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.AccountingEntity.SearchName, selected.Id,
@@ -653,9 +653,9 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public ICommand DeleteBankAccountCommand =>
-            field ??= new AsyncCommand(DeleteBankAccount);
+            field ??= new AsyncCommand(DeleteBankAccountAsync);
 
-        public async Task DeleteBankAccount()
+        public async Task DeleteBankAccountAsync()
         {
             if (SelectedItem is not TreasuryBankAccountMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.Description, selected.Id,
@@ -665,9 +665,9 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public ICommand DeleteFranchiseCommand =>
-            field ??= new AsyncCommand(DeleteFranchise);
+            field ??= new AsyncCommand(DeleteFranchiseAsync);
 
-        public async Task DeleteFranchise()
+        public async Task DeleteFranchiseAsync()
         {
             if (SelectedItem is not TreasuryFranchiseMasterTreeDTO selected) return;
             await DeleteEntityAsync(selected.Name, selected.Id,
@@ -691,6 +691,8 @@ namespace NetErp.Treasury.Masters.ViewModels
         /// </summary>
         private void BuildTreeFromCaches()
         {
+            
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 // Raíz 1: Caja General (mayor)
@@ -728,6 +730,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     majorDummy.Locations.Add(locationDTO);
                 }
+                #pragma warning restore VSTHRD001
 
                 // Raíz 2: Caja Menor
                 CashDrawerDummyDTO minorDummy = new() { Id = 2, Name = "CAJA MENOR", Type = CashDrawerType.Minor, Context = this };
