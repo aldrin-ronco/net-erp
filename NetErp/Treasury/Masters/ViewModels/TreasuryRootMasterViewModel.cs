@@ -4,24 +4,28 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
-using Models.Books;
 using Models.Global;
 using Models.Treasury;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using NetErp.Helpers.Services;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.Validators;
 using System;
-using System.Linq;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using static Models.Global.GraphQLResponseTypes;
+using IDialogService = NetErp.Helpers.IDialogService;
+using INotificationService = NetErp.Helpers.Services.INotificationService;
 
 namespace NetErp.Treasury.Masters.ViewModels
 {
@@ -39,14 +43,14 @@ namespace NetErp.Treasury.Masters.ViewModels
         IHandle<FranchiseDeleteMessage>,
         IHandle<FranchiseUpdateMessage>
     {
-        public TreasuryRootViewModel Context { get; set; }
+        public TreasuryRootViewModel Context { get; }
 
         private readonly IRepository<CashDrawerGraphQLModel> _cashDrawerService;
         private readonly IRepository<BankGraphQLModel> _bankService;
         private readonly IRepository<BankAccountGraphQLModel> _bankAccountService;
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
-        private readonly Helpers.IDialogService _dialogService;
-        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IDialogService _dialogService;
+        private readonly INotificationService _notificationService;
         private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly CompanyLocationCache _companyLocationCache;
@@ -66,41 +70,62 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly MinorCashDrawerValidator _minorCashDrawerValidator;
         private readonly AuxiliaryCashDrawerValidator _auxiliaryCashDrawerValidator;
 
-        public ObservableCollection<object> DummyItems { get; set; } = [];
-
-        private ITreasuryTreeMasterSelectedItem? _selectedItem;
-        public ITreasuryTreeMasterSelectedItem? SelectedItem
+        public ObservableCollection<object> DummyItems
         {
-            get => _selectedItem;
+            get;
             set
             {
-                if (_selectedItem != value)
+                if (field != value)
                 {
-                    _selectedItem = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DummyItems));
+                }
+            }
+        } = [];
+
+        public ITreasuryTreeMasterSelectedItem? SelectedItem
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
                 }
             }
         }
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
+        public string ResponseTime
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        } = string.Empty;
+
         #region Create Commands (tree context menus)
 
-        private ICommand _createMajorCashDrawerCommand;
         public ICommand CreateMajorCashDrawerCommand =>
-            _createMajorCashDrawerCommand ??= new AsyncCommand(CreateMajorCashDrawerAsync);
+            field ??= new AsyncCommand(CreateMajorCashDrawerAsync);
 
         public async Task CreateMajorCashDrawerAsync()
         {
@@ -128,9 +153,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, "Nueva caja general");
         }
 
-        private ICommand _createMinorCashDrawerCommand;
         public ICommand CreateMinorCashDrawerCommand =>
-            _createMinorCashDrawerCommand ??= new AsyncCommand(CreateMinorCashDrawerAsync);
+            field ??= new AsyncCommand(CreateMinorCashDrawerAsync);
 
         public async Task CreateMinorCashDrawerAsync()
         {
@@ -157,9 +181,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, "Nueva caja menor");
         }
 
-        private ICommand _createAuxiliaryCashDrawerCommand;
         public ICommand CreateAuxiliaryCashDrawerCommand =>
-            _createAuxiliaryCashDrawerCommand ??= new AsyncCommand(CreateAuxiliaryCashDrawerAsync);
+            field ??= new AsyncCommand(CreateAuxiliaryCashDrawerAsync);
 
         public async Task CreateAuxiliaryCashDrawerAsync()
         {
@@ -187,9 +210,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, "Nueva caja auxiliar");
         }
 
-        private ICommand _createBankCommand;
         public ICommand CreateBankCommand =>
-            _createBankCommand ??= new AsyncCommand(CreateBankAsync);
+            field ??= new AsyncCommand(CreateBankAsync);
 
         public async Task CreateBankAsync()
         {
@@ -203,9 +225,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, "Nuevo banco");
         }
 
-        private ICommand _createBankAccountCommand;
         public ICommand CreateBankAccountCommand =>
-            _createBankAccountCommand ??= new AsyncCommand(CreateBankAccountAsync);
+            field ??= new AsyncCommand(CreateBankAccountAsync);
 
         public async Task CreateBankAccountAsync()
         {
@@ -232,9 +253,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, "Nueva cuenta bancaria");
         }
 
-        private ICommand _createFranchiseCommand;
         public ICommand CreateFranchiseCommand =>
-            _createFranchiseCommand ??= new AsyncCommand(CreateFranchiseAsync);
+            field ??= new AsyncCommand(CreateFranchiseAsync);
 
         public async Task CreateFranchiseAsync()
         {
@@ -253,8 +273,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #region Edit Command
 
-        private ICommand _editCommand;
-        public ICommand EditCommand => _editCommand ??= new AsyncCommand(EditAsync);
+        public ICommand EditCommand => field ??= new AsyncCommand(EditAsync);
 
         public async Task EditAsync()
         {
@@ -431,14 +450,15 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                await Dispatcher.Yield(DispatcherPriority.Background);
                 detail = setup();
             }
             catch (Exception ex)
             {
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{title}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{title}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             finally
@@ -454,9 +474,10 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
             catch (Exception ex)
             {
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{title}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{title}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -475,11 +496,10 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
                 string canDeleteQuery = BuildCanDeleteQuery(canDeleteFragmentName);
                 object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await service.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
+                CanDeleteType validation = await service.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
@@ -494,16 +514,16 @@ namespace NetErp.Treasury.Masters.ViewModels
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
+                    ThemedMessageBox.Show(
                         title: "Atención!",
                         text: $"El registro no puede ser eliminado\n\n{validation.Message}",
                         messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
+                        image: MessageBoxImage.Error);
                     return;
                 }
 
                 IsBusy = true;
-                Refresh();
 
                 DeleteResponseType deleteResult = await ExecuteDeleteAsync(service, deleteFragmentName, id);
 
@@ -519,27 +539,14 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 await publishMessage(deleteResult);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.DeleteEntityAsync \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{GetType().Name}.DeleteEntityAsync \r\n{ex.Message}",
+                    text: $"{GetType().Name}.DeleteEntityAsync \r\n{ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -547,39 +554,37 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _canDeleteQueryCache = new();
+        private static readonly ConcurrentDictionary<string, Lazy<string>> _canDeleteQueryCache = new();
 
         private static string BuildCanDeleteQuery(string fragmentName)
         {
-            return _canDeleteQueryCache.GetOrAdd(fragmentName, name =>
+            return _canDeleteQueryCache.GetOrAdd(fragmentName, name => new Lazy<string>(() =>
             {
-                var fields = FieldSpec<CanDeleteType>.Create()
+                FieldSpec<CanDeleteType> fields = FieldSpec<CanDeleteType>.Create()
                     .Field(f => f.CanDelete)
-                    .Field(f => f.Message)
-                    .Build();
+                    .Field(f => f.Message);
 
-                var parameter = new GraphQLQueryParameter("id", "ID!");
-                var fragment = new GraphQLQueryFragment(name, [parameter], fields, "CanDeleteResponse");
+                GraphQLQueryParameter parameter = new("id", "ID!");
+                GraphQLQueryFragment fragment = new(name, [parameter], fields.Build(), "CanDeleteResponse");
                 return new GraphQLQueryBuilder([fragment]).GetQuery();
-            });
+            })).Value;
         }
 
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _deleteMutationQueryCache = new();
+        private static readonly ConcurrentDictionary<string, Lazy<string>> _deleteMutationQueryCache = new();
 
         private static string BuildDeleteMutationQuery(string fragmentName)
         {
-            return _deleteMutationQueryCache.GetOrAdd(fragmentName, name =>
+            return _deleteMutationQueryCache.GetOrAdd(fragmentName, name => new Lazy<string>(() =>
             {
-                var fields = FieldSpec<DeleteResponseType>.Create()
+                FieldSpec<DeleteResponseType> fields = FieldSpec<DeleteResponseType>.Create()
                     .Field(f => f.DeletedId)
                     .Field(f => f.Message)
-                    .Field(f => f.Success)
-                    .Build();
+                    .Field(f => f.Success);
 
-                var parameter = new GraphQLQueryParameter("id", "ID!");
-                var fragment = new GraphQLQueryFragment(name, [parameter], fields, "DeleteResponse");
+                GraphQLQueryParameter parameter = new("id", "ID!");
+                GraphQLQueryFragment fragment = new(name, [parameter], fields.Build(), "DeleteResponse");
                 return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-            });
+            })).Value;
         }
 
         private async Task<DeleteResponseType> ExecuteDeleteAsync<TModel>(
@@ -592,9 +597,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             return result;
         }
 
-        private ICommand _deleteMajorCashDrawerCommand;
         public ICommand DeleteMajorCashDrawerCommand =>
-            _deleteMajorCashDrawerCommand ??= new AsyncCommand(DeleteMajorCashDrawer);
+            field ??= new AsyncCommand(DeleteMajorCashDrawer);
 
         public async Task DeleteMajorCashDrawer()
         {
@@ -605,9 +609,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
 
-        private ICommand _deleteMinorCashDrawerCommand;
         public ICommand DeleteMinorCashDrawerCommand =>
-            _deleteMinorCashDrawerCommand ??= new AsyncCommand(DeleteMinorCashDrawer);
+            field ??= new AsyncCommand(DeleteMinorCashDrawer);
 
         public async Task DeleteMinorCashDrawer()
         {
@@ -618,9 +621,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
 
-        private ICommand _deleteAuxiliaryCashDrawerCommand;
         public ICommand DeleteAuxiliaryCashDrawerCommand =>
-            _deleteAuxiliaryCashDrawerCommand ??= new AsyncCommand(DeleteAuxiliaryCashDrawer);
+            field ??= new AsyncCommand(DeleteAuxiliaryCashDrawer);
 
         public async Task DeleteAuxiliaryCashDrawer()
         {
@@ -631,8 +633,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
 
-        private ICommand _deleteBankCommand;
-        public ICommand DeleteBankCommand => _deleteBankCommand ??= new AsyncCommand(DeleteBank);
+        public ICommand DeleteBankCommand => field ??= new AsyncCommand(DeleteBank);
 
         public async Task DeleteBank()
         {
@@ -643,9 +644,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     new BankDeleteMessage { DeletedBank = result }));
         }
 
-        private ICommand _deleteBankAccountCommand;
         public ICommand DeleteBankAccountCommand =>
-            _deleteBankAccountCommand ??= new AsyncCommand(DeleteBankAccount);
+            field ??= new AsyncCommand(DeleteBankAccount);
 
         public async Task DeleteBankAccount()
         {
@@ -656,9 +656,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     new BankAccountDeleteMessage { DeletedBankAccount = result }));
         }
 
-        private ICommand _deleteFranchiseCommand;
         public ICommand DeleteFranchiseCommand =>
-            _deleteFranchiseCommand ??= new AsyncCommand(DeleteFranchise);
+            field ??= new AsyncCommand(DeleteFranchise);
 
         public async Task DeleteFranchise()
         {
@@ -674,122 +673,111 @@ namespace NetErp.Treasury.Masters.ViewModels
         #region Tree hydration
 
         /// <summary>
-        /// Reconstruye el árbol completo desde los caches ya hidratados.
+        /// Construye el árbol completo desde los caches ya hidratados.
+        /// Siguiendo el patrón de CostCenterMasterViewModel.BuildTree: arma toda la jerarquía
+        /// en una ObservableCollection local y la asigna al final como nueva colección raíz
+        /// (via NotifyOfPropertyChange). Esto garantiza que el TreeView re-evalúe toda la
+        /// estructura — mutar las sub-colecciones in-place no funciona porque DevExpress
+        /// TreeViewControl cachea la estructura jerárquica de los nodos bindeados al inicio.
         /// Debe ejecutarse en el hilo de UI.
         /// </summary>
         private void BuildTreeFromCaches()
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
-                CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
-                BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
-                FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
-
-                if (majorDummy != null)
+                // Raíz 1: Caja General (mayor)
+                CashDrawerDummyDTO majorDummy = new() { Id = 1, Name = "CAJA GENERAL", Type = CashDrawerType.Major, Context = this };
+                foreach (CompanyLocationGraphQLModel loc in _companyLocationCache.Items)
                 {
-                    majorDummy.Locations.Clear();
-                    foreach (var loc in _companyLocationCache.Items)
+                    CashDrawerCompanyLocationDTO locationDTO = Context.AutoMapper.Map<CashDrawerCompanyLocationDTO>(loc);
+                    locationDTO.Context = this;
+                    locationDTO.DummyParent = majorDummy;
+                    locationDTO.Type = CashDrawerType.Major;
+
+                    foreach (CostCenterGraphQLModel cc in _costCenterCache.Items.Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == loc.Id))
                     {
-                        var locationDTO = Context.AutoMapper.Map<CashDrawerCompanyLocationDTO>(loc);
-                        locationDTO.Context = this;
-                        locationDTO.DummyParent = majorDummy;
-                        locationDTO.Type = CashDrawerType.Major;
-                        locationDTO.CostCenters.Clear();
+                        CashDrawerCostCenterDTO costCenterDTO = Context.AutoMapper.Map<CashDrawerCostCenterDTO>(cc);
+                        costCenterDTO.Context = this;
+                        costCenterDTO.Location = locationDTO;
+                        costCenterDTO.Type = CashDrawerType.Major;
 
-                        foreach (var cc in _costCenterCache.Items.Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == loc.Id))
+                        foreach (CashDrawerGraphQLModel major in _majorCashDrawerCache.Items.Where(m =>
+                            m.CostCenter != null && m.CostCenter.Id == cc.Id && !m.IsPettyCash && m.Parent == null))
                         {
-                            var costCenterDTO = Context.AutoMapper.Map<CashDrawerCostCenterDTO>(cc);
-                            costCenterDTO.Context = this;
-                            costCenterDTO.Location = locationDTO;
-                            costCenterDTO.Type = CashDrawerType.Major;
-                            costCenterDTO.CashDrawers.Clear();
+                            MajorCashDrawerMasterTreeDTO majorDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(major);
+                            majorDTO.Context = this;
 
-                            foreach (var major in _majorCashDrawerCache.Items.Where(m =>
-                                m.CostCenter != null && m.CostCenter.Id == cc.Id && !m.IsPettyCash && m.Parent == null))
+                            foreach (CashDrawerGraphQLModel aux in _auxiliaryCashDrawerCache.Items.Where(a =>
+                                a.Parent != null && a.Parent.Id == major.Id))
                             {
-                                var majorDTO = Context.AutoMapper.Map<MajorCashDrawerMasterTreeDTO>(major);
-                                majorDTO.Context = this;
-                                majorDTO.AuxiliaryCashDrawers.Clear();
-
-                                foreach (var aux in _auxiliaryCashDrawerCache.Items.Where(a =>
-                                    a.Parent != null && a.Parent.Id == major.Id))
-                                {
-                                    var auxDTO = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(aux);
-                                    auxDTO.Context = this;
-                                    majorDTO.AuxiliaryCashDrawers.Add(auxDTO);
-                                }
-                                costCenterDTO.CashDrawers.Add(majorDTO);
+                                TreasuryAuxiliaryCashDrawerMasterTreeDTO auxDTO = Context.AutoMapper.Map<TreasuryAuxiliaryCashDrawerMasterTreeDTO>(aux);
+                                auxDTO.Context = this;
+                                majorDTO.AuxiliaryCashDrawers.Add(auxDTO);
                             }
-                            locationDTO.CostCenters.Add(costCenterDTO);
+                            costCenterDTO.CashDrawers.Add(majorDTO);
                         }
-                        majorDummy.Locations.Add(locationDTO);
+                        locationDTO.CostCenters.Add(costCenterDTO);
                     }
+                    majorDummy.Locations.Add(locationDTO);
                 }
 
-                if (minorDummy != null)
+                // Raíz 2: Caja Menor
+                CashDrawerDummyDTO minorDummy = new() { Id = 2, Name = "CAJA MENOR", Type = CashDrawerType.Minor, Context = this };
+                foreach (CompanyLocationGraphQLModel loc in _companyLocationCache.Items)
                 {
-                    minorDummy.Locations.Clear();
-                    foreach (var loc in _companyLocationCache.Items)
-                    {
-                        var locationDTO = Context.AutoMapper.Map<CashDrawerCompanyLocationDTO>(loc);
-                        locationDTO.Context = this;
-                        locationDTO.DummyParent = minorDummy;
-                        locationDTO.Type = CashDrawerType.Minor;
-                        locationDTO.CostCenters.Clear();
+                    CashDrawerCompanyLocationDTO locationDTO = Context.AutoMapper.Map<CashDrawerCompanyLocationDTO>(loc);
+                    locationDTO.Context = this;
+                    locationDTO.DummyParent = minorDummy;
+                    locationDTO.Type = CashDrawerType.Minor;
 
-                        foreach (var cc in _costCenterCache.Items.Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == loc.Id))
+                    foreach (CostCenterGraphQLModel cc in _costCenterCache.Items.Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == loc.Id))
+                    {
+                        CashDrawerCostCenterDTO costCenterDTO = Context.AutoMapper.Map<CashDrawerCostCenterDTO>(cc);
+                        costCenterDTO.Context = this;
+                        costCenterDTO.Location = locationDTO;
+                        costCenterDTO.Type = CashDrawerType.Minor;
+
+                        foreach (CashDrawerGraphQLModel minor in _minorCashDrawerCache.Items.Where(m =>
+                            m.CostCenter != null && m.CostCenter.Id == cc.Id && m.IsPettyCash && m.Parent == null))
                         {
-                            var costCenterDTO = Context.AutoMapper.Map<CashDrawerCostCenterDTO>(cc);
-                            costCenterDTO.Context = this;
-                            costCenterDTO.Location = locationDTO;
-                            costCenterDTO.Type = CashDrawerType.Minor;
-                            costCenterDTO.CashDrawers.Clear();
-
-                            foreach (var minor in _minorCashDrawerCache.Items.Where(m =>
-                                m.CostCenter != null && m.CostCenter.Id == cc.Id && m.IsPettyCash && m.Parent == null))
-                            {
-                                var minorDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(minor);
-                                minorDTO.Context = this;
-                                costCenterDTO.CashDrawers.Add(minorDTO);
-                            }
-                            locationDTO.CostCenters.Add(costCenterDTO);
+                            MinorCashDrawerMasterTreeDTO minorDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(minor);
+                            minorDTO.Context = this;
+                            costCenterDTO.CashDrawers.Add(minorDTO);
                         }
-                        minorDummy.Locations.Add(locationDTO);
+                        locationDTO.CostCenters.Add(costCenterDTO);
                     }
+                    minorDummy.Locations.Add(locationDTO);
                 }
 
-                if (bankDummy != null)
+                // Raíz 3: Bancos
+                BankDummyDTO bankDummy = new() { Id = 3, Name = "BANCOS", Context = this };
+                foreach (BankGraphQLModel bank in _bankCache.Items)
                 {
-                    bankDummy.Banks.Clear();
-                    foreach (var bank in _bankCache.Items)
-                    {
-                        var bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(bank);
-                        bankDTO.Context = this;
-                        bankDTO.DummyParent = bankDummy;
-                        bankDTO.BankAccounts.Clear();
+                    TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(bank);
+                    bankDTO.Context = this;
+                    bankDTO.DummyParent = bankDummy;
 
-                        foreach (var ba in _bankAccountCache.Items.Where(x => x.Bank != null && x.Bank.Id == bank.Id))
-                        {
-                            var bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(ba);
-                            bankAccountDTO.Context = this;
-                            bankDTO.BankAccounts.Add(bankAccountDTO);
-                        }
-                        bankDummy.Banks.Add(bankDTO);
+                    foreach (BankAccountGraphQLModel ba in _bankAccountCache.Items.Where(x => x.Bank != null && x.Bank.Id == bank.Id))
+                    {
+                        TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(ba);
+                        bankAccountDTO.Context = this;
+                        bankDTO.BankAccounts.Add(bankAccountDTO);
                     }
+                    bankDummy.Banks.Add(bankDTO);
                 }
 
-                if (franchiseDummy != null)
+                // Raíz 4: Franquicias
+                FranchiseDummyDTO franchiseDummy = new() { Id = 4, Name = "FRANQUICIAS", Context = this };
+                foreach (FranchiseGraphQLModel franchise in _franchiseCache.Items)
                 {
-                    franchiseDummy.Franchises.Clear();
-                    foreach (var franchise in _franchiseCache.Items)
-                    {
-                        var franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(franchise);
-                        franchiseDTO.Context = this;
-                        franchiseDTO.DummyParent = franchiseDummy;
-                        franchiseDummy.Franchises.Add(franchiseDTO);
-                    }
+                    TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(franchise);
+                    franchiseDTO.Context = this;
+                    franchiseDTO.DummyParent = franchiseDummy;
+                    franchiseDummy.Franchises.Add(franchiseDTO);
                 }
+
+                // Reasigna la raíz como una nueva ObservableCollection para forzar re-bind del tree.
+                DummyItems = [majorDummy, minorDummy, bankDummy, franchiseDummy];
             });
         }
 
@@ -803,8 +791,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             IRepository<BankGraphQLModel> bankService,
             IRepository<BankAccountGraphQLModel> bankAccountService,
             IRepository<FranchiseGraphQLModel> franchiseService,
-            Helpers.IDialogService dialogService,
-            Helpers.Services.INotificationService notificationService,
+            IDialogService dialogService,
+            INotificationService notificationService,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             CompanyLocationCache companyLocationCache,
             CostCenterCache costCenterCache,
@@ -824,59 +812,86 @@ namespace NetErp.Treasury.Masters.ViewModels
             MinorCashDrawerValidator minorCashDrawerValidator,
             AuxiliaryCashDrawerValidator auxiliaryCashDrawerValidator)
         {
-            _cashDrawerService = cashDrawerService;
-            _bankService = bankService;
-            _bankAccountService = bankAccountService;
-            _franchiseService = franchiseService;
-            _dialogService = dialogService;
-            _notificationService = notificationService;
-            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
-            _companyLocationCache = companyLocationCache;
-            _costCenterCache = costCenterCache;
-            _bankAccountCache = bankAccountCache;
-            _majorCashDrawerCache = majorCashDrawerCache;
-            _minorCashDrawerCache = minorCashDrawerCache;
-            _auxiliaryCashDrawerCache = auxiliaryCashDrawerCache;
-            _bankCache = bankCache;
-            _franchiseCache = franchiseCache;
-            _graphQLClient = graphQLClient;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
-            _bankValidator = bankValidator;
-            _bankAccountValidator = bankAccountValidator;
-            _franchiseValidator = franchiseValidator;
-            _majorCashDrawerValidator = majorCashDrawerValidator;
-            _minorCashDrawerValidator = minorCashDrawerValidator;
-            _auxiliaryCashDrawerValidator = auxiliaryCashDrawerValidator;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _cashDrawerService = cashDrawerService ?? throw new ArgumentNullException(nameof(cashDrawerService));
+            _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+            _bankAccountService = bankAccountService ?? throw new ArgumentNullException(nameof(bankAccountService));
+            _franchiseService = franchiseService ?? throw new ArgumentNullException(nameof(franchiseService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache ?? throw new ArgumentNullException(nameof(auxiliaryAccountingAccountCache));
+            _companyLocationCache = companyLocationCache ?? throw new ArgumentNullException(nameof(companyLocationCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _bankAccountCache = bankAccountCache ?? throw new ArgumentNullException(nameof(bankAccountCache));
+            _majorCashDrawerCache = majorCashDrawerCache ?? throw new ArgumentNullException(nameof(majorCashDrawerCache));
+            _minorCashDrawerCache = minorCashDrawerCache ?? throw new ArgumentNullException(nameof(minorCashDrawerCache));
+            _auxiliaryCashDrawerCache = auxiliaryCashDrawerCache ?? throw new ArgumentNullException(nameof(auxiliaryCashDrawerCache));
+            _bankCache = bankCache ?? throw new ArgumentNullException(nameof(bankCache));
+            _franchiseCache = franchiseCache ?? throw new ArgumentNullException(nameof(franchiseCache));
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
+            _bankValidator = bankValidator ?? throw new ArgumentNullException(nameof(bankValidator));
+            _bankAccountValidator = bankAccountValidator ?? throw new ArgumentNullException(nameof(bankAccountValidator));
+            _franchiseValidator = franchiseValidator ?? throw new ArgumentNullException(nameof(franchiseValidator));
+            _majorCashDrawerValidator = majorCashDrawerValidator ?? throw new ArgumentNullException(nameof(majorCashDrawerValidator));
+            _minorCashDrawerValidator = minorCashDrawerValidator ?? throw new ArgumentNullException(nameof(minorCashDrawerValidator));
+            _auxiliaryCashDrawerValidator = auxiliaryCashDrawerValidator ?? throw new ArgumentNullException(nameof(auxiliaryCashDrawerValidator));
 
-            // Los DummyItems se crean con colecciones vacías; BuildTreeFromCaches las llena en OnActivatedAsync.
+            // Siembra los 4 root nodes con colecciones vacías para que el TreeView tenga algo
+            // que mostrar aunque OnViewReady falle. BuildTreeFromCaches reasigna DummyItems
+            // cuando termina de cargar, lo que dispara NotifyOfPropertyChange y re-bindea la
+            // jerarquía completa en el TreeView.
             DummyItems = [
                 new CashDrawerDummyDTO() { Id = 1, Name = "CAJA GENERAL", Type = CashDrawerType.Major, Context = this },
                 new CashDrawerDummyDTO() { Id = 2, Name = "CAJA MENOR", Type = CashDrawerType.Minor, Context = this },
                 new BankDummyDTO() { Id = 3, Name = "BANCOS", Context = this },
                 new FranchiseDummyDTO() { Id = 4, Name = "FRANQUICIAS", Context = this }
             ];
-            Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
-        protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
+        protected override async void OnViewReady(object view)
         {
-            await CacheBatchLoader.LoadAsync(
-                _graphQLClient, cancellationToken,
-                _auxiliaryAccountingAccountCache,
-                _companyLocationCache,
-                _costCenterCache,
-                _bankAccountCache,
-                _majorCashDrawerCache,
-                _minorCashDrawerCache,
-                _auxiliaryCashDrawerCache,
-                _bankCache,
-                _franchiseCache);
+            base.OnViewReady(view);
+            try
+            {
+                IsBusy = true;
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-            BuildTreeFromCaches();
+                await Task.WhenAll(
+                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Treasury),
+                    CacheBatchLoader.LoadAsync(
+                        _graphQLClient, default,
+                        _auxiliaryAccountingAccountCache,
+                        _companyLocationCache,
+                        _costCenterCache,
+                        _bankAccountCache,
+                        _majorCashDrawerCache,
+                        _minorCashDrawerCache,
+                        _auxiliaryCashDrawerCache,
+                        _bankCache,
+                        _franchiseCache));
 
-            await base.OnActivatedAsync(cancellationToken);
+                BuildTreeFromCaches();
+
+                stopwatch.Stop();
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await Context.TryCloseAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -894,7 +909,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
         {
-            var createdCashDrawer = message.CreatedCashDrawer.Entity;
+            CashDrawerGraphQLModel createdCashDrawer = message.CreatedCashDrawer.Entity;
 
             // Caja general (major)
             if (!createdCashDrawer.IsPettyCash && createdCashDrawer.Parent is null)
@@ -981,11 +996,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                 CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
                 if (majorDummy != null)
                 {
-                    foreach (var location in majorDummy.Locations)
+                    foreach (CashDrawerCompanyLocationDTO location in majorDummy.Locations)
                     {
-                        foreach (var costCenter in location.CostCenters)
+                        foreach (CashDrawerCostCenterDTO costCenter in location.CostCenters)
                         {
-                            var majorCashDrawer = costCenter.CashDrawers.FirstOrDefault(x => x.Id == deletedId);
+                            CashDrawerMasterTreeDTO? majorCashDrawer = costCenter.CashDrawers.FirstOrDefault(x => x.Id == deletedId);
                             if (majorCashDrawer != null)
                             {
                                 costCenter.CashDrawers.Remove(majorCashDrawer);
@@ -993,9 +1008,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                                 return;
                             }
 
-                            foreach (var major in costCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>())
+                            foreach (MajorCashDrawerMasterTreeDTO major in costCenter.CashDrawers.OfType<MajorCashDrawerMasterTreeDTO>())
                             {
-                                var auxiliary = major.AuxiliaryCashDrawers.FirstOrDefault(x => x.Id == deletedId);
+                                TreasuryAuxiliaryCashDrawerMasterTreeDTO? auxiliary = major.AuxiliaryCashDrawers.FirstOrDefault(x => x.Id == deletedId);
                                 if (auxiliary != null)
                                 {
                                     major.AuxiliaryCashDrawers.Remove(auxiliary);
@@ -1010,11 +1025,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                 CashDrawerDummyDTO? minorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Minor);
                 if (minorDummy != null)
                 {
-                    foreach (var location in minorDummy.Locations)
+                    foreach (CashDrawerCompanyLocationDTO location in minorDummy.Locations)
                     {
-                        foreach (var costCenter in location.CostCenters)
+                        foreach (CashDrawerCostCenterDTO costCenter in location.CostCenters)
                         {
-                            var minorCashDrawer = costCenter.CashDrawers.FirstOrDefault(x => x.Id == deletedId);
+                            CashDrawerMasterTreeDTO? minorCashDrawer = costCenter.CashDrawers.FirstOrDefault(x => x.Id == deletedId);
                             if (minorCashDrawer != null)
                             {
                                 costCenter.CashDrawers.Remove(minorCashDrawer);
@@ -1031,7 +1046,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(TreasuryCashDrawerUpdateMessage message, CancellationToken cancellationToken)
         {
-            var updatedCashDrawer = message.UpdatedCashDrawer.Entity;
+            CashDrawerGraphQLModel updatedCashDrawer = message.UpdatedCashDrawer.Entity;
 
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -1108,7 +1123,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
         {
-            var createdBank = message.CreatedBank.Entity;
+            BankGraphQLModel createdBank = message.CreatedBank.Entity;
 
             TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(createdBank);
             bankDTO.Context = this;
@@ -1129,7 +1144,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(BankUpdateMessage message, CancellationToken cancellationToken)
         {
-            var updatedBank = message.UpdatedBank.Entity;
+            BankGraphQLModel updatedBank = message.UpdatedBank.Entity;
             Application.Current.Dispatcher.Invoke(() =>
             {
                 TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(updatedBank);
@@ -1161,7 +1176,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
         {
-            var createdBankAccount = message.CreatedBankAccount.Entity;
+            BankAccountGraphQLModel createdBankAccount = message.CreatedBankAccount.Entity;
 
             // La API puede crear cuentas contables como side-effect.
             _auxiliaryAccountingAccountCache.Clear();
@@ -1192,9 +1207,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                 BankDummyDTO? bankDummy = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
                 if (bankDummy is null) return;
 
-                foreach (var bank in bankDummy.Banks)
+                foreach (TreasuryBankMasterTreeDTO bank in bankDummy.Banks)
                 {
-                    var bankAccount = bank.BankAccounts.FirstOrDefault(x => x.Id == message.DeletedBankAccount.DeletedId);
+                    TreasuryBankAccountMasterTreeDTO? bankAccount = bank.BankAccounts.FirstOrDefault(x => x.Id == message.DeletedBankAccount.DeletedId);
                     if (bankAccount != null)
                     {
                         bank.BankAccounts.Remove(bankAccount);
@@ -1208,7 +1223,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
         {
-            var updatedBankAccount = message.UpdatedBankAccount.Entity;
+            BankAccountGraphQLModel updatedBankAccount = message.UpdatedBankAccount.Entity;
             Application.Current.Dispatcher.Invoke(() =>
             {
                 TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(updatedBankAccount);
@@ -1237,7 +1252,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(FranchiseCreateMessage message, CancellationToken cancellationToken)
         {
-            var createdFranchise = message.CreatedFranchise.Entity;
+            FranchiseGraphQLModel createdFranchise = message.CreatedFranchise.Entity;
             TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(createdFranchise);
             franchiseDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? inserted = null;
@@ -1257,7 +1272,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(FranchiseDeleteMessage message, CancellationToken cancellationToken)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current.Dispatcher?.Invoke(() =>
             {
                 FranchiseDummyDTO? franchiseDummy = DummyItems.OfType<FranchiseDummyDTO>().FirstOrDefault();
                 if (franchiseDummy is null) return;
@@ -1271,7 +1286,9 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public Task HandleAsync(FranchiseUpdateMessage message, CancellationToken cancellationToken)
         {
-            var updatedFranchise = message.UpdatedFranchise.Entity;
+            FranchiseGraphQLModel updatedFranchise = message.UpdatedFranchise.Entity;
+
+            #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
                 TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(updatedFranchise);
@@ -1294,6 +1311,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 franchiseToUpdate.CommissionAccountingAccount = franchiseDTO.CommissionAccountingAccount;
                 franchiseToUpdate.FranchisesByCostCenter = franchiseDTO.FranchisesByCostCenter;
             });
+            #pragma warning restore VSTHRD001
+
             _notificationService.ShowSuccess(message.UpdatedFranchise.Message);
             return Task.CompletedTask;
         }

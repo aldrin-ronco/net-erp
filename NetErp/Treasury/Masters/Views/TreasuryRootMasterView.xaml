@@ -322,7 +322,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- Tree panel -->
-            <dxg:TreeViewControl Grid.Column="0"
+            <dxg:TreeViewControl x:Name="TreasuryTree"
+                                 Grid.Column="0"
                                  ItemsSource="{Binding DummyItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  h:TreeViewExtension.SelectItemOnRightClick="True"
                                  HighlightSelectedNodeIndent="False"

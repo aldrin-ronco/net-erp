@@ -1,58 +1,46 @@
-﻿using Caliburn.Micro;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Caliburn.Micro;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class TreasuryBankAccountCostCenterDTO: Screen
+    public class TreasuryBankAccountCostCenterDTO : PropertyChangedBase
     {
-		private int _id;
-
-		public int Id
-		{
-			get { return _id; }
-			set 
-			{
-				if (_id != value) 
-				{
-					_id = value;
-					NotifyOfPropertyChange(nameof(Id));
-				}
-			}
-		}
-
-		private string _name;
-
-		public string Name
-		{
-			get { return _name; }
-			set 
-			{
-                if (_name != value)
+        public int Id
+        {
+            get;
+            set
+            {
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                }
+            }
+        }
+
+        public string Name
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                 }
-			}
-		}
+            }
+        } = string.Empty;
 
-		private bool _isChecked = false;
-
-		public bool IsChecked
-		{
-			get { return _isChecked; }
-			set 
-			{
-                if (_isChecked != value)
+        public bool IsChecked
+        {
+            get;
+            set
+            {
+                if (field != value)
                 {
-                    _isChecked = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsChecked));
                 }
-			}
-		}
-
-	}
+            }
+        }
+    }
 }

@@ -69,7 +69,9 @@ namespace NetErp.Helpers.Cache
 
             var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
             var filtersParam = new GraphQLQueryParameter("filters", "CashDrawerFilters");
-            var fragment = new GraphQLQueryFragment("auxiliaryCashDrawersPage", [paginationParam, filtersParam], fields, "PageResponse");
+            // Root field real en el schema: "cashDrawersPage". Este cache se distingue de
+            // mayores y menores por filtrado client-side (Parent != null) sobre el mismo query.
+            var fragment = new GraphQLQueryFragment("cashDrawersPage", [paginationParam, filtersParam], fields, "PageResponse");
             var query = new QueryBuilder([fragment]).GetQuery();
 
             return (fragment, query);

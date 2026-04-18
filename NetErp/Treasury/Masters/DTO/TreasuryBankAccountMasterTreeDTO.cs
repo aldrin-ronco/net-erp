@@ -1,215 +1,161 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Billing;
 using Models.Books;
-using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Treasury.Masters.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class TreasuryBankAccountMasterTreeDTO : Screen, ITreasuryTreeMasterSelectedItem
+    public class TreasuryBankAccountMasterTreeDTO : PropertyChangedBase, ITreasuryTreeMasterSelectedItem
     {
-        public bool AllowContentControlVisibility { get => true; }
         public int Id { get; set; }
-        public TreasuryRootMasterViewModel Context { get; set; }
-
-        //Propiedad creada para no tener errores de binding en la vista
-        public string Name { get; set; } = string.Empty;
-
-        //Propiedad creada para no tener errores de binding en la vista
-        public AccountingEntityGraphQLModel AccountingEntity { get; set; } = new();
-
-        private string _type = string.Empty;
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
         public string Type
         {
-            get { return _type; }
+            get;
             set
             {
-                if (_type != value)
+                if (field != value)
                 {
-                    _type = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Type));
                 }
             }
-        }
-
-        private string _number = string.Empty;
+        } = string.Empty;
 
         public string Number
         {
-            get { return _number; }
+            get;
             set
             {
-                if (_number != value)
+                if (field != value)
                 {
-                    _number = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Number));
                 }
             }
-        }
-
-        private bool _isActive;
+        } = string.Empty;
 
         public bool IsActive
         {
-            get { return _isActive; }
+            get;
             set
             {
-                if (_isActive != value)
+                if (field != value)
                 {
-                    _isActive = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
                 }
             }
         }
 
-        private string _description = string.Empty;
-
         public string Description
         {
-            get { return _description; }
+            get;
             set
             {
-                if (_description != value)
+                if (field != value)
                 {
-                    _description = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Description));
                 }
             }
-        }
-
-        private string _reference = string.Empty;
+        } = string.Empty;
 
         public string Reference
         {
-            get { return _reference; }
+            get;
             set
             {
-                if (_reference != value)
+                if (field != value)
                 {
-                    _reference = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Reference));
                 }
             }
-        }
-
-        private int _displayOrder;
+        } = string.Empty;
 
         public int DisplayOrder
         {
-            get { return _displayOrder; }
+            get;
             set
             {
-                if (_displayOrder != value)
+                if (field != value)
                 {
-                    _displayOrder = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DisplayOrder));
                 }
             }
         }
 
-        private AccountingAccountGraphQLModel _accountingAccount = new();
-
         public AccountingAccountGraphQLModel AccountingAccount
         {
-            get { return _accountingAccount; }
+            get;
             set
             {
-                if (_accountingAccount != value)
+                if (field != value)
                 {
-                    _accountingAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccount));
                 }
             }
-        }
-
-        private TreasuryBankMasterTreeDTO _bank = new();
+        } = new();
 
         public TreasuryBankMasterTreeDTO Bank
         {
-            get { return _bank; }
+            get;
             set
             {
-                if (_bank != value)
+                if (field != value)
                 {
-                    _bank = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Bank));
                 }
             }
-        }
-
-        
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-        private bool _isExpanded = false;
+        } = new();
 
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
                 }
             }
         }
 
-        private string _provider;
-
         public string Provider
         {
-            get { return _provider; }
-            set 
+            get;
+            set
             {
-                if (_provider != value)
+                if (field != value)
                 {
-                    _provider = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Provider));
                 }
             }
-        }
-
-        private PaymentMethodGraphQLModel _paymentMethod;
+        } = string.Empty;
 
         public PaymentMethodGraphQLModel PaymentMethod
         {
-            get { return _paymentMethod; }
+            get;
             set
             {
-                if (_paymentMethod != value)
+                if (field != value)
                 {
-                    _paymentMethod = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PaymentMethod));
                 }
             }
-        }
+        } = new();
 
         public ObservableCollection<TreasuryBankAccountCostCenterDTO> AllowedCostCenters { get; set; } = [];
 
-        public TreasuryBankAccountMasterTreeDTO()
-        {
-
-        }
+        public bool AllowContentControlVisibility => true;
     }
 }

@@ -1,80 +1,54 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using NetErp.Treasury.Masters.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class BankDummyDTO: Screen, ITreasuryTreeMasterSelectedItem
+    public class BankDummyDTO : PropertyChangedBase, ITreasuryTreeMasterSelectedItem
     {
         public int Id { get; set; }
-        private string _name = string.Empty;
 
-        public TreasuryRootMasterViewModel Context { get; set; }
+        public TreasuryRootMasterViewModel? Context { get; set; }
 
         public string Name
-		{
-			get { return _name; }
-			set
-			{
-                if (_name != value)
-                {
-                    _name = value;
-                    NotifyOfPropertyChange(nameof(Name));
-                }
-			}
-		}
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
         {
-            get { return _isDummyChild; }
+            get;
             set
             {
-                if (_isDummyChild != value)
+                if (field != value)
                 {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Name));
                 }
             }
-        }
-
-
-        private ObservableCollection<TreasuryBankMasterTreeDTO> _banks = [];
+        } = string.Empty;
 
         public ObservableCollection<TreasuryBankMasterTreeDTO> Banks
         {
-            get { return _banks; }
+            get;
             set
             {
-                if (_banks != value)
+                if (field != value)
                 {
-                    _banks = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Banks));
                 }
             }
-        }
-
-
-        private bool _isExpanded;
+        } = [];
 
         public bool IsExpanded
         {
-            get { return _isExpanded; }
+            get;
             set
             {
-                if (_isExpanded != value)
+                if (field != value)
                 {
-                    _isExpanded = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
                 }
             }
         }
 
-        public bool AllowContentControlVisibility { get => false; }
+        public bool AllowContentControlVisibility => false;
     }
 }

@@ -18,7 +18,7 @@ namespace Models.Treasury
         public decimal Margin { get; set; } = 0;
         public int MarginBasis { get; set; } = 0;
         public string Type { get; set; } = string.Empty;
-        public AccountingAccountGraphQLModel AccountingAccount { get; set; }
+        public AccountingAccountGraphQLModel AccountingAccount { get; set; } = new();
 
         public override string ToString()
         {
@@ -26,17 +26,17 @@ namespace Models.Treasury
         }
         public class TreasuryConceptCreateMessage
         {
-            public UpsertResponseType<TreasuryConceptGraphQLModel> CreatedTreasuryConcept { get; set; } = new ();
+            public required UpsertResponseType<TreasuryConceptGraphQLModel> CreatedTreasuryConcept { get; set; }        
         }
 
         public class TreasuryConceptUpdateMessage
         {
-            public UpsertResponseType<TreasuryConceptGraphQLModel> UpdatedTreasuryConcept { get; set; } = new ();
+            public required UpsertResponseType<TreasuryConceptGraphQLModel> UpdatedTreasuryConcept { get; set; }
         }
 
         public class TreasuryConceptDeleteMessage
         {
-            public DeleteResponseType DeletedTreasuryConcept { get; set; } = new();
+            public required DeleteResponseType DeletedTreasuryConcept { get; set; }
         }
     }
 }

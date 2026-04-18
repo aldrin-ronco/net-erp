@@ -66,7 +66,8 @@ namespace NetErp.Helpers.Cache
 
             var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
             var filtersParam = new GraphQLQueryParameter("filters", "CashDrawerFilters");
-            var fragment = new GraphQLQueryFragment("CashDrawersPage", [paginationParam, filtersParam], fields, "PageResponse");
+            // Root field real en el schema: "cashDrawersPage".
+            var fragment = new GraphQLQueryFragment("cashDrawersPage", [paginationParam, filtersParam], fields, "PageResponse");
             var query = new QueryBuilder([fragment]).GetQuery();
 
             return (fragment, query);

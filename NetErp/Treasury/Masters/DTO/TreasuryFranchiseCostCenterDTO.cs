@@ -1,42 +1,33 @@
-﻿using Caliburn.Micro;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Caliburn.Micro;
 
 namespace NetErp.Treasury.Masters.DTO
 {
-    public class TreasuryFranchiseCostCenterDTO: Screen
+    public class TreasuryFranchiseCostCenterDTO : PropertyChangedBase
     {
-        private int _id;
-
         public int Id
         {
-            get { return _id; }
+            get;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Id));
                 }
             }
         }
 
-        private string _name;
-
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                 }
             }
-        }
+        } = string.Empty;
     }
 }

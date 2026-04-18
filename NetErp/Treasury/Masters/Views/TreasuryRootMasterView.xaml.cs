@@ -13,8 +13,10 @@ namespace NetErp.Treasury.Masters.Views
 
         private void TreeViewControlView_Loaded(object sender, RoutedEventArgs e)
         {
-            var control = sender as TreeViewControlView;
+            TreeViewControlView? control = sender as TreeViewControlView;
+            if (control is null) return;
             control.VisibleColumns[0].Width = new GridColumnWidth(1, GridColumnUnitType.Star);
+            TreasuryTree.Focus();
         }
     }
 }

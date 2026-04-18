@@ -1301,10 +1301,10 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             if (!HasUnmetDependencies) return;
 
-#pragma warning disable VSTHRD001
+            #pragma warning disable VSTHRD001
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                 () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
-#pragma warning restore VSTHRD001
+            #pragma warning restore VSTHRD001
 
             EvaluateDependencies();
             if (!HasUnmetDependencies)
