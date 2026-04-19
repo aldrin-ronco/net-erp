@@ -9,6 +9,8 @@
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -319,15 +321,18 @@
                             BusyContentMargin="0,20,0,0">
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
-        <Grid Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.4*" MinWidth="260"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <Grid>
+            <!-- Dependency State (highest priority) -->
+            <uc:DependencyStateView Visibility="{Binding HasUnmetDependencies, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                    Title="Configuración requerida para Tesorería"
+                                    Message="Antes de registrar cajas, bancos o franquicias, debe configurar los siguientes elementos:"
+                                    Dependencies="{Binding Dependencies}"/>
+
+            <!-- Content -->
+            <Grid Margin="10" Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
 
             <!-- Tree panel -->
             <dxg:TreeViewControl x:Name="TreasuryTree"
-                                 Grid.Column="0"
                                  ItemsSource="{Binding DummyItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  h:TreeViewExtension.SelectItemOnRightClick="True"
                                  HighlightSelectedNodeIndent="False"
@@ -360,23 +365,7 @@
                     </Style>
                 </dxg:TreeViewControl.NodeStyle>
             </dxg:TreeViewControl>
-
-            <!-- Right-side placeholder: guidance for the user. Proper empty state with icon + CTA
-                 is tracked for a later iteration (would use uc:EmptyStateView). -->
-            <Border Grid.Column="1" Margin="10,0,0,0"
-                    Background="#EEF1F5" BorderBrush="#D9DDE3" BorderThickness="1"
-                    CornerRadius="8">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="380" Margin="20">
-                    <Image Source="{dx:DXImage 'SvgImages/Outlook Inspired/Pointer.svg'}"
-                           Width="48" Height="48" HorizontalAlignment="Center" Opacity="0.6"/>
-                    <TextBlock Text="Seleccione un elemento del árbol"
-                               HorizontalAlignment="Center" Margin="0,12,0,4"
-                               FontSize="14" FontWeight="SemiBold" Foreground="#4A5568"/>
-                    <TextBlock Text="Use el menú contextual (clic derecho) para crear, editar o eliminar bancos, cuentas bancarias, cajas y franquicias."
-                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
-                               FontSize="12" Foreground="#6B7280"/>
-                </StackPanel>
-            </Border>
+            </Grid>
         </Grid>
     </Border>
     </busyIndicator:BusyMask>

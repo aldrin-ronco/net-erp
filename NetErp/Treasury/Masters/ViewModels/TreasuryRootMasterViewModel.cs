@@ -15,6 +15,7 @@ using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.Validators;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
@@ -41,7 +42,11 @@ namespace NetErp.Treasury.Masters.ViewModels
         IHandle<BankAccountUpdateMessage>,
         IHandle<FranchiseCreateMessage>,
         IHandle<FranchiseDeleteMessage>,
-        IHandle<FranchiseUpdateMessage>
+        IHandle<FranchiseUpdateMessage>,
+        IHandle<CompanyLocationCreateMessage>,
+        IHandle<CompanyLocationDeleteMessage>,
+        IHandle<CostCenterCreateMessage>,
+        IHandle<CostCenterDeleteMessage>
     {
         public TreasuryRootViewModel Context { get; }
 
@@ -121,6 +126,29 @@ namespace NetErp.Treasury.Masters.ViewModels
                 }
             }
         } = string.Empty;
+
+        #region State
+
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !HasUnmetDependencies;
+
+        private List<DependencyItem>? _dependencies;
+        public List<DependencyItem>? Dependencies
+        {
+            get => _dependencies;
+            private set
+            {
+                _dependencies = value;
+                NotifyOfPropertyChange(nameof(Dependencies));
+                NotifyOfPropertyChange(nameof(HasUnmetDependencies));
+                NotifyOfPropertyChange(nameof(HasRecords));
+            }
+        }
+
+        public bool HasUnmetDependencies => Dependencies?.Any(d => !d.IsMet) == true;
+
+        #endregion
 
         #region Create Commands (tree context menus)
 
@@ -884,7 +912,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                         _bankCache,
                         _franchiseCache));
 
-                BuildTreeFromCaches();
+                EvaluateDependencies();
+                if (HasUnmetDependencies)
+                {
+                    _isInitialized = true;
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    return;
+                }
+
+                await PerformInitialLoadAsync();
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -904,6 +940,27 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = false;
             }
         }
+
+        #region Dependencies
+
+        private void EvaluateDependencies()
+        {
+            Dependencies =
+            [
+                DependencyDefinitions.CompanyLocations(_companyLocationCache),
+                DependencyDefinitions.CostCenters(_costCenterCache),
+            ];
+        }
+
+        private Task PerformInitialLoadAsync()
+        {
+            BuildTreeFromCaches();
+            _isInitialized = true;
+            NotifyOfPropertyChange(nameof(HasRecords));
+            return Task.CompletedTask;
+        }
+
+        #endregion
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
@@ -1213,17 +1270,19 @@ namespace NetErp.Treasury.Masters.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
         {
             BankAccountGraphQLModel createdBankAccount = message.CreatedBankAccount.Entity;
 
-            // La API puede crear cuentas contables como side-effect.
+            // La API puede crear cuentas contables como side-effect: limpiar y recargar el caché
+            // para que los combos de cajas reflejen correctamente las cuentas actualizadas.
             _auxiliaryAccountingAccountCache.Clear();
+            try { await _auxiliaryAccountingAccountCache.EnsureLoadedAsync(); } catch { /* silently continue — el caché quedará vacío pero no bloquea la UI */ }
 
             TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(createdBankAccount);
             bankAccountDTO.Context = this;
             ITreasuryTreeMasterSelectedItem? inserted = null;
-            
+
             #pragma warning disable VSTHRD001
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -1237,10 +1296,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                 inserted = bankAccountDTO;
             });
             #pragma warning restore VSTHRD001
-            
+
             if (inserted != null) SelectedItem = inserted;
             _notificationService.ShowSuccess(message.CreatedBankAccount.Message);
-            return Task.CompletedTask;
         }
 
         public Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
@@ -1372,6 +1430,59 @@ namespace NetErp.Treasury.Masters.ViewModels
 
             _notificationService.ShowSuccess(message.UpdatedFranchise.Message);
             return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(CompanyLocationCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+            // JoinableTaskFactory.SwitchToMainThreadAsync() no soporta prioridades.
+#pragma warning disable VSTHRD001
+            await Application.Current.Dispatcher.InvokeAsync(
+                () => { }, DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(CompanyLocationDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await Application.Current.Dispatcher.InvokeAsync(
+                () => { }, DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+        }
+
+        public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await Application.Current.Dispatcher.InvokeAsync(
+                () => { }, DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await Application.Current.Dispatcher.InvokeAsync(
+                () => { }, DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
         }
 
         #endregion

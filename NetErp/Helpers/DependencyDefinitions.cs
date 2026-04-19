@@ -14,6 +14,11 @@ namespace NetErp.Helpers
             "Registre al menos un centro de costo en Configuración > Centros de costo",
             cache.IsInitialized && cache.Items.Count > 0);
 
+        public static DependencyItem CompanyLocations(CompanyLocationCache cache) => new(
+            "Sedes",
+            "Registre al menos una sede en Configuración > Parámetros > Sedes",
+            cache.IsInitialized && cache.Items.Count > 0);
+
         public static DependencyItem Storages(StorageCache cache) => new(
             "Bodegas",
             "Registre al menos una bodega en Tesorería > Bodegas",
