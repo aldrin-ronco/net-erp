@@ -611,8 +611,41 @@ namespace NetErp
 
             protected override void OnExit(object sender, EventArgs e)
             {
-                kernel.Dispose();
+                // Apagado determinista:
+                // 1) Detener servicios con trabajo en segundo plano (loops con HttpClient / PeriodicTimer)
+                //    antes de disponer el kernel — Ninject no garantiza orden de disposición
+                //    y un HttpClient en medio de una petición puede retener sockets abiertos.
+                try
+                {
+                    if (kernel.TryGet<INetworkConnectivityService>() is NetworkConnectivityService networkService)
+                    {
+                        networkService.Dispose();
+                    }
+                }
+                catch { /* no bloquear el shutdown por errores de disposición */ }
+
+                try
+                {
+                    if (kernel.TryGet<IBackgroundQueueService>() is BackgroundQueueService backgroundService)
+                    {
+                        backgroundService.Dispose();
+                    }
+                }
+                catch { /* no bloquear el shutdown por errores de disposición */ }
+
+                try
+                {
+                    kernel.Dispose();
+                }
+                catch { /* no bloquear el shutdown por errores de disposición */ }
+
                 base.OnExit(sender, e);
+
+                // Red de seguridad: garantizar la terminación del proceso aunque
+                // algún hilo (por ej. conexiones HTTP pooled o un timer nativo)
+                // permanezca vivo. Esto evita que el ejecutable quede bloqueado
+                // y que compilaciones posteriores fallen por archivo en uso.
+                Environment.Exit(0);
             }
 
             protected override object GetInstance(Type service, string key)

@@ -368,12 +368,41 @@ namespace NetErp.Treasury.Masters.ViewModels
             AutoTransfer = cashDrawer.AutoTransfer;
             IsPettyCash = cashDrawer.IsPettyCash;
 
-            SelectedCashAccountingAccount = _accountingAccountCache.Items.FirstOrDefault(a => a.Id == cashDrawer.CashAccountingAccount?.Id);
-            SelectedCheckAccountingAccount = _accountingAccountCache.Items.FirstOrDefault(a => a.Id == cashDrawer.CheckAccountingAccount?.Id);
-            SelectedCardAccountingAccount = _accountingAccountCache.Items.FirstOrDefault(a => a.Id == cashDrawer.CardAccountingAccount?.Id);
+            SelectedCashAccountingAccount = ResolveAccountingAccount(cashDrawer.CashAccountingAccount);
+            SelectedCheckAccountingAccount = ResolveAccountingAccount(cashDrawer.CheckAccountingAccount);
+            SelectedCardAccountingAccount = ResolveAccountingAccount(cashDrawer.CardAccountingAccount);
             SelectedAutoTransferCashDrawer = _majorCashDrawerCache.Items.FirstOrDefault(c => c.Id == cashDrawer.AutoTransferCashDrawer?.Id);
 
             SeedCurrentValues();
+        }
+
+        /// <summary>
+        /// Resuelve una cuenta contable contra el caché de cuentas auxiliares.
+        /// DevExpress LookUpEdit requiere que la selección sea una referencia existente
+        /// dentro de ItemsSource — devolver un objeto externo hace que el combo aparezca vacío.
+        /// <para>
+        /// Estrategia:
+        /// 1) Si la cuenta ya está en el caché (por Id), devolver la referencia cacheada.
+        /// 2) Si no está pero cumple el criterio de auxiliar (código ≥ 8 dígitos, p.ej.
+        ///    cuenta autogenerada por el backend al crear la caja y aún no publicada al caché),
+        ///    agregarla y devolver la referencia ya cacheada.
+        /// 3) Si no cumple el criterio, devolver el objeto recibido sin contaminar el caché.
+        /// </para>
+        /// La mutación ahora pide Id/Code/Name, por lo que <paramref name="source"/>
+        /// siempre viene con datos completos (el problema original de datos incompletos
+        /// contaminando el caché ya no aplica).
+        /// </summary>
+        private AccountingAccountGraphQLModel? ResolveAccountingAccount(AccountingAccountGraphQLModel? source)
+        {
+            if (source == null || source.Id == 0) return null;
+            var found = _accountingAccountCache.Items.FirstOrDefault(a => a.Id == source.Id);
+            if (found != null) return found;
+            if (!string.IsNullOrEmpty(source.Code) && source.Code.Length >= 8)
+            {
+                _accountingAccountCache.Add(source);
+                return _accountingAccountCache.Items.FirstOrDefault(a => a.Id == source.Id) ?? source;
+            }
+            return source;
         }
 
         private void SeedDefaultValues()
@@ -498,12 +527,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                             .Field(l => l.Id)))
                     .Select(e => e.CashAccountingAccount, acc => acc
                         .Field(a => a.Id)
+                        .Field(a => a.Code)
                         .Field(a => a.Name))
                     .Select(e => e.CheckAccountingAccount, acc => acc
                         .Field(a => a.Id)
+                        .Field(a => a.Code)
                         .Field(a => a.Name))
                     .Select(e => e.CardAccountingAccount, acc => acc
                         .Field(a => a.Id)
+                        .Field(a => a.Code)
                         .Field(a => a.Name)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
