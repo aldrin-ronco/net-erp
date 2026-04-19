@@ -44,6 +44,7 @@ namespace NetErp.Helpers.Cache
                     .Field(x => x.ComputerName)
                     .Select(x => x.Parent!, nested => nested
                         .Field(p => p.Id)
+                        .Field(p => p.Name)
                         .Select(p => p.CostCenter, pcc => pcc
                             .Field(c => c.Id)))
                     .Select(x => x.CostCenter, nested => nested
