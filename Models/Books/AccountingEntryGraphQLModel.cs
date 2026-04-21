@@ -1,103 +1,75 @@
-﻿using Models.Global;
+using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
+    /// <summary>
+    /// Comprobante contable publicado (encabezado).
+    /// Mapea al tipo <c>AccountingEntry</c> del schema GraphQL.
+    /// </summary>
     public class AccountingEntryGraphQLModel
     {
         public BigInteger Id { get; set; } = 0;
-        public BigInteger? DraftMasterId { get; set; }
-        public string State { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public DateTime DocumentDate { get; set; } = DateTime.Now.Date;
+
         private DateTime _insertedAt = DateTime.Now;
         public DateTime InsertedAt
         {
-            get { return TimeZoneInfo.ConvertTimeFromUtc(this._insertedAt.ToUniversalTime(), TimeZoneInfo.Local); }
+            get { return TimeZoneInfo.ConvertTimeFromUtc(_insertedAt.ToUniversalTime(), TimeZoneInfo.Local); }
             set { _insertedAt = value; }
         }
-        public TimeSpan DocumentTime {  get; set; }
+
+        public DateTime UpdatedAt { get; set; }
         public string Description { get; set; } = string.Empty;
         public string DocumentNumber { get; set; } = string.Empty;
-        public SystemAccountGraphQLModel CreatedBy { get; set; } 
-        public string CancelledBy { get; set; } = string.Empty;
+        public SystemAccountGraphQLModel CreatedBy { get; set; }
+        public SystemAccountGraphQLModel CancelledBy { get; set; }
         public bool Annulment { get; set; } = false;
         public AccountingBookGraphQLModel AccountingBook { get; set; }
         public CostCenterGraphQLModel CostCenter { get; set; }
         public AccountingSourceGraphQLModel AccountingSource { get; set; }
-        public IEnumerable<AccountingEntryDetailGraphQLModel> AccountingEntriesDetail { get; set; }
-        public AccountingEntryTotals Totals { get; set; }
+        public CompanyGraphQLModel Company { get; set; }
+
+        /// <summary>
+        /// Líneas del comprobante publicado (subselección <c>lines</c> del schema).
+        /// </summary>
+        public IEnumerable<AccountingEntryLineGraphQLModel> Lines { get; set; } = [];
+
+        /// <summary>
+        /// Si el comprobante es una anulación de otro, aquí apunta al original.
+        /// </summary>
+        public AccountingEntryGraphQLModel Reverse { get; set; }
 
         private string GetInfo()
         {
             string _info = "";
-            if (this.DraftMasterId != null) _info = "Existe un borrador asociado a este documento";
-            if (!string.IsNullOrEmpty(this.State)) _info = string.IsNullOrEmpty(_info) ? "Este documento ha sido anulado" : $"{_info}\r\nEste documento ha sido anulado";
-            if (this.Annulment) _info = string.IsNullOrEmpty(_info) ? $"Este es un documento de anulación" : $"{_info}\r\nEste es un documento de anulación";
+            if (Status is "CANCELLED_WITH_DOCUMENT" or "CANCELLED_NO_DOCUMENT") _info = "Este documento ha sido anulado";
+            if (Annulment) _info = string.IsNullOrEmpty(_info) ? "Este es un documento de anulación" : $"{_info}\r\nEste es un documento de anulación";
             return _info;
         }
 
-        public string Info { get { return this.GetInfo(); } }
-    }
-
-    public class AccountingEntryTotals
-    {
-        public decimal Debit { get; set; } = 0;
-        public decimal Credit { get; set; } = 0;
-    }
-
-    public class AccountingEntryDraftTotals
-    {
-        public decimal Debit { get; set; } = 0;
-        public decimal Credit { get; set; } = 0;
-    }
-
-    public class AccountingEntryCountDelete
-    {
-        public int Count { get; set; }
+        public string Info => GetInfo();
     }
 
     public class AccountingEntriesDataContext
     {
-        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; }
-        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public PageType<AccountingEntryDraftGraphQLModel>  AccountingEntryDraftMasterPage { get; set; }
+        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; } = [];
+        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; } = [];
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; } = [];
+        public PageType<DraftAccountingEntryGraphQLModel> DraftAccountingEntryPage { get; set; } = new();
     }
 
-    public class AccountingEntriesDraftDetailDataContext
+    public class AccountingEntryDeleteMessage
     {
-        public AccountingEntryDraftTotals AccountingEntryDraftTotals { get; set; } = new();
+        public DeleteResponseType DeletedAccountingEntry { get; set; } = new();
     }
 
-    //TODO
-    public class BulkDeleteAccountingEntryMaster
-    {
-        public int Count { get; set; }
-    }
-    public class AccountingEntryDocumentPreviewDataContext
-    {
-        public AccountingEntryGraphQLModel AccountingEntryMaster { get; set; }
-        public PageType<AccountingEntryDetailGraphQLModel> AccountingEntryDetailPage { get; set; }
-    }
-
-    public class AccountingEntryMasterDTO : AccountingEntryGraphQLModel
-    {
-        public bool IsChecked { get; set; } = false;
-    }
-
-    public class AccountingEntryMasterDeleteMessage
-    {
-        public BigInteger Id { get; set; }
-    }
-
-    public class AccountingEntryMasterCancellationMessage
+    public class AccountingEntryCancellationMessage
     {
         public AccountingEntryGraphQLModel CancelledAccountingEntry { get; set; }
     }

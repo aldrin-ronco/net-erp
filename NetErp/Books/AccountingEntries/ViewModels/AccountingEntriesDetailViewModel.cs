@@ -8,11 +8,12 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
 using DevExpress.XtraEditors.Controls;
 using Extensions.Books;
-using GraphQL.Client.Http;
+
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingEntries.DTO;
+using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -52,24 +53,34 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService; 
-        private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
-        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly IRepository<DraftAccountingEntryGraphQLModel> _draftAccountingEntryService; 
+        private readonly IRepository<DraftAccountingEntryLineGraphQLModel> _draftAccountingEntryLineService;
+        private readonly Helpers.IDialogService _dialogService;
 
-        
 
 
         #region Propiedades
 
-        // Context
         public AccountingEntriesViewModel Context { get; set; }
 
-        // Parent record reference
-        public AccountingEntryDraftGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
 
-        // Accounting Entries
-        private ObservableCollection<AccountingEntryDraftDetailDTO> _accountingEntries;
-        public ObservableCollection<AccountingEntryDraftDetailDTO> AccountingEntries
+        // Colecciones para combos y grid
+        private ObservableCollection<DraftAccountingEntryLineDTO> _accountingEntries;
+        public ObservableCollection<DraftAccountingEntryLineDTO> AccountingEntries
         {
             get { return _accountingEntries; }
             set
@@ -81,7 +92,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
             }
         }
-        // Cuentas Contables
+
         private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
         {
@@ -95,7 +106,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
             }
         }
-        //CostCenters
+
         private ObservableCollection<CostCenterGraphQLModel> _costCenters;
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
@@ -109,7 +120,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
             }
         }
-        // Libros contables
+
         private ObservableCollection<AccountingBookGraphQLModel> _accountingBooks;
         public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks
         {
@@ -123,7 +134,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
             }
         }
-        // AccountingSources
+
         private ObservableCollection<AccountingSourceGraphQLModel> _accountingSources;
         public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources
         {
@@ -137,22 +148,27 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
             }
         }
-        // Selected Accounting Entry
-        private AccountingEntryDraftDetailDTO _selectedAccountingEntryDraftDetail;
-        public AccountingEntryDraftDetailDTO SelectedAccountingEntryDraftDetail
+
+        private DraftAccountingEntryLineDTO _selectedDraftAccountingEntryLine;
+        public DraftAccountingEntryLineDTO SelectedDraftAccountingEntryLine
         {
-            get { return _selectedAccountingEntryDraftDetail; }
+            get { return _selectedDraftAccountingEntryLine; }
             set
             {
-                if (this._selectedAccountingEntryDraftDetail != value)
+                if (this._selectedDraftAccountingEntryLine != value)
                 {
-                    _selectedAccountingEntryDraftDetail = value;
-                    NotifyOfPropertyChange(nameof(this.SelectedAccountingEntryDraftDetail));
+                    _selectedDraftAccountingEntryLine = value;
+                    NotifyOfPropertyChange(nameof(this.SelectedDraftAccountingEntryLine));
                 }
             }
         }
 
-        // Draft Master Id
+        #region DraftEntry
+
+        public DraftAccountingEntryGraphQLModel SelectedDraftAccountingEntry { get; set; } = null;
+
+        public int DescriptionMaxLength => Context.StringLengthCache.GetMaxLength<DraftAccountingEntryGraphQLModel>(nameof(DraftAccountingEntryGraphQLModel.Description));
+
         private BigInteger _draftMasterId = 0;
         public BigInteger DraftMasterId
         {
@@ -168,72 +184,18 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        // Resultados de busqueda de terceros
-        private ObservableCollection<AccountingEntityGraphQLModel> _accountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>();
-        public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntitiesSearchResults
+        public bool IsNewRecord
         {
-            get { return _accountingEntitiesSearchResults; }
-            set
-            {
-                if (_accountingEntitiesSearchResults != value)
-                {
-                    _accountingEntitiesSearchResults = value;
-                    NotifyOfPropertyChange(nameof(AccountingEntitiesSearchResults));
-                }
-            }
+            get { return this.DraftMasterId == 0; }
         }
 
-        // IsBusy
-        private bool _isBusy;
-        public bool IsBusy
+        public bool IsEditingRecord
         {
-            get { return _isBusy; }
-            set
-            {
-                if (_isBusy != value)
-                {
-                    _isBusy = value;
-                    NotifyOfPropertyChange(nameof(CanAddRecord));
-                    NotifyOfPropertyChange(nameof(CanSearchForAccountingEntityMatch));
-                    NotifyOfPropertyChange(nameof(IsBusy));
-                }
-            }
+            get { return this.DraftMasterId > 0; }
         }
 
-        // Filtro de busqueda de tercero
-        private string _filterSearchAccountingEntity = "";
-        public string FilterSearchAccountingEntity
-        {
-            get { return _filterSearchAccountingEntity; }
-            set
-            {
-                if (_filterSearchAccountingEntity != value)
-                {
-                    _filterSearchAccountingEntity = value;
-                    NotifyOfPropertyChange(nameof(FilterSearchAccountingEntity));
-                    NotifyOfPropertyChange(nameof(CanSearchForAccountingEntityMatch));
-                }
-            }
-        }
-
-        // Estado de filtro de tercero
-        private bool _isFilterSearchAccountinEntityOnEditMode = true;
-        public bool IsFilterSearchAccountinEntityOnEditMode
-        {
-            get { return _isFilterSearchAccountinEntityOnEditMode; }
-            set
-            {
-                if (_isFilterSearchAccountinEntityOnEditMode != value)
-                {
-                    _isFilterSearchAccountinEntityOnEditMode = value;
-                    NotifyOfPropertyChange(nameof(IsFilterSearchAccountinEntityOnEditMode));
-                    NotifyOfPropertyChange(nameof(CanSearchForAccountingEntityMatch));
-                }
-            }
-        }
-
-        // Document Date
         private DateTime? _documentDate = DateTime.Now;
+        [IsoDate]
         public DateTime? DocumentDate
         {
             get { return _documentDate; }
@@ -243,15 +205,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _documentDate = value;
                     NotifyOfPropertyChange(nameof(DocumentDate));
+                    this.TrackChange(nameof(DocumentDate));
+                    ValidateProperty(nameof(DocumentDate), null);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    // Con esto evito que vaya a la API en la primera asignación
-                    if (this.SelectedAccountingEntryDraftMaster != null && this.SelectedAccountingEntryDraftMaster.DocumentDate != value)
-                        _ = Task.Run(() => UpdateAccountingEntryDraftMasterAsync(nameof(DocumentDate)));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        // Descrcipcion del comprobante
         private string _description = string.Empty;
         public string Description
         {
@@ -262,126 +223,71 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _description = value;
                     NotifyOfPropertyChange(nameof(Description));
+                    this.TrackChange(nameof(Description));
                     ValidateProperty(nameof(Description), value, 0);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    // Con esto evito que vaya a la API en la primera asignación
-                    if (this.SelectedAccountingEntryDraftMaster != null && this.SelectedAccountingEntryDraftMaster.Description != value && !string.IsNullOrEmpty(Description))
-                        _ = Task.Run(() => UpdateAccountingEntryDraftMasterAsync(nameof(Description)));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        // Detalle del registro
-        private string _recordDetail = string.Empty;
-        public string RecordDetail
+        private int? _selectedAccountingBookId;
+        [ExpandoPath("accountingBookId")]
+        public int? SelectedAccountingBookId
         {
-            get { return _recordDetail; }
+            get { return _selectedAccountingBookId; }
             set
             {
-                if (_recordDetail != value)
+                if (_selectedAccountingBookId != value)
                 {
-                    _recordDetail = value;
-                    NotifyOfPropertyChange(nameof(RecordDetail));
-                    ValidateProperty(nameof(RecordDetail), value, 0);
+                    _selectedAccountingBookId = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountingBookId));
+                    this.TrackChange(nameof(SelectedAccountingBookId));
+                    ValidateProperty(nameof(SelectedAccountingBookId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        // Debito
-        private decimal _debit = 0;
-        public decimal Debit
+        private int? _selectedCostCenterId;
+        [ExpandoPath("costCenterId")]
+        public int? SelectedCostCenterId
         {
-            get { return _debit; }
+            get { return _selectedCostCenterId; }
             set
             {
-                if (_debit != value)
+                if (_selectedCostCenterId != value)
                 {
-                    _debit = value;
-                    NotifyOfPropertyChange(nameof(Debit));
-                    ValidateProperty(nameof(Debit), null, 0, value);
-                    ValidateProperty(nameof(Credit), null, 0, this.Credit);
+                    _selectedCostCenterId = value;
+                    NotifyOfPropertyChange(nameof(SelectedCostCenterId));
+                    this.TrackChange(nameof(SelectedCostCenterId));
+                    ValidateProperty(nameof(SelectedCostCenterId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    NotifyOfPropertyChange(nameof(IsEnableCredit));
-                    NotifyOfPropertyChange(nameof(IsEnableDebit));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        // Is Enable Debit
-        public bool IsEnableDebit
+        private int? _selectedAccountingSourceId;
+        [ExpandoPath("accountingSourceId")]
+        public int? SelectedAccountingSourceId
         {
-            get { return this.Credit == 0; }
-        }
-
-        // Credit
-        private decimal _credit = 0;
-        public decimal Credit
-        {
-            get { return _credit; }
+            get { return _selectedAccountingSourceId; }
             set
             {
-                if (_credit != value)
+                if (_selectedAccountingSourceId != value)
                 {
-                    _credit = value;
-                    NotifyOfPropertyChange(nameof(Credit));
-                    ValidateProperty(nameof(Credit), null, 0, value);
-                    ValidateProperty(nameof(Debit), null, 0, this.Debit);
+                    _selectedAccountingSourceId = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountingSourceId));
+                    this.TrackChange(nameof(SelectedAccountingSourceId));
+                    ValidateProperty(nameof(SelectedAccountingSourceId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    NotifyOfPropertyChange(nameof(IsEnableCredit));
-                    NotifyOfPropertyChange(nameof(IsEnableDebit));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        // Is Enable Credit
-        public bool IsEnableCredit { get { return this.Debit == 0; } }
-
-        // Base
-        private decimal _base = 0;
-        public decimal Base
-        {
-            get { return _base; }
-            set
-            {
-                if (_base != value)
-                {
-                    _base = value;
-                    NotifyOfPropertyChange(nameof(Base));
-                    NotifyOfPropertyChange(nameof(CanAddRecord));
-                }
-            }
-        }
-
-        // IsNewRcord
-        public bool IsNewRecord
-        {
-            get { return this.DraftMasterId == 0; }
-        }
-
-        // IsEditingRecord
-        public bool IsEditingRecord
-        {
-            get { return this.DraftMasterId > 0; }
-        }
-
-        // Habilitar Search Entity
-        public bool CanSearchForAccountingEntityMatch
-        {
-            get
-            {
-                if (this.IsFilterSearchAccountinEntityOnEditMode)
-                {
-                    return (this.FilterSearchAccountingEntity.Trim().Length >= 3) && !this.IsBusy;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-        }
-
-        // Total Debito
         private Decimal _totalDebit = 0;
         public Decimal TotalDebit
         {
@@ -398,7 +304,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        // Total Credit
         private decimal _totalCredit;
         public decimal TotalCredit
         {
@@ -419,59 +324,35 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         #endregion
 
-        #region Selected Items
+        #region DraftLine
 
-        // Selected Accounting Book
-        private int _selectedAccountingBookId;
-        public int SelectedAccountingBookId
+        public int RecordDetailMaxLength => Context.StringLengthCache.GetMaxLength<DraftAccountingEntryLineGraphQLModel>(nameof(DraftAccountingEntryLineGraphQLModel.RecordDetail));
+
+        private AccountingEntityGraphQLModel? _selectedAccountingEntity;
+        public AccountingEntityGraphQLModel? SelectedAccountingEntity
         {
-            get { return _selectedAccountingBookId; }
+            get => _selectedAccountingEntity;
             set
             {
-                if (_selectedAccountingBookId != value)
+                if (_selectedAccountingEntity != value)
                 {
-                    _selectedAccountingBookId = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingBookId));
+                    _selectedAccountingEntity = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountingEntity));
+                    NotifyOfPropertyChange(nameof(SelectedAccountingEntityDisplay));
+                    this.TrackChange(nameof(SelectedAccountingEntity));
+                    ValidateProperty(nameof(SelectedAccountingEntity), null);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                 }
             }
         }
 
-        private int _selectedCostCenterId = 0;
-        public int SelectedCostCenterId
-        {
-            get { return _selectedCostCenterId; }
-            set
-            {
-                if (_selectedCostCenterId != value)
-                {
-                    _selectedCostCenterId = value;
-                    NotifyOfPropertyChange(nameof(SelectedCostCenterId));
-                    ValidateProperty(nameof(SelectedCostCenterId), null, value);
-                    NotifyOfPropertyChange(nameof(CanAddRecord));
-                }
-            }
-        }
+        public string SelectedAccountingEntityDisplay =>
+            SelectedAccountingEntity is null
+                ? string.Empty
+                : $"{SelectedAccountingEntity.IdentificationNumber} — {SelectedAccountingEntity.SearchName}";
 
-        private int _selectedCostCenterOnEntryId = 0;
-        public int SelectedCostCenterOnEntryId
-        {
-            get { return _selectedCostCenterOnEntryId; }
-            set
-            {
-                if (_selectedCostCenterOnEntryId != value)
-                {
-                    _selectedCostCenterOnEntryId = value;
-                    NotifyOfPropertyChange(nameof(SelectedCostCenterOnEntryId));
-                    ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, value);
-                    NotifyOfPropertyChange(nameof(CanAddRecord));
-                }
-            }
-        }
-
-        // Cuenta Contable
-        private int _selectedAccountingAccountOnEntryId = 0;
-        public int SelectedAccountingAccountOnEntryId
+        private int? _selectedAccountingAccountOnEntryId;
+        public int? SelectedAccountingAccountOnEntryId
         {
             get { return _selectedAccountingAccountOnEntryId; }
             set
@@ -480,46 +361,105 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedAccountingAccountOnEntryId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingAccountOnEntryId));
-                    ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, value);
+                    ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                 }
             }
         }
 
-        // Tercero
-        private int _selectedAccountingEntityOnEntryId;
-        public int SelectedAccountingEntityOnEntryId
+        private int? _selectedCostCenterOnEntryId;
+        public int? SelectedCostCenterOnEntryId
         {
-            get { return _selectedAccountingEntityOnEntryId; }
+            get { return _selectedCostCenterOnEntryId; }
             set
             {
-                if (_selectedAccountingEntityOnEntryId != value)
+                if (_selectedCostCenterOnEntryId != value)
                 {
-                    _selectedAccountingEntityOnEntryId = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingEntityOnEntryId));
-                    ValidateProperty(nameof(SelectedAccountingEntityOnEntryId), null, value);
+                    _selectedCostCenterOnEntryId = value;
+                    NotifyOfPropertyChange(nameof(SelectedCostCenterOnEntryId));
+                    ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                 }
-
             }
         }
 
-        // Selected Accounting Source
-        private int _selectedAccountingSourceId = 0;
-        public int SelectedAccountingSourceId
+        private string _recordDetail = string.Empty;
+        public string RecordDetail
         {
-            get { return _selectedAccountingSourceId; }
+            get { return _recordDetail; }
             set
             {
-                if (_selectedAccountingSourceId != value)
+                if (_recordDetail != value)
                 {
-                    _selectedAccountingSourceId = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingSourceId));
-                    ValidateProperty(nameof(SelectedAccountingSourceId), null, value);
+                    _recordDetail = value;
+                    NotifyOfPropertyChange(nameof(RecordDetail));
+                    ValidateProperty(nameof(RecordDetail), value, 0);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                 }
             }
         }
+
+        private decimal _debit = 0;
+        public decimal Debit
+        {
+            get { return _debit; }
+            set
+            {
+                if (_debit != value)
+                {
+                    _debit = value;
+                    NotifyOfPropertyChange(nameof(Debit));
+                    ValidateProperty(nameof(Debit), null, 0, value);
+                    ValidateProperty(nameof(Credit), null, 0, this.Credit);
+                    NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(IsEnableCredit));
+                    NotifyOfPropertyChange(nameof(IsEnableDebit));
+                }
+            }
+        }
+
+        public bool IsEnableDebit
+        {
+            get { return this.Credit == 0; }
+        }
+
+        private decimal _credit = 0;
+        public decimal Credit
+        {
+            get { return _credit; }
+            set
+            {
+                if (_credit != value)
+                {
+                    _credit = value;
+                    NotifyOfPropertyChange(nameof(Credit));
+                    ValidateProperty(nameof(Credit), null, 0, value);
+                    ValidateProperty(nameof(Debit), null, 0, this.Debit);
+                    NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(IsEnableCredit));
+                    NotifyOfPropertyChange(nameof(IsEnableDebit));
+                }
+            }
+        }
+
+        public bool IsEnableCredit { get { return this.Debit == 0; } }
+
+        private decimal _base = 0;
+        public decimal Base
+        {
+            get { return _base; }
+            set
+            {
+                if (_base != value)
+                {
+                    _base = value;
+                    NotifyOfPropertyChange(nameof(Base));
+                    NotifyOfPropertyChange(nameof(CanAddRecord));
+                }
+            }
+        }
+
+        #endregion
 
         private ICommand _publishAccountingEntryCommand;
 
@@ -556,20 +496,26 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea finalizar la edición del comprobante?", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.No) return;
 
                 this.IsBusy = true;
-                this.Refresh();
+
+                // Si hay cambios pendientes en el header del borrador, persistirlos antes
+                // de finalizar. Solo aplica cuando el borrador ya existe (DraftMasterId > 0);
+                // si es un borrador nuevo (DraftMasterId == 0) no hay nada que actualizar
+                // porque los datos del header se enviarán dentro de createAccountingEntryDraft
+                // junto con la primera línea — ese flujo no aplica aquí porque PublishAccountingEntry
+                // requiere un borrador ya creado.
+                if (DraftMasterId != 0 && HasHeaderChanges())
+                {
+                    await UpdateDraftHeaderAsync();
+                }
+
                 var createdEntry = await this.ExecutePublishAccountingEntryAsync();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(createdEntry);
-                if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDraftMasterDeleteMessage { Id = this.DraftMasterId });
+                if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new DraftAccountingEntryFinalizeMessage { DraftId = this.DraftMasterId });
                 if (createdEntry != null)
                 {
                     await this.Context.ActivateMasterViewAsync();
                 }
 
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
@@ -581,174 +527,145 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
+        /// <summary>
+        /// Finaliza el borrador vigente vía <c>finalizeAccountingEntryDraft(input: FinalizeAccountingEntryDraftInput!)</c>.
+        /// El schema ya no diferencia "crear publicado" vs "re-publicar": siempre es una única mutación
+        /// que transforma el borrador en un <c>AccountingEntry</c> publicado y retorna ese entry.
+        /// </summary>
         public async Task<AccountingEntryGraphQLModel> ExecutePublishAccountingEntryAsync()
         {
-            AccountingEntryGraphQLModel? entry = null;
-            object variables = new
-            {
-                this.DraftMasterId
-            };
+            var (fragment, query) = _finalizeDraftQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "input", new { draftId = (int)this.DraftMasterId })
+                .Build();
 
-            try
-            {
-                if (this.SelectedAccountingEntryDraftMaster is null || this.SelectedAccountingEntryDraftMaster.MasterId is null)
-                {
-                    string query = @"
-                    mutation($draftMasterId:ID!) {
-                      CreateResponse: finalize_accounting_entry_draft(draftId:$draftMasterId) {
-                        id 
-                        draftMasterId
-                        documentNumber
-                        accountingBook {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          name
-                        }
-                        documentDate
-                        createdAt
-                        createdBy
-                        description    
-                      }
-                    }";
-                    entry = await this._accountingEntryMasterService.CreateAsync(query, variables);
-                }
-                else
-                {
-                    string query = @"
-                    mutation($draftMasterId:ID!) {
-                      UpdateResponse: finalize_accounting_entry_draft (draftId:$draftMasterId) {
-                        id
-                        draftMasterId
-                        documentNumber
-                        accountingBook {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          name
-                        }    
-                        documentDate
-                        description
-                        createdBy
-                        createdAt
-                      }
-                    }";
-                    entry = await this._accountingEntryMasterService.UpdateAsync(query, variables);
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            return entry;
+            var payload = await this._accountingEntryMasterService
+                .CreateAsync<UpsertResponseType<AccountingEntryGraphQLModel>>(query, variables);
+
+            if (!payload.Success)
+                throw new Exception(payload.Message);
+
+            return payload.Entity;
         }
+
+        /// <summary>
+        /// Campos del header que deben estar libres de errores para permitir publicar.
+        /// Los campos del line (cuenta contable, tercero, centro de costo del entry, detalle,
+        /// débito, crédito) solo afectan a <see cref="CanAddRecord"/>.
+        /// </summary>
+        private static readonly string[] _headerFields =
+        [
+            nameof(SelectedAccountingBookId),
+            nameof(SelectedCostCenterId),
+            nameof(SelectedAccountingSourceId),
+            nameof(DocumentDate),
+            nameof(Description)
+        ];
+
+        private bool HasHeaderErrors => _headerFields.Any(f => _errors.ContainsKey(f));
 
         public bool CanPublishAccountingEntry
         {
             get
             {
-                // Aqui deben haber mas validaciones, que no hayan cosas vacias, etc..
-                return (TotalDiference == 0 && TotalCredit > 0);
+                if (HasHeaderErrors) return false;
+                if (TotalDiference != 0) return false;
+                if (TotalCredit <= 0) return false;
+                return true;
             }
         }
 
-        public async Task EndRowEditingAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                mutation($data:UpdateAccountingEntryDraftDetailInput!, $id:Int!) {
-                  UpdateResponse: updateAccountingEntryDraftDetail(data:$data, id:$id) {
-                    id
-                    draftMasterId
-                    accountingAccount {
-                      id
-                      code
-                      name      
-                    }
-                    accountingEntity {
-                      id
-                      identificationNumber
-                      verificationDigit
-                      businessName
-                      searchName
-                    }
-                    costCenter {
-                      id
-                      name
-                    }
-                    recordDetail
-                    debit
-                    credit
-                    base
-                  }
-                }";
-
-
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Id = SelectedAccountingEntryDraftDetail.Id;
-                variables.Data.AccountingAccountId = SelectedAccountingEntryDraftDetail.AccountingAccount.Id;
-                variables.Data.AccountingEntityId = SelectedAccountingEntryDraftDetail.AccountingEntity.Id;
-                variables.Data.CostCenterId = SelectedAccountingEntryDraftDetail.CostCenter.Id;
-                variables.Data.RecordDetail = SelectedAccountingEntryDraftDetail.RecordDetail;
-                variables.Data.Debit = SelectedAccountingEntryDraftDetail.Debit;
-                variables.Data.Credit = SelectedAccountingEntryDraftDetail.Credit;
-                variables.Data.Base = SelectedAccountingEntryDraftDetail.Base;
-
-                AccountingEntryDraftDetailDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftDetailDTO>(await this._accountingEntryDraftDetailService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
-                // Actualizo el registro en la lista
-                var entryToUpdate = this.AccountingEntries.FirstOrDefault(x => x.Id == updatedEntry.Id);
-                if (entryToUpdate != null)
-                {
-                    entryToUpdate.AccountingAccount = updatedEntry.AccountingAccount;
-                    entryToUpdate.AccountingEntity = updatedEntry.AccountingEntity;
-                    entryToUpdate.CostCenter = updatedEntry.CostCenter;
-                    entryToUpdate.RecordDetail = updatedEntry.RecordDetail;
-                    entryToUpdate.Debit = updatedEntry.Debit;
-                    entryToUpdate.Credit = updatedEntry.Credit;
-                    entryToUpdate.Base = updatedEntry.Base;
-                }
-                // Totals
-                query = @"
-                    query($draftMasterId:ID!){
-                        accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
-                        debit
-                        credit
-                        }
-                    }";
-                variables = new
-                {
-                    this.DraftMasterId
-                };
-                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
-                this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
-                this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
-                this.IsBusy = false;
-                _notificationService.ShowSuccess("Actualización exitosa");
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+        // TODO: refactor pendiente — edición inline por celda deshabilitada.
+        // Este método persistía cada celda inmediatamente al API. Requiere análisis de UX e
+        // integridad transaccional antes de re-habilitarse (mismo patrón que el auto-save de
+        // DocumentDate/Description en los setters del header). Se conserva el código completo
+        // como referencia y se reactivará en una iteración posterior del refactor.
+        // El binding en AccountingEntriesDetailView.xaml también está comentado.
+        //public async Task EndRowEditingAsync()
+        //{
+        //    try
+        //    {
+        //        IsBusy = true;
+        //        string query = @"
+        //        mutation($data:UpdateAccountingEntryDraftDetailInput!, $id:Int!) {
+        //          UpdateResponse: updateAccountingEntryDraftDetail(data:$data, id:$id) {
+        //            id
+        //            draftMasterId
+        //            accountingAccount {
+        //              id
+        //              code
+        //              name
+        //            }
+        //            accountingEntity {
+        //              id
+        //              identificationNumber
+        //              verificationDigit
+        //              businessName
+        //              searchName
+        //            }
+        //            costCenter {
+        //              id
+        //              name
+        //            }
+        //            recordDetail
+        //            debit
+        //            credit
+        //            base
+        //          }
+        //        }";
+        //
+        //
+        //        dynamic variables = new ExpandoObject();
+        //        variables.Data = new ExpandoObject();
+        //        variables.Id = SelectedDraftAccountingEntryLine.Id;
+        //        variables.Data.AccountingAccountId = SelectedDraftAccountingEntryLine.AccountingAccount.Id;
+        //        variables.Data.AccountingEntityId = SelectedDraftAccountingEntryLine.AccountingEntity.Id;
+        //        variables.Data.CostCenterId = SelectedDraftAccountingEntryLine.CostCenter.Id;
+        //        variables.Data.RecordDetail = SelectedDraftAccountingEntryLine.RecordDetail;
+        //        variables.Data.Debit = SelectedDraftAccountingEntryLine.Debit;
+        //        variables.Data.Credit = SelectedDraftAccountingEntryLine.Credit;
+        //        variables.Data.Base = SelectedDraftAccountingEntryLine.Base;
+        //
+        //        DraftAccountingEntryLineDTO updatedEntry = Context.Mapper.Map<DraftAccountingEntryLineDTO>(await this._draftAccountingEntryLineService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
+        //        // Actualizo el registro en la lista
+        //        var entryToUpdate = this.AccountingEntries.FirstOrDefault(x => x.Id == updatedEntry.Id);
+        //        if (entryToUpdate != null)
+        //        {
+        //            entryToUpdate.AccountingAccount = updatedEntry.AccountingAccount;
+        //            entryToUpdate.AccountingEntity = updatedEntry.AccountingEntity;
+        //            entryToUpdate.CostCenter = updatedEntry.CostCenter;
+        //            entryToUpdate.RecordDetail = updatedEntry.RecordDetail;
+        //            entryToUpdate.Debit = updatedEntry.Debit;
+        //            entryToUpdate.Credit = updatedEntry.Credit;
+        //            entryToUpdate.Base = updatedEntry.Base;
+        //        }
+        //        // Totals
+        //        query = @"
+        //            query($draftMasterId:ID!){
+        //                accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
+        //                debit
+        //                credit
+        //                }
+        //            }";
+        //        variables = new
+        //        {
+        //            this.DraftMasterId
+        //        };
+        //        var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
+        //        this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
+        //        this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
+        //        this.IsBusy = false;
+        //        _notificationService.ShowSuccess("Actualización exitosa");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+        //    }
+        //    finally
+        //    {
+        //        IsBusy = false;
+        //    }
+        //}
 
         public bool CanDeleteAccountingEntries
         {
@@ -779,61 +696,38 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 if (ThemedMessageBox.Show("Atención !", "¿ Confirma que desea eliminar los registros seleccionados ?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
 
                 this.IsBusy = true;
-                this.Refresh();
 
-                IEnumerable<BigInteger> ids = from e in this.AccountingEntries
-                                              where e.IsChecked
-                                              select e.Id;
+                int[] lineIds = this.AccountingEntries
+                    .Where(e => e.IsChecked)
+                    .Select(e => (int)e.Id)
+                    .ToArray();
 
-                string query = @"
-                mutation($ids: [Int!]!){
-                  Data: deleteListAccountingEntryDraftDetail(ids:$ids){
-                    success
-                    message
-                  }
-                }  ";
+                if (lineIds.Length == 0) return;
 
-                object variables = new
+                var (fragment, query) = _deleteDraftLinesQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "input", new
+                    {
+                        draftId = (int)this.DraftMasterId,
+                        lineIds
+                    })
+                    .Build();
+
+                var payload = await this._draftAccountingEntryLineService
+                    .MutationContextAsync<DeleteDraftLinesPayloadWrapper>(query, variables);
+                var response = payload?.DeleteResponse
+                    ?? throw new Exception("No se recibió respuesta al eliminar las líneas.");
+
+                if (!response.Success)
                 {
-                    Ids = ids
-                };
-
-                var response = await this._accountingEntryDraftDetailService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
-
-                if(!response.Data.Success)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{response.Data.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.DeleteAccountingEntriesAsync\r\n{response.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
                     return;
                 }
-                // Totals
-                query = @"
-                    query($draftMasterId:ID!){
-                        accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
-                        debit
-                        credit
-                        }
-                    }";
 
-                variables = new
-                {
-                    this.DraftMasterId
-                };
-
-                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
-
-                this.IsBusy = false;
-
-                this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
-                this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
-
-                var itemsToDelete = this.AccountingEntries.Where(x => x.IsChecked).ToList();
-
-                foreach (var item in itemsToDelete)
-                {
-                    this.AccountingEntries.Remove(item); // Queda asi o debo llamar a la pagina ? quien sabe ....
-                }
+                // Recargar líneas del borrador desde el API y recalcular totales client-side.
+                await ReloadDraftLinesAsync();
                 NotifyOfPropertyChange(nameof(CanDeleteAccountingEntries));
-                _notificationService.ShowSuccess("Eliminación exitosa");
+                _notificationService.ShowSuccess(response.Message);
             }
             catch (Exception ex)
             {
@@ -849,7 +743,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                this.SelectedAccountingAccountOnEntryId = 0;
+                this.SelectedAccountingAccountOnEntryId = null;
+                this.RecordDetail = string.Empty;
                 this.Debit = 0;
                 this.Credit = 0;
                 this.Base = 0;
@@ -863,35 +758,139 @@ namespace NetErp.Books.AccountingEntries.ViewModels
        
 
 
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
-            await CacheBatchLoader.LoadAsync(
-               _graphQLClient, default,
-               _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _auxiliaryAccountingAccountCache);
+            // Los caches ya fueron cargados centralizadamente por el Conductor en
+            // OnInitializedAsync vía CacheBatchLoader. Aquí solo se materializan las
+            // colecciones locales que la vista bindea.
+            // La selección por defecto la maneja SetForNew/SetForEdit, llamados por el Conductor
+            // ANTES de ActivateItemAsync (siguiendo el patrón estándar Seller/Customer).
+            // Sin sentinelas: los combos usan NullText vía DevExpress cuando el valor es null.
             CostCenters = [.. _costCenterCache.Items];
-            this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-            this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
             this.AccountingBooks = [.. _accountingBookCache.Items];
-            this.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
             this.AccountingSources = [.. _notAnnulledAccountingSourceCache.Items];
-            this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
-            this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
             this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-            
-            
+            return Task.CompletedTask;
+        }
+
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
+        {
+            await InitializeAsync();
+            await base.OnInitializedAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Inicializa el ViewModel para crear un nuevo borrador de comprobante contable.
+        /// Llamado por el Conductor ANTES de ActivateItemAsync. Asume que los caches ya
+        /// fueron cargados por el Master (CacheBatchLoader en Master.OnInitializedAsync).
+        /// </summary>
+        public void SetForNew()
+        {
+            // Header — sin pre-selección automática; los combos muestran su NullText.
+            SelectedDraftAccountingEntry = null;
+            DraftMasterId = 0;
+            SelectedAccountingBookId = null;
+            SelectedCostCenterId = null;
+            SelectedAccountingSourceId = null;
+            SelectedCostCenterOnEntryId = null;
+            AccountingEntries = [];
+            EntriesPageIndex = 1;
+            EntriesPageSize = 50;
+            EntriesTotalCount = 0;
+            EntriesResponseTime = "";
+            TotalDebit = 0;
+            TotalCredit = 0;
+            DocumentDate = DateTime.Now.Date;
+            Description = "";
+
+            // Entry Point (formulario de captura de líneas)
+            SelectedAccountingAccountOnEntryId = null;
+            SelectedAccountingEntity = null;
+            SelectedCostCenterOnEntryId = null;
+            RecordDetail = "";
+            Debit = 0;
+            Credit = 0;
+            Base = 0;
+            SeedDefaultValues();
+        }
+
+        /// <summary>
+        /// Inicializa el ViewModel para editar un borrador existente.
+        /// Llamado por el Conductor ANTES de ActivateItemAsync, después de cargar las líneas
+        /// y los totales del borrador.
+        /// </summary>
+        public void SetForEdit(DraftAccountingEntryGraphQLModel model,
+                               IEnumerable<DraftAccountingEntryLineDTO> entries,
+                               decimal totalDebit,
+                               decimal totalCredit,
+                               string responseTime)
+        {
+            // Header
+            SelectedDraftAccountingEntry = model;
+            DraftMasterId = model.Id;
+            SelectedAccountingBookId = model.AccountingBook.Id;
+            SelectedCostCenterId = model.CostCenter.Id;
+            SelectedAccountingSourceId = model.AccountingSource.Id;
+            DocumentDate = model.DocumentDate;
+            Description = model.Description;
+
+            // Líneas y totales
+            AccountingEntries = new ObservableCollection<DraftAccountingEntryLineDTO>(entries);
+            TotalDebit = totalDebit;
+            TotalCredit = totalCredit;
+            EntriesResponseTime = responseTime;
+
+            // Entry Point (formulario de captura de líneas)
+            SelectedAccountingAccountOnEntryId = null;
+            SelectedAccountingEntity = null;
+            SelectedCostCenterOnEntryId = null;
+            RecordDetail = "";
+            Debit = 0;
+            Credit = 0;
+            Base = 0;
+            SeedCurrentValues();
+        }
+
+        /// <summary>
+        /// Para CREATE: limpia seeds previos, siembra solo defaults significativos y acepta cambios.
+        /// Para los borradores, los defaults son las selecciones iniciales del header.
+        /// </summary>
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(SelectedAccountingBookId), SelectedAccountingBookId);
+            this.SeedValue(nameof(SelectedCostCenterId), SelectedCostCenterId);
+            this.SeedValue(nameof(SelectedAccountingSourceId), SelectedAccountingSourceId);
+            this.SeedValue(nameof(DocumentDate), DocumentDate);
+            this.SeedValue(nameof(Description), Description);
+            this.AcceptChanges();
+        }
+
+        /// <summary>
+        /// Para EDIT: siembra TODOS los campos editables del header con su valor actual del borrador.
+        /// Sin ClearSeeds aquí: AcceptChanges al final limpia el HashSet de cambios pero conserva los seeds.
+        /// </summary>
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(SelectedAccountingBookId), SelectedAccountingBookId);
+            this.SeedValue(nameof(SelectedCostCenterId), SelectedCostCenterId);
+            this.SeedValue(nameof(SelectedAccountingSourceId), SelectedAccountingSourceId);
+            this.SeedValue(nameof(DocumentDate), DocumentDate);
+            this.SeedValue(nameof(Description), Description);
+            this.AcceptChanges();
         }
 
         public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context,
-            IRepository<AccountingEntryGraphQLModel>accountingEntryMasterService,
+            IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService,
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
-            IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
-            IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
-             CostCenterCache costCenterCache,
-             AccountingBookCache accountingBookCache,
-             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
-             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
-             IGraphQLClient graphQLClient)
+            IRepository<DraftAccountingEntryGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<DraftAccountingEntryLineGraphQLModel> accountingEntryDraftLineService,
+            CostCenterCache costCenterCache,
+            AccountingBookCache accountingBookCache,
+            NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+            Helpers.IDialogService dialogService,
+            IGraphQLClient graphQLClient)
         {
             this.Context = context;
             _costCenterCache = costCenterCache;
@@ -899,214 +898,293 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             this._accountingEntryMasterService = accountingEntryMasterService;
             this._accountingEntityService = accountingEntityService;
-            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
-            this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
-            this._accountingAccountService = accountingAccountService;
+            this._draftAccountingEntryService = accountingEntryDraftMasterService;
+            this._draftAccountingEntryLineService = accountingEntryDraftLineService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _dialogService = dialogService;
             _graphQLClient = graphQLClient;
 
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            
-            joinable.Run(async () => await InitializeAsync());
-            
+            // Suscribir para recibir handlers de AccountingAccount / CostCenter + modal tercero.
+            this.Context.EventAggregator.SubscribeOnUIThread(this);
+            Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(
+                this,
+                SearchWithTwoColumnsGridMessageToken.AccountingEntryAccountingEntity,
+                false,
+                OnFindAccountingEntityMessage);
         }
 
-        /*public async Task ExecuteSearchForAccountingEntityMatchAsync()
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            try
+            if (close)
             {
-                if (string.IsNullOrEmpty(this.FilterSearchAccountingEntity))
-                {
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.AccountingEntitiesSearchResults.Clear();
-                    });
-                    return;
-                }
-
-                string query = @"
-                    query ($filter: AccountingEntityFilterInput) {
-                      ListResponse: accountingEntities(filter: $filter) {
-                        id
-                        searchName
-                        identificationNumber
-                        verificationDigit
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.searchName = new ExpandoObject();
-                variables.filter.searchName.@operator = "like";
-                variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                var accountingEntities = await this._accountingEntityService.GetListAsync(query, variables);
-                this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
-                App.Current.Dispatcher.Invoke(() =>
-                {
-                    AccountingEntitiesSearchResults.Insert(0, new AccountingEntityGraphQLModel() { Id = 0, SearchName = "SELECCIONE UN TERCERO" });
-                    if (AccountingEntitiesSearchResults.ToList().Count == 2) AccountingEntitiesSearchResults = AccountingEntitiesSearchResults.Where(x => x.Id != 0).ToObservableCollection();
-                });
-
-                this.IsFilterSearchAccountinEntityOnEditMode = (this.AccountingEntitiesSearchResults.Count == 0);
-                this.SelectedAccountingEntityOnEntryId = -1; // Necesario para que siempre se ejecute el property change
-                this.SelectedAccountingEntityOnEntryId = this.AccountingEntitiesSearchResults.FirstOrDefault().Id;
+                this.Context.EventAggregator.Unsubscribe(this);
+                Messenger.Default.Unregister(this);
             }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }*/
-        public async Task SearchForAccountingEntityMatchAsync()
-        {
-           
-            try
-            {
-                if (string.IsNullOrEmpty(this.FilterSearchAccountingEntity))
-                {
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.AccountingEntitiesSearchResults.Clear();
-                    });
-                    return;
-                }
-                if (this.IsFilterSearchAccountinEntityOnEditMode)
-                {
-                    string query = GetSearchForAccountingEntityMatchQuery();
-                    dynamic variables = new ExpandoObject();
-                    variables.pageResponsePagination = new ExpandoObject();
-                    variables.pageResponsePagination.page = 1;
-                    variables.pageResponsePagination.pageSize = 10;
-
-                    variables.pageResponseFilters = new ExpandoObject();
-                    variables.pageResponseFilters.matching = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                   
-                    PageType<AccountingEntityGraphQLModel> result = await _accountingEntityService.GetPageAsync(query, variables);
-                    this.AccountingEntitiesSearchResults = [.. result.Entries];
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        AccountingEntitiesSearchResults.Insert(0, new AccountingEntityGraphQLModel() { Id = 0, SearchName = "SELECCIONE UN TERCERO" });
-                        if (AccountingEntitiesSearchResults.ToList().Count == 2) AccountingEntitiesSearchResults = AccountingEntitiesSearchResults.Where(x => x.Id != 0).ToObservableCollection();
-                    });
-
-                    this.IsFilterSearchAccountinEntityOnEditMode = (this.AccountingEntitiesSearchResults.Count == 0);
-                    this.SelectedAccountingEntityOnEntryId = -1; // Necesario para que siempre se ejecute el property change
-                    this.SelectedAccountingEntityOnEntryId = this.AccountingEntitiesSearchResults.FirstOrDefault().Id;
-                  
-                }
-                else
-                {
-                    await Task.Run(() =>
-                    {
-                        this.IsFilterSearchAccountinEntityOnEditMode = true;
-                        App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(FilterSearchAccountingEntity)));
-                    });
-                }
-
-                IsBusy = true;
-
-               
-                
-
-               
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
-        }
-        public string GetSearchForAccountingEntityMatchQuery()
-        {
-
-
-            var accountingEntityFields = FieldSpec<PageType<AccountingEntityGraphQLModel>>
-            .Create()
-            .SelectList(it => it.Entries, entries => entries
-                .Field(e => e.Id)
-                .Field(e => e.SearchName)
-                .Field(e => e.VerificationDigit)
-                .Field(e => e.IdentificationNumber)
-                .Field(e => e.InsertedAt)
-            )
-            .Field(o => o.PageNumber)
-            .Field(o => o.PageSize)
-            .Field(o => o.TotalPages)
-            .Field(o => o.TotalEntries)
-            .Build();
-
-
-            var accountingEntityPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var accountingEntityfilterParameters = new GraphQLQueryParameter("filters", "AccountingEntityFilters");
-
-            var accountingEntityFragment = new GraphQLQueryFragment("accountingEntitiesPage", [accountingEntityPagParameters, accountingEntityfilterParameters], accountingEntityFields, "PageResponse");
-
-            var builder = new GraphQLQueryBuilder([accountingEntityFragment]);
-            return builder.GetQuery();
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
-        public async Task<AccountingEntryDraftGraphQLModel> UpdateAccountingEntryDraftMasterAsync(string field)
+        /// <summary>
+        /// Abre la modal genérica de búsqueda de terceros con dos columnas
+        /// (identificación + nombre). La modal retorna el tercero seleccionado
+        /// vía Messenger.Default y el handler OnFindAccountingEntityMessage
+        /// lo asigna a SelectedAccountingEntity.
+        /// </summary>
+        public async Task OpenAccountingEntitySearchAsync()
         {
-            try
-            {
-                string query = @"
-                mutation($data:UpdateAccountingEntryDraftMasterInput!, $id:Int!) {
-                    UpdateResponse: updateAccountingEntryDraftMaster(data:$data, id:$id) {
-                    id
-                    masterId  
-                    accountingBook {
-                        id
-                        name
-                    }
-                    costCenter {
-                        id
-                        name
-                    }
-                    accountingSource {
-                        id
-                        name
-                    }
-                    documentNumber
-                    documentDate
-                    createdAt
-                    description
-                    createdBy
-                    }
-                }";
-                DateTime? parsedDocumentDate = DateTimeHelper.DateTimeKindUTC(DocumentDate);
-                object variables = field switch
-                {
-                    nameof(DocumentDate) => new
-                    {
-                        Data = new { DocumentDate = parsedDocumentDate },
-                        Id = this.DraftMasterId
-                    },
-                    nameof(Description) => new
-                    {
-                        Data = new { Description },
-                        Id = this.DraftMasterId
-                    },
-                    _ => new { },
-                };
-                var result = await this._accountingEntryDraftMasterService.UpdateAsync(query, variables);
-                var message = new AccountingEntryDraftMasterUpdateMessage() { UpdatedAccountingEntryDraftMaster = this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(result) };
-                await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
-                return result;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            string query = GetSearchAccountingEntityQuery();
+
+            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(
+                query,
+                fieldHeader1: "Identificación",
+                fieldHeader2: "Nombre / Razón Social",
+                fieldData1: "IdentificationNumberWithVerificationDigit",
+                fieldData2: "SearchName",
+                variables: null,
+                SearchWithTwoColumnsGridMessageToken.AccountingEntryAccountingEntity,
+                _dialogService);
+
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
         }
+
+        private static string GetSearchAccountingEntityQuery()
+        {
+            var fields = FieldSpec<PageType<AccountingEntityGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.TotalEntries)
+                .Field(f => f.PageSize)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
+                    .Field(e => e.SearchName))
+                .Build();
+
+            var filterParameter = new GraphQLQueryParameter("filters", "AccountingEntityFilters");
+            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("accountingEntitiesPage", [filterParameter, paginationParameter], fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        private void OnFindAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
+        {
+            if (message?.ReturnedData is null) return;
+            SelectedAccountingEntity = message.ReturnedData;
+        }
+
+        private static readonly string[] _nonHeaderProperties = [nameof(SelectedAccountingEntity)];
+
+        private static readonly HashSet<string> _headerProperties =
+        [
+            nameof(Description),
+            nameof(DocumentDate),
+            nameof(SelectedAccountingBookId),
+            nameof(SelectedCostCenterId),
+            nameof(SelectedAccountingSourceId),
+        ];
+
+        public bool HasHeaderChanges()
+        {
+            return this.GetChangedProperties().Any(_headerProperties.Contains);
+        }
+
+        public async Task<DraftAccountingEntryGraphQLModel> UpdateDraftHeaderAsync()
+        {
+            var (fragment, query) = _updateDraftQuery.Value;
+
+            dynamic variables = ChangeCollector.CollectChanges(this,
+                prefix: "updateResponseInput",
+                excludeProperties: _nonHeaderProperties);
+            variables.updateResponseInput.draftId = (int)this.DraftMasterId;
+
+            var result = await this._draftAccountingEntryService
+                .UpdateAsync<UpsertResponseType<DraftAccountingEntryGraphQLModel>>(query, variables);
+
+            if (!result.Success)
+                throw new Exception(result.Message);
+
+            var message = new DraftAccountingEntryUpdateMessage
+            {
+                UpdatedDraftAccountingEntry = result.Entity
+            };
+            await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
+            this.AcceptChanges();
+            return result.Entity;
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        /// <summary>
+        /// <c>createAccountingEntryDraft(input: CreateAccountingEntryDraftInput!)</c>.
+        /// Crea el encabezado del borrador (sin líneas). Las líneas se persisten aparte
+        /// vía <c>upsertDraftLines</c>. El payload del schema usa <c>draft</c> como campo
+        /// de la entidad; aquí se mapea al alias <c>entity</c> de <see cref="UpsertResponseType{T}"/>.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createDraftQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<DraftAccountingEntryGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "draft", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("createDraftAccountingEntry",
+                [new("input", "CreateDraftAccountingEntryInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>updateDraft(input: UpdateDraftInput!)</c>.
+        /// Actualiza campos del header del borrador. <c>draftId</c> viaja DENTRO del input wrapper.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateDraftQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<DraftAccountingEntryGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "draft", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("updateDraft",
+                [new("input", "UpdateDraftInput!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>upsertDraftLines(input: UpsertDraftLinesInput!)</c>.
+        /// Crea y/o actualiza múltiples líneas del borrador en una sola llamada.
+        /// El payload solo retorna contadores y success/errors, no las líneas; por eso
+        /// <see cref="ReloadDraftLinesAsync"/> recarga el borrador después.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _upsertDraftLinesQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertDraftLinesPayloadWrapper.UpsertDraftLinesResponse>
+                .Create()
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Field(f => f.InsertedCount)
+                .Field(f => f.UpdatedCount)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("upsertDraftLines",
+                [new("input", "UpsertDraftLinesInput!")],
+                fields, "UpsertResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>deleteDraftLines(input: DeleteDraftLinesInput!)</c>.
+        /// Elimina líneas específicas del borrador por id.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteDraftLinesQuery = new(() =>
+        {
+            var fields = FieldSpec<DeleteDraftLinesPayloadWrapper.DeleteDraftLinesResponse>
+                .Create()
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Field(f => f.DeletedCount)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("deleteDraftLines",
+                [new("input", "DeleteDraftLinesInput!")],
+                fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>finalizeAccountingEntryDraft(input: FinalizeAccountingEntryDraftInput!)</c>.
+        /// Convierte el borrador en un comprobante publicado (<c>AccountingEntry</c>).
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _finalizeDraftQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingEntryGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingEntry", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("finalizeDraftAccountingEntry",
+                [new("input", "FinalizeDraftAccountingEntryInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>accountingEntryDraft(id: ID!)</c>.
+        /// Recarga el borrador entero con sus líneas (incluidas las relaciones: cuenta,
+        /// tercero, centro de costo). Usado tras cada mutación de líneas para refrescar
+        /// la colección local y recalcular totales.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadDraftLinesQuery = new(() =>
+        {
+            var fields = FieldSpec<DraftAccountingEntryGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Description)
+                .Field(f => f.DocumentDate)
+                .Field(f => f.DocumentNumber)
+                .SelectList(f => f.Lines, l => l
+                    .Field(x => x.Id)
+                    .Field(x => x.RecordDetail)
+                    .Field(x => x.Debit)
+                    .Field(x => x.Credit)
+                    .Field(x => x.Base)
+                    .Select(x => x.AccountingAccount, a => a.Field(y => y.Id).Field(y => y.Code).Field(y => y.Name))
+                    .Select(x => x.AccountingEntity, a => a.Field(y => y.Id).Field(y => y.IdentificationNumber).Field(y => y.SearchName))
+                    .Select(x => x.CostCenter, c => c.Field(y => y.Id).Field(y => y.Name)))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("draftAccountingEntry",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
 
         #endregion
 
@@ -1116,16 +1194,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 this.IsBusy = true;
-                this.Refresh();
                 await ExecuteAddRecordAsync();
                 CleanEntry();
-                this.Refresh();
+                NotifyOfPropertyChange(nameof(CanAddRecord));
+                NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 this.SetFocus(nameof(this.AccountingAccounts));
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
@@ -1137,175 +1210,122 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
+        /// <summary>
+        /// Agrega una línea al borrador. Flujo alineado al schema actual:
+        /// 1. Si es el primer registro (DraftMasterId == 0) → createAccountingEntryDraft(header only)
+        ///    para materializar el borrador, y luego upsertDraftLines(lines: [firstLine]).
+        /// 2. Si ya existe borrador → upsertDraftLines(lines: [newLine]) directamente.
+        /// Los totales se recalculan client-side desde la colección local.
+        /// </summary>
         public async Task ExecuteAddRecordAsync()
         {
-            try
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            if (this.DraftMasterId == 0)
             {
-                string query;
-                object variables;
-                if (this.DraftMasterId == 0)
-                {
-                    query = @"
-                    mutation ($data: CreateAccountingEntryDraftMasterInput!) {
-                      CreateResponse: createAccountingEntryDraft(data: $data) {
-                        id
-                        accountingBook {
-                          id
-                          name
-                        } 
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          code
-                          name
-                        },
-                        accountingEntriesDraftDetail {
-                            id
-                            draftMasterId
-                            accountingAccount {
-                              id
-                              code
-                              name
-                            }
-                            accountingEntity {
-                              id
-                              identificationNumber
-                              searchName
-                            }
-                            costCenter {
-                              id
-                              name
-                            }
-                            recordDetail
-                            debit
-                            credit
-                            base
-                        }
-                        masterId
-                        documentNumber
-                        documentDate
-                        createdAt
-                        createdBy
-                        description
-                        totals {
-                          debit
-                          credit
-                        }
-                      }  
-                    }";
-                    var DocumentDate = this.DocumentDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                    variables = new
+                // Paso 1: crear el borrador con solo el header.
+                // CanAddRecord garantiza que los tres IDs del header no son null al llegar aquí.
+                var (createFragment, createQuery) = _createDraftQuery.Value;
+                object createVariables = new GraphQLVariables()
+                    .For(createFragment, "input", new
                     {
-                        Input = new
-                        {
-                            CostCenterId = this.SelectedCostCenterId,
-                            AccountingSourceId = this.SelectedAccountingSourceId,
-                            AccountingBookId = this.SelectedAccountingBookId,
-                            DocumentDate,
-                            this.Description,
-                            createdById = SessionInfo.SessionId,
-                            EntriesDraftDetail = new List<Object>()
-                            {
-                                new
-                                {
-                                    AccountingAccountId = this.SelectedAccountingAccountOnEntryId,
-                                    AccountingEntityId = this.SelectedAccountingEntityOnEntryId,
-                                    CostCenterId = this.SelectedCostCenterId,
-                                    this.RecordDetail,
-                                    this.Debit,
-                                    this.Credit,
-                                    this.Base
-                                }
-                            }
-                        }
-                    };
+                        accountingBookId = this.SelectedAccountingBookId!.Value,
+                        accountingSourceId = this.SelectedAccountingSourceId!.Value,
+                        costCenterId = this.SelectedCostCenterId!.Value,
+                        description = this.Description,
+                        documentDate = this.DocumentDate.ToIsoDate()
+                    })
+                    .Build();
 
-                    // Iniciar cronometro
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    AccountingEntryDraftGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
-                    stopwatch.Stop();
+                var draftPayload = await this._draftAccountingEntryService
+                    .CreateAsync<UpsertResponseType<DraftAccountingEntryGraphQLModel>>(createQuery, createVariables);
 
-                    // Message
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(result);
+                if (!draftPayload.Success)
+                    throw new Exception(draftPayload.Message);
 
-                    this.TotalCredit = result.Totals.Credit;
-                    this.TotalDebit = result.Totals.Debit;
-                    this.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                    this.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(this.Context.Mapper.Map<IEnumerable<AccountingEntryDraftDetailDTO>>(result.AccountingEntriesDraftDetail));
-                    //this.EntriesTotalCount = result.AccountingEntryDraftDetailPage.PageResponse.Count;
-                    this.DraftMasterId = result.Id;
-                }
-                else
-                {
-                    query = @"
-                    mutation($data: CreateAccountingEntryDraftDetailInput!) {
-                      CreateResponse: createAccountingEntryDraftDetail(data: $data) {
-                        id
-                        draftMasterId
-                        accountingAccount {
-                          id
-                          code
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingEntity {
-                          id
-                          identificationNumber
-                          searchName
-                        }
-                        recordDetail
-                        debit
-                        credit
-                        base
-                        totals {
-                          debit
-                          credit
-                        }
-                      }
-                    }";
+                this.DraftMasterId = draftPayload.Entity.Id;
+                this.SelectedDraftAccountingEntry = draftPayload.Entity;
+                this.AccountingEntries = [];
 
-                    variables = new
-                    {
-                        Data = new
-                        {
-                            this.DraftMasterId,
-                            AccountingAccountId = this.SelectedAccountingAccountOnEntryId,
-                            AccountingEntityId = this.SelectedAccountingEntityOnEntryId,
-                            CostCenterId = this.SelectedCostCenterOnEntryId,
-                            this.RecordDetail,
-                            this.Debit,
-                            this.Credit,
-                            this.Base
-                        }
-                    };
-                    
-                    // Iniciar cronometro
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    var entry = await this._accountingEntryDraftDetailService.CreateAsync(query, variables);
-                    stopwatch.Stop();
+                // Publicar mensaje de creación del borrador para que el Master lo agregue a su lista.
+                await this.Context.EventAggregator.PublishOnUIThreadAsync(draftPayload.Entity);
 
-                    this.TotalCredit = entry.Totals.Credit;
-                    this.TotalDebit = entry.Totals.Debit;
-                    this.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.AccountingEntries.Add(this.Context.Mapper.Map<AccountingEntryDraftDetailDTO>(entry));
-                    });
-                }
+                // Re-seedear: los valores del header ya están persistidos en BD.
+                // Sin esto, DocumentDate y Description quedan como "changed" en el tracker
+                // porque sus seeds tienen valor real (no null) y TrackChange sin currentValue
+                // compara Equals(seed, null) → false.
+                SeedCurrentValues();
             }
-            catch (Exception ex)
+
+            // Paso 2 (siempre): upsert de la línea nueva contra el borrador vigente.
+            var (upsertFragment, upsertQuery) = _upsertDraftLinesQuery.Value;
+            object upsertVariables = new GraphQLVariables()
+                .For(upsertFragment, "input", new
+                {
+                    draftId = (int)this.DraftMasterId,
+                    lines = new[]
+                    {
+                        new
+                        {
+                            accountingAccountId = this.SelectedAccountingAccountOnEntryId!.Value,
+                            accountingEntityId = (int)this.SelectedAccountingEntity!.Id,
+                            costCenterId = this.SelectedCostCenterOnEntryId!.Value,
+                            recordDetail = this.RecordDetail,
+                            debit = this.Debit,
+                            credit = this.Credit,
+                            @base = this.Base
+                        }
+                    }
+                })
+                .Build();
+
+            var upsertPayload = await this._draftAccountingEntryLineService
+                .MutationContextAsync<UpsertDraftLinesPayloadWrapper>(upsertQuery, upsertVariables);
+            var upsertResult = upsertPayload.UpsertResponse;
+
+            if (!upsertResult.Success)
+                throw new Exception(upsertResult.Message);
+
+            stopwatch.Stop();
+            this.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+
+            // Recargar las líneas del borrador desde el API para tener los datos completos con relaciones.
+            await ReloadDraftLinesAsync();
+        }
+
+        /// <summary>
+        /// Recarga todas las líneas del borrador actual desde el API.
+        /// Necesario después de cualquier mutación sobre líneas (upsert/delete) porque
+        /// ni upsertDraftLines ni deleteDraftLines retornan los objetos completos con relaciones.
+        /// También recalcula los totales client-side desde la colección recargada.
+        /// </summary>
+        private async Task ReloadDraftLinesAsync()
+        {
+            var (fragment, query) = _loadDraftLinesQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "id", (int)this.DraftMasterId)
+                .Build();
+
+            var draft = await this._draftAccountingEntryService.FindByIdAsync(query, variables);
+            IEnumerable<DraftAccountingEntryLineGraphQLModel> rawLines = draft?.Lines ?? [];
+            var mappedLines = this.Context.Mapper.Map<IEnumerable<DraftAccountingEntryLineDTO>>(rawLines);
+
+            App.Current.Dispatcher.Invoke(() =>
             {
-               throw;
-            }
+                this.AccountingEntries = new ObservableCollection<DraftAccountingEntryLineDTO>(mappedLines);
+            });
+
+            RecalculateTotals();
+        }
+
+        /// <summary>
+        /// Recalcula TotalDebit y TotalCredit sumando los valores de la colección local de líneas.
+        /// Reemplaza la antigua query <c>accountingEntryDraftTotals</c> del API (ya no existe).
+        /// </summary>
+        private void RecalculateTotals()
+        {
+            this.TotalDebit = this.AccountingEntries?.Sum(e => e.Debit) ?? 0;
+            this.TotalCredit = this.AccountingEntries?.Sum(e => e.Credit) ?? 0;
         }
 
         public bool CanAddRecord
@@ -1397,6 +1417,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 _errors[propertyName].Add(error);
                 RaiseErrorsChanged(propertyName);
+                NotifyOfPropertyChange(nameof(CanAddRecord));
+                NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
             }
         }
 
@@ -1406,6 +1428,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
+                NotifyOfPropertyChange(nameof(CanAddRecord));
+                NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
             }
         }
 
@@ -1414,17 +1438,23 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             ClearErrors(propertyName);
             switch (propertyName)
             {
+                case nameof(SelectedAccountingBookId):
+                    if (intValue <= 0) AddError(propertyName, "El libro contable no puede estar vacío");
+                    break;
                 case nameof(SelectedCostCenterId):
                     if (intValue <= 0) AddError(propertyName, "El centro de costo no puede estar vacío");
                     break;
                 case nameof(SelectedAccountingSourceId):
                     if (intValue <= 0) AddError(propertyName, "La fuente contable no puede estar vacía");
                     break;
+                case nameof(DocumentDate):
+                    if (DocumentDate is null) AddError(propertyName, "La fecha del documento no puede estar vacía");
+                    break;
                 case nameof(SelectedAccountingAccountOnEntryId):
                     if (intValue <= 0) AddError(propertyName, "La cuenta contable no puede estar vacía");
                     break;
-                case nameof(SelectedAccountingEntityOnEntryId):
-                    if (intValue <= 0) AddError(propertyName, "El tercero del registro no puede estar vacío");
+                case nameof(SelectedAccountingEntity):
+                    if (SelectedAccountingEntity is null) AddError(propertyName, "El tercero del registro no puede estar vacío");
                     break;
                 case nameof(SelectedCostCenterOnEntryId):
                     if (intValue <= 0) AddError(propertyName, "El centro de costo del registro no puede estar vacío");
@@ -1448,11 +1478,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private void ValidateProperties()
         {
-            ValidateProperty(nameof(SelectedCostCenterId), null, SelectedCostCenterId);
-            ValidateProperty(nameof(SelectedAccountingSourceId), null, SelectedAccountingSourceId);
-            ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, SelectedAccountingAccountOnEntryId);
-            ValidateProperty(nameof(SelectedAccountingEntityOnEntryId), null, SelectedAccountingEntityOnEntryId);
-            ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, SelectedCostCenterOnEntryId);
+            ValidateProperty(nameof(SelectedAccountingBookId), null, SelectedAccountingBookId.GetValueOrDefault());
+            ValidateProperty(nameof(SelectedCostCenterId), null, SelectedCostCenterId.GetValueOrDefault());
+            ValidateProperty(nameof(SelectedAccountingSourceId), null, SelectedAccountingSourceId.GetValueOrDefault());
+            ValidateProperty(nameof(DocumentDate), null);
+            ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, SelectedAccountingAccountOnEntryId.GetValueOrDefault());
+            ValidateProperty(nameof(SelectedAccountingEntity), null);
+            ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, SelectedCostCenterOnEntryId.GetValueOrDefault());
             ValidateProperty(nameof(Description), Description);
             ValidateProperty(nameof(RecordDetail), RecordDetail);
             ValidateProperty(nameof(Debit), null, 0, this.Debit);
@@ -1567,7 +1599,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     {
                         entry.AccountingAccount = message.UpdatedAccountingAccount;
                     }
-                    this.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(this.AccountingEntries);
+                    this.AccountingEntries = new ObservableCollection<DraftAccountingEntryLineDTO>(this.AccountingEntries);
                 }
 
             }
