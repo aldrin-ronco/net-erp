@@ -2,6 +2,7 @@ using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -47,18 +48,18 @@ namespace Models.Books
         public AccountingEntryGraphQLModel AccountingEntry { get; set; }
     }
 
-    public class DraftAccountingEntryDTO : DraftAccountingEntryGraphQLModel
-    {
-        public bool IsChecked { get; set; } = false;
-    }
-
     public class DraftAccountingEntryDeleteMessage
     {
-        public BigInteger Id { get; set; }
+        public DeleteResponseType DeletedDraftAccountingEntry { get; set; } = new();
+    }
+
+    public class DraftAccountingEntryFinalizeMessage
+    {
+        public BigInteger DraftId { get; set; }
     }
 
     public class DraftAccountingEntryUpdateMessage
     {
-        public DraftAccountingEntryDTO UpdatedDraftAccountingEntry { get; set; }
+        public DraftAccountingEntryGraphQLModel UpdatedDraftAccountingEntry { get; set; }
     }
 }

@@ -14,7 +14,6 @@
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:cal="http://www.caliburnproject.org"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignHeight="550" d:DesignWidth="800" FontFamily="Century Gothic">
     <UserControl.Resources>
@@ -43,11 +42,10 @@
                 <dxr:RibbonPage Caption="General">
 
                     <dxr:RibbonPageGroup Caption="Acciones">
-                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/AddFile_16x16.png'}" 
-                                           LargeGlyph="{dx:DXImage 'Images/Actions/AddFile_32x32.png'}" 
+                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/AddFile_16x16.png'}"
+                                           LargeGlyph="{dx:DXImage 'Images/Actions/AddFile_32x32.png'}"
                                            Content="Nuevo"
                                            RibbonStyle="Large"
-                                           IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
                                            Hint="Crear un nuevo comprobante">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:EventToCommand Command="{Binding Path=CreateAccountingEntryCommand}" EventName="ItemClick"/>
@@ -59,11 +57,11 @@
                                            LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                                            Description="Eliminar"
                                            Hint="Eliminar comprobantes"    
-                                           IsEnabled="{Binding Path=CanDeleteEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           IsEnabled="{Binding Path=CanDeleteSelected, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                            RibbonStyle="Large">
                             <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand 
-                                    Command="{Binding Path=DeleteEntryCommand}" EventName="ItemClick"
+                                <dxmvvm:EventToCommand
+                                    Command="{Binding Path=DeleteCommand}" EventName="ItemClick"
                                    
                                     />
                             </dxmvvm:Interaction.Behaviors>
@@ -143,16 +141,20 @@
                                           IsChecked="{Binding Path=SearchOnDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0 0 0 4"
                                             Visibility="{Binding Path=SearchOnDate, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <ComboBox Width="60" Margin="0 0 4 0" Padding="2"
-                                              DisplayMemberPath="Value" SelectedValuePath="Key"
-                                              HorizontalContentAlignment="Center"
-                                              SelectedValue="{Binding Path=SelectedDateFilterOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              ItemsSource="{Binding Path=DateFilterOptions, Mode=OneWay}"/>
-                                    <DatePicker Width="105" Margin="0 0 4 0" Padding="2"
-                                                SelectedDate="{Binding Path=StartDateFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                    <DatePicker Width="105" Padding="2"
-                                                SelectedDate="{Binding Path=EndDateFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                Visibility="{Binding Path=IsDateRange, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <dxe:ComboBoxEdit Width="60" Margin="0 0 4 0"
+                                                       IsTextEditable="False"
+                                                       DisplayMember="Value" ValueMember="Key"
+                                                       EditValue="{Binding Path=SelectedDateFilterOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       ItemsSource="{Binding Path=DateFilterOptions, Mode=OneWay}"/>
+                                    <dxe:DateEdit Width="105" Margin="0 0 4 0" Padding="2"
+                                                   DateTime="{Binding Path=StartDateFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                   DisplayFormatString="dd/MM/yyyy" ShowClearButton="False"/>
+                                    <TextBlock Text="y" VerticalAlignment="Center" Margin="0 0 4 0"
+                                               Visibility="{Binding Path=IsDateRange, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <dxe:DateEdit Width="105" Padding="2"
+                                                   DateTime="{Binding Path=EndDateFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                   DisplayFormatString="dd/MM/yyyy" ShowClearButton="False"
+                                                   Visibility="{Binding Path=IsDateRange, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 </StackPanel>
                                 <!--Número de documento-->
                                 <CheckBox Grid.Row="4" Grid.Column="0" Content="Número de documento" FontSize="13"
@@ -175,65 +177,19 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <dxe:ComboBoxEdit Grid.Column="0" Margin="0 0 4 0"
-                                          IsTextEditable="False"
-                                          Visibility="{Binding Path=IsFilterSearchAccountinEntityOnEditMode, Converter={StaticResource SimpleBooleanConverter}}"
-                                          x:Name="SelectedAccountingEntityId"
-                                          DisplayMember="SearchName" ValueMember="Id"
-                                          EditValue="{Binding Path=SelectedAccountingEntityId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          ItemsSource="{Binding Path=AccountingEntitiesSearchResults}"
-                                          ApplyItemTemplateToSelectedItem="False">
-                                        <dxe:ComboBoxEdit.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Vertical">
-                                                    <TextBlock Text="{Binding Path=SearchName}"/>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="Nit." Foreground="Gray" FontSize="12"/>
-                                                        <TextBlock Text="{Binding Path=IdentificationNumberWithVerificationDigit}" Foreground="Gray" FontSize="12"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </dxe:ComboBoxEdit.ItemTemplate>
-                                        <dxe:ComboBoxEdit.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <VirtualizingStackPanel/>
-                                            </ItemsPanelTemplate>
-                                        </dxe:ComboBoxEdit.ItemsPanel>
-                                    </dxe:ComboBoxEdit>
-                                    <dxe:TextEdit Grid.Column="0" Margin="0 0 4 0"
-                                                  CharacterCasing="Upper" FontSize="13"
-                                                  NullText="Digite por lo menos 3 caracteres y presione Buscar"
-                                                  ShowNullTextIfFocused="True"
-                                                  x:Name="FilterSearchAccountingEntity"
+                                    <dxe:TextEdit Grid.Column="0"
+                                                  IsReadOnly="True"
+                                                  NullText="Sin tercero seleccionado"
+                                                  ShowNullTextForEmptyValue="True"
+                                                  Text="{Binding Path=FilterSelectedAccountingEntityDisplay, Mode=OneWay}"
                                                   VerticalContentAlignment="Center"
-                                                  Text="{Binding Path=FilterSearchAccountingEntity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  Visibility="{Binding Path=IsFilterSearchAccountinEntityOnEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                    <Button Grid.Column="1" Padding="3" x:Name="SearchForAccountingEntityMatch">
+                                                  Padding="3" Margin="0,0,4,0"/>
+                                    <Button Grid.Column="1" Padding="6,3"
+                                            cal:Message.Attach="OpenFilterAccountingEntitySearchAsync">
                                         <StackPanel Orientation="Horizontal">
-                                            <Image Margin="0 0 4 0" Width="16">
-                                                <Image.Style>
-                                                    <Style TargetType="Image">
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsEnabled" Value="False">
-                                                                <Setter Property="Opacity" Value="0.5"/>
-                                                            </Trigger>
-                                                            <MultiDataTrigger>
-                                                                <MultiDataTrigger.Conditions>
-                                                                    <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="true"/>
-                                                                </MultiDataTrigger.Conditions>
-                                                                <Setter Property="Source" Value="{dx:DXImage 'Images/Print/Preview_16x16.png'}"/>
-                                                            </MultiDataTrigger>
-                                                            <MultiDataTrigger>
-                                                                <MultiDataTrigger.Conditions>
-                                                                    <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="false"/>
-                                                                </MultiDataTrigger.Conditions>
-                                                                <Setter Property="Source" Value="{dx:DXImage 'Images/History/Undo_16x16.png'}"/>
-                                                            </MultiDataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Image.Style>
-                                            </Image>
-                                            <TextBlock Text="{Binding Path=FilterSearchButtonInfo, Mode=OneWay}" Margin="0 4 0 4" VerticalAlignment="Center"/>
+                                            <Image Source="{dx:DXImage 'Images/Print/Preview_16x16.png'}"
+                                                   Width="16" Margin="0,0,4,0"/>
+                                            <TextBlock Text="Buscar..." VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </Grid>
@@ -278,16 +234,6 @@
                                 </dxg:TableView>
                             </dxg:GridControl.View>
                             <dxg:GridControl.Columns>
-                                <!--Check para seleccionar comprobante-->
-                                <dxg:GridColumn Width="30" AllowEditing="True" AllowSorting="False" AllowColumnFiltering="False" ShowInColumnChooser="False">
-                                    <dxg:GridColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <CheckBox cal:Message.Attach="[Event Checked] = [Action OnChecked];[Event Unchecked] = [Action OnUnchecked]"
-                                                      IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </dxg:GridColumn.CellTemplate>
-                                </dxg:GridColumn>
                                 <dxg:GridColumn Header="Fecha Comp." Width="Auto" MinWidth="100" HorizontalHeaderContentAlignment="Center"
                                                 Binding="{Binding DocumentDate, StringFormat={}{0:dd/MM/yyyy}}"/>
                                 <dxg:GridColumn Header="Fuente contable" Width="Auto" MinWidth="150" HorizontalHeaderContentAlignment="Center"
@@ -343,15 +289,12 @@
                     </dx:DXTabItem.Header>
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="¿Qué desea buscar?" Grid.Row="0" Margin="0,0,0,3"/>
-                        <TextBox Grid.Row="1" Margin="0,0,0,0" Padding="3"/>
-                        <dxg:GridControl Grid.Row="2" Margin="0,6,0,0"
-                                         ItemsSource="{Binding Path=AccountingEntryDrafts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <dxg:GridControl Grid.Row="0" Margin="0,6,0,0"
+                                         ItemsSource="{Binding Path=AccountingEntryDrafts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         SelectedItem="{Binding Path=SelectedDraftAccountingEntry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <dxg:GridControl.View>
                                 <dxg:TableView AllowEditing="False"
                                                AllowCascadeUpdate="False"
@@ -365,16 +308,6 @@
                                                AlternateRowBackground="Beige"/>
                             </dxg:GridControl.View>
                             <dxg:GridControl.Columns>
-                                <!--Check para seleccionar borrador-->
-                                <dxg:GridColumn Width="30" AllowEditing="True" AllowSorting="False" AllowColumnFiltering="False" ShowInColumnChooser="False">
-                                    <dxg:GridColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <CheckBox cal:Message.Attach="[Event Checked] = [Action OnChecked];[Event Unchecked] = [Action OnUnchecked]"
-                                                      IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </dxg:GridColumn.CellTemplate>
-                                </dxg:GridColumn>
                                 <dxg:GridColumn Header="Fecha" Width="Auto" MinWidth="100" HorizontalHeaderContentAlignment="Center"
                                                 Binding="{Binding DocumentDate, StringFormat={}{0:dd/MM/yyyy}}"/>
                                 <dxg:GridColumn Header="Fuente contable" Width="Auto" MinWidth="150" HorizontalHeaderContentAlignment="Center"
@@ -408,7 +341,7 @@
                                 </dxg:GridColumn>
                             </dxg:GridControl.Columns>
                         </dxg:GridControl>
-                        <uc:GridPaging Grid.Row="3" Margin="0,6,0,0"
+                        <uc:GridPaging Grid.Row="1" Margin="0,6,0,0"
                                        ChangedIndexCommand="{Binding Path=DraftPaginationCommand}"
                                        PageIndex="{Binding Path=DraftPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        PageSize="{Binding Path=DraftPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

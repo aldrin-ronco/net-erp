@@ -4,7 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -45,8 +45,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public AccountingEntriesViewModel Context { get; set; }
 
-        private AccountingEntryDTO _selectedAccountingEntry;
-        public AccountingEntryDTO SelectedAccountingEntry
+        private AccountingEntryGraphQLModel _selectedAccountingEntry;
+        public AccountingEntryGraphQLModel SelectedAccountingEntry
         {
             get { return _selectedAccountingEntry; }
             set
@@ -142,13 +142,32 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         private ICommand _cancelAccountingEntryCommand;
-
         public ICommand CancelAccountingEntryCommand
         {
             get
             {
-                if (_cancelAccountingEntryCommand is null) _cancelAccountingEntryCommand = new AsyncCommand(CancelAccountingEntry, CanCancelAccountingEntry);
+                _cancelAccountingEntryCommand ??= new DelegateCommand(CancelAccountingEntry);
                 return _cancelAccountingEntryCommand;
+            }
+        }
+
+        private ICommand _copyCommand;
+        public ICommand CopyCommand
+        {
+            get
+            {
+                _copyCommand ??= new DelegateCommand(Copy);
+                return _copyCommand;
+            }
+        }
+
+        private ICommand _printCommand;
+        public ICommand PrintCommand
+        {
+            get
+            {
+                _printCommand ??= new DelegateCommand(Print);
+                return _printCommand;
             }
         }
 
@@ -221,7 +240,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryDTO selectedAccountingEntry, IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService, IRepository<DraftAccountingEntryGraphQLModel> accountingEntryDraftMasterService)
+        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryGraphQLModel selectedAccountingEntry, IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService, IRepository<DraftAccountingEntryGraphQLModel> accountingEntryDraftMasterService)
         {
             this.Context = context;
             this._accountingEntryMasterService = accountingEntryMasterService;
@@ -237,37 +256,59 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await base.OnInitializedAsync(cancellationToken);
         }
 
-        // Print
         public void Print()
         {
-            App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
+            ThemedMessageBox.Show("Atención !", "Estamos trabajando en esta implementación", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // Copy
         public void Copy()
         {
-            App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
+            ThemedMessageBox.Show("Atención !", "Estamos trabajando en esta implementación", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // Cancel Accounting Entry
-        public async Task CancelAccountingEntry()
+        public void CancelAccountingEntry()
         {
-            if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea anular el comprobante?", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.No) return;
+            ThemedMessageBox.Show("Atención !", "Estamos trabajando en esta implementación", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteEntryQuery = new(() =>
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("deleteAccountingEntry",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        public async Task DeleteAccountingEntryAsync()
+        {
+            if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el comprobante?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
 
             try
             {
                 this.IsBusy = true;
-                this.Refresh();
-                var result = await ExecuteCancelAccountingEntryAsync();
-                await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryCancellationMessage() { CancelledAccountingEntry = result });
+                var (fragment, query) = _deleteEntryQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "id", (int)SelectedAccountingEntry.Id)
+                    .Build();
+
+                var result = await _accountingEntryMasterService.DeleteAsync<DeleteResponseType>(query, variables);
+
+                if (!result.Success)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", result.Message, MessageBoxButton.OK, MessageBoxImage.Error));
+                    return;
+                }
+
+                await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDeleteMessage { DeletedAccountingEntry = result });
                 await this.Context.ActivateMasterViewAsync();
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (ArgumentException ex)
+            catch (Exception ex)
             {
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
@@ -277,67 +318,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public bool CanCancelAccountingEntry
-        {
-            get
-            {
-                // TODO (Bloque 10 del refactor): el schema actual NO expone la mutación
-                // cancelAccountingEntryMaster. Deshabilitado hasta que el backend la agregue
-                // o se defina otro mecanismo de anulación.
-                return false;
-            }
-        }
-
-        public Task<AccountingEntryGraphQLModel> ExecuteCancelAccountingEntryAsync()
-        {
-            throw new NotImplementedException(
-                "Anulación de comprobantes no está implementada en el schema actual.");
-        }
-
-        // Delete Accounting Entry
-        public async Task DeleteAccountingEntryAsync()
-        {
-            if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el comprobante?", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.No) return;
-
-            try
-            {
-                this.IsBusy = true;
-                this.Refresh();
-
-                var deletedRecord = await Task.Run(() => this.ExecuteDeleteAccountingEntryAsync());
-
-                if (deletedRecord > 0)
-                {
-                    // Notificar la eliminacion del registro
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDeleteMessage() { Id = this.SelectedAccountingEntry.Id });
-                    await this.Context.ActivateMasterViewAsync();
-                }
-                else
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "El registro no ha sido eliminado", MessageBoxButton.OK, MessageBoxImage.Error));
-                }
-                this.IsBusy = false;
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-        }
-
-        public Task<int> ExecuteDeleteAccountingEntryAsync()
-        {
-            // TODO (Bloque 10 del refactor): el schema actual NO expone bulkDeleteAccountingEntryMaster.
-            throw new NotImplementedException(
-                "Eliminación de comprobantes no está implementada en el schema actual. " +
-                "Se aborda en el Bloque 10 del refactor.");
-        }
-
         public bool CanDeleteAccountingEntry
         {
             get
             {
-                // TODO (Bloque 10 del refactor): deshabilitado hasta definir flujo en el schema actual.
-                return false;
+                return !this.IsBusy
+                       && this.SelectedAccountingEntry.Status is "ACTIVE" or "" or null
+                       && !this.SelectedAccountingEntry.Annulment;
             }
         }
 
@@ -374,14 +361,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
                 this.BusyContent = "";
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                this.IsBusy = false;
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally

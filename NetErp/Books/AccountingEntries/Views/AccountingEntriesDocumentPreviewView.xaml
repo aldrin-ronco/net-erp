@@ -11,11 +11,8 @@
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:config="clr-namespace:Common.Config;assembly=Common"
-             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" FontFamily="Century Gothic">
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
@@ -58,12 +55,11 @@
                     </dxb:BarButtonItem>
                     <dxb:BarItemSeparator/>
 
-                    <dxb:BarButtonItem Content="Anular" 
-                               Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
-                               LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
+                    <dxb:BarButtonItem Content="Anular"
+                               Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}"
+                               LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"
                                Description="Anular comprobante"
-                               Hint="Anular comprobante"    
-                               IsEnabled="{Binding Path=CanCancelAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               Hint="Anular comprobante"
                                RibbonStyle="Large">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=CancelAccountingEntryCommand}" EventName="ItemClick"/>
@@ -78,30 +74,28 @@
                                IsEnabled="{Binding Path=CanDeleteAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                RibbonStyle="Large">
                         <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding Path=DeleteAccountingEntry}" EventName="ItemClick"/>
+                            <dxmvvm:EventToCommand Command="{Binding Path=DeleteAccountingEntryCommand}" EventName="ItemClick"/>
                         </dxmvvm:Interaction.Behaviors>
                     </dxb:BarButtonItem>
 
                     <dxb:BarItemSeparator/>
-                    
-                    <dxb:BarButtonItem Content="Copiar" 
-                               Glyph="{dx:DXImage 'Images/Edit/Copy_16x16.png'}" 
-                               LargeGlyph="{dx:DXImage 'Images/Edit/Copy_32x32.png'}"                                             
+
+                    <dxb:BarButtonItem Content="Copiar"
+                               Glyph="{dx:DXImage 'Images/Edit/Copy_16x16.png'}"
+                               LargeGlyph="{dx:DXImage 'Images/Edit/Copy_32x32.png'}"
                                Description="Copiar comprobante"
-                               Hint="Copiar comprobante"    
-                               IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               Hint="Copiar comprobante"
                                RibbonStyle="Large">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=CopyCommand}" EventName="ItemClick"/>
                         </dxmvvm:Interaction.Behaviors>
                     </dxb:BarButtonItem>
                     <dxb:BarItemSeparator/>
-                    <dxb:BarButtonItem Content="Imprimir" 
-                               Glyph="{dx:DXImage 'Images/Print/Print_16x16.png'}" 
-                               LargeGlyph="{dx:DXImage 'Images/Print/Print_32x32.png'}"                                             
+                    <dxb:BarButtonItem Content="Imprimir"
+                               Glyph="{dx:DXImage 'Images/Print/Print_16x16.png'}"
+                               LargeGlyph="{dx:DXImage 'Images/Print/Print_32x32.png'}"
                                Description="Imprimir comprobante"
-                               Hint="Imprimir comprobante"    
-                               IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               Hint="Imprimir comprobante"
                                RibbonStyle="Large">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=PrintCommand}" EventName="ItemClick"/>
@@ -169,7 +163,7 @@
                     <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding Path=TotalCredit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" VerticalAlignment="Center" Padding="3" FontSize="19"/>
 
                     <TextBlock Grid.Row="4" Grid.Column="3" Text="Diferencia" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
-                    <TextBlock Grid.Row="5" Grid.Column="3" Text="$0.00" VerticalAlignment="Center" Padding="3" FontSize="19"/>
+                    <TextBlock Grid.Row="5" Grid.Column="3" Text="{c:Binding 'TotalDebit - TotalCredit', StringFormat='\{0:C2\}'}" VerticalAlignment="Center" Padding="3" FontSize="19"/>
                 </Grid>
             </Border>
 

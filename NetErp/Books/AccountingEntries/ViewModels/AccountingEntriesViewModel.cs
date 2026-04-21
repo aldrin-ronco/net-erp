@@ -60,7 +60,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._draftAccountingEntryService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _graphQLClient);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._draftAccountingEntryService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _dialogService, _graphQLClient);
                 return _accountingEntriesMasterViewModel;
             }
         }
@@ -123,7 +123,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await ActivateItemAsync(this.AccountingEntriesMasterViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDocumentPreviewViewAsync(AccountingEntryDTO selectedAccountingEntry)
+        public async Task ActivateDocumentPreviewViewAsync(AccountingEntryGraphQLModel selectedAccountingEntry)
         {
             AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry, this._accountingEntryMasterService, this._draftAccountingEntryService);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());

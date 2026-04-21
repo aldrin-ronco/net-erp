@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -74,6 +75,9 @@ namespace Common.Helpers
                 // Sanitizar el valor antes de mandarlo al payload
                 var sanitized = SanitizerRegistry.Sanitize(vmType, propName, rawValue);
 
+                // Aplicar formato ISO de fecha si la propiedad tiene [IsoDate] o [IsoDatetime]
+                sanitized = ApplyDateFormatIfNeeded(propInfo, sanitized);
+
                 // Si el valor sanitizado es string vacío y el seed también es string vacío, no hubo cambio real
                 if (sanitized is string sanitizedStr && sanitizedStr == string.Empty)
                 {
@@ -125,6 +129,9 @@ namespace Common.Helpers
 
                     // Sanitizar el seed
                     object? sanitizedSeed = SanitizerRegistry.Sanitize(vmType, propName, kv.Value);
+
+                    // Aplicar formato ISO de fecha si la propiedad tiene [IsoDate] o [IsoDatetime]
+                    sanitizedSeed = ApplyDateFormatIfNeeded(propInfo, sanitizedSeed);
 
                     // Si el seed es string vacío y no fue modificado, no enviarlo
                     if (sanitizedSeed is string seedStr && seedStr == string.Empty)
@@ -284,6 +291,23 @@ namespace Common.Helpers
                 return IsSimpleType(underlying);
 
             return false;
+        }
+
+        /// <summary>
+        /// Si la propiedad tiene <see cref="IsoDateAttribute"/> o <see cref="IsoDatetimeAttribute"/>,
+        /// convierte el valor DateTime al formato string correspondiente.
+        /// </summary>
+        private static object? ApplyDateFormatIfNeeded(PropertyInfo propInfo, object? value)
+        {
+            if (value is not DateTime dt) return value;
+
+            if (propInfo.GetCustomAttribute<IsoDateAttribute>() != null)
+                return dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            if (propInfo.GetCustomAttribute<IsoDatetimeAttribute>() != null)
+                return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+
+            return value;
         }
     }
 }

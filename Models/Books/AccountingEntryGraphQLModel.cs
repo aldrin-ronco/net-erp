@@ -64,14 +64,9 @@ namespace Models.Books
         public PageType<DraftAccountingEntryGraphQLModel> DraftAccountingEntryPage { get; set; } = new();
     }
 
-    public class AccountingEntryDTO : AccountingEntryGraphQLModel
-    {
-        public bool IsChecked { get; set; } = false;
-    }
-
     public class AccountingEntryDeleteMessage
     {
-        public BigInteger Id { get; set; }
+        public DeleteResponseType DeletedAccountingEntry { get; set; } = new();
     }
 
     public class AccountingEntryCancellationMessage

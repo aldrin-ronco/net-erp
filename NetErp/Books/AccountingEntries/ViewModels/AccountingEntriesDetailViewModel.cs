@@ -8,7 +8,7 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
 using DevExpress.XtraEditors.Controls;
 using Extensions.Books;
-using GraphQL.Client.Http;
+
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
@@ -196,6 +196,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         private DateTime? _documentDate = DateTime.Now;
+        [IsoDate]
         public DateTime? DocumentDate
         {
             get { return _documentDate; }
@@ -510,17 +511,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 var createdEntry = await this.ExecutePublishAccountingEntryAsync();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(createdEntry);
-                if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new DraftAccountingEntryDeleteMessage { Id = this.DraftMasterId });
+                if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new DraftAccountingEntryFinalizeMessage { DraftId = this.DraftMasterId });
                 if (createdEntry != null)
                 {
                     await this.Context.ActivateMasterViewAsync();
                 }
 
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
@@ -1010,7 +1006,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
             var message = new DraftAccountingEntryUpdateMessage
             {
-                UpdatedDraftAccountingEntry = this.Context.Mapper.Map<DraftAccountingEntryDTO>(result.Entity)
+                UpdatedDraftAccountingEntry = result.Entity
             };
             await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
             this.AcceptChanges();
@@ -1204,11 +1200,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 NotifyOfPropertyChange(nameof(CanAddRecord));
                 NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 this.SetFocus(nameof(this.AccountingAccounts));
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {

@@ -441,8 +441,6 @@ namespace NetErp
                 _ = cfg.CreateMap<SellerGraphQLModel, SellerDTO>();
                 _ = cfg.CreateMap<AccountingSourceGraphQLModel, AccountingSourceDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountDTO>();
-                _ = cfg.CreateMap<AccountingEntryGraphQLModel, AccountingEntryDTO>();
-                _ = cfg.CreateMap<DraftAccountingEntryGraphQLModel, DraftAccountingEntryDTO>();
                 _ = cfg.CreateMap<DraftAccountingEntryLineGraphQLModel, DraftAccountingEntryLineDTO>();
                 _ = cfg.CreateMap<MeasurementUnitGraphQLModel, MeasurementUnitDTO>();
                 _ = cfg.CreateMap<ItemSizeCategoryGraphQLModel, ItemSizeCategoryDTO>();

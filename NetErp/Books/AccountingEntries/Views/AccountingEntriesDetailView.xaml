@@ -9,15 +9,12 @@
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:uc="clr-namespace:NetErp.UserControls"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:cal="http://caliburnmicro.com"
-             xmlns:dotNetKitControls="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Background="White" FontFamily="Century Gothic">
     <UserControl.Resources>
@@ -246,11 +243,11 @@
                     <TextBlock Text="Fecha" Grid.Column="0" Grid.Row="0"/>
                     <dxe:DateEdit Grid.Column="0" Grid.Row="1" Margin="0 4 6 0"
                                 TabIndex="3" ShowClearButton="False"
-                                DateTime="{Binding Path=DocumentDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
+                                DateTime="{Binding Path=DocumentDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                                
                                 Padding="2"/>
                     <!--Descripcion-->
                     <TextBlock Text="Descripción" Grid.Column="1" Grid.Row="0"/>
-                    <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                    <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              MaxLength="{Binding Path=DescriptionMaxLength}"
                              Grid.Column="1" Grid.Row="1" Margin="0 4 0 0" CharacterCasing="Upper"
                              TextWrapping="WrapWithOverflow"
@@ -447,7 +444,7 @@
                                     Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="3"
                                     x:Name="BusyIndicator"
                                     IndicatorType="BouncingDot"
-                                    BusyContent="Please wait..."
+                                    BusyContent="Por favor espere..."
                                     BusyContentMargin="0,20,0,0">
                 <!--Nota: edición inline deshabilitada (ver EndRowEditingAsync en el ViewModel).
                     El grid es read-only y solo sirve para mostrar las líneas del borrador y permitir
