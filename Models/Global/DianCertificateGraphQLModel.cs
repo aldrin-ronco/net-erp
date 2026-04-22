@@ -39,6 +39,11 @@ namespace Models.Global
         public required UpsertResponseType<DianCertificateGraphQLModel> CreatedCertificate { get; set; }
     }
 
+    public class DianCertificateUpdateMessage
+    {
+        public required UpsertResponseType<DianCertificateGraphQLModel> UpdatedCertificate { get; set; }
+    }
+
     public class DianCertificateDeleteMessage
     {
         public required DeleteResponseType DeletedCertificate { get; set; }
