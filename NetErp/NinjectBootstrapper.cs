@@ -321,7 +321,10 @@ namespace NetErp
             _ = kernel.Bind<IRepository<EntityVsAccountGraphQLModel>>().To<GraphQLRepository<EntityVsAccountGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TestBalanceGraphQLModel>>().To<GraphQLRepository<TestBalanceGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TestBalanceByEntityGraphQLModel>>().To<GraphQLRepository<TestBalanceByEntityGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingPeriodGraphQLModel>>().To<GraphQLRepository<AccountingPeriodGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryPeriodGraphQLModel>>().To<GraphQLRepository<AccountingEntryPeriodGraphQLModel>>().InSingletonScope();
 
+            
 
             _ = kernel.Bind<IRepository<WithholdingTypeGraphQLModel>>().To<GraphQLRepository<WithholdingTypeGraphQLModel>>().InSingletonScope();
 
