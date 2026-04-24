@@ -38,7 +38,14 @@ namespace Dictionaries
         public enum CaptureTypeEnum { PN, PJ, Undefined }
    
         public enum SequenceOriginEnum { M, D, Undefined }
+        
+        public static Dictionary<string, string> AccountingPeriodStatusDictionary = new()
+        {
+            { "OPEN", "OPEN" },
+            { "CLOSED", "CLOSED" },
 
+        };
+       
         public static Dictionary<string, string> RetentionGroupDictionary = new()
         {
             { "RTFTE", "Retención de Renta" },
