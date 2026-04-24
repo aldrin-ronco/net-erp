@@ -31,6 +31,7 @@ namespace NetErp.Global.GlobalConfig.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly INotificationService _notificationService;
+        private GlobalConfigGraphQLModel? _loadedConfig;
 
         public GlobalConfigViewModel(
             IRepository<GlobalConfigGraphQLModel> globalConfigService,
@@ -74,9 +75,26 @@ namespace NetErp.Global.GlobalConfig.ViewModels
                 if (_isBusy == value) return;
                 _isBusy = value;
                 NotifyOfPropertyChange(nameof(IsBusy));
+                NotifyOfPropertyChange(nameof(CanEdit));
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
+
+        private bool _isEditing;
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set
+            {
+                if (_isEditing == value) return;
+                _isEditing = value;
+                NotifyOfPropertyChange(nameof(IsEditing));
+                NotifyOfPropertyChange(nameof(CanEdit));
+                NotifyOfPropertyChange(nameof(CanSave));
+            }
+        }
+
+        public bool CanEdit => !IsEditing && !IsBusy;
 
         private AwsS3ConfigGraphQLModel? _selectedDefaultAwsS3Config;
 
@@ -113,11 +131,21 @@ namespace NetErp.Global.GlobalConfig.ViewModels
         public ReadOnlyObservableCollection<AwsS3ConfigGraphQLModel> AwsS3Configs => _awsS3ConfigCache.Items;
         public ReadOnlyObservableCollection<DianCertificateGraphQLModel> DianCertificates => _dianCertificateCache.Items;
 
-        public bool CanSave => this.HasChanges() && !IsBusy;
+        public bool CanSave => IsEditing && this.HasChanges() && !IsBusy;
 
         #endregion
 
         #region Commands
+
+        private ICommand? _editCommand;
+        public ICommand EditCommand
+        {
+            get
+            {
+                _editCommand ??= new DelegateCommand(() => IsEditing = true);
+                return _editCommand;
+            }
+        }
 
         private ICommand? _saveCommand;
         public ICommand SaveCommand
@@ -126,6 +154,16 @@ namespace NetErp.Global.GlobalConfig.ViewModels
             {
                 _saveCommand ??= new AsyncCommand(SaveAsync);
                 return _saveCommand;
+            }
+        }
+
+        private ICommand? _undoCommand;
+        public ICommand UndoCommand
+        {
+            get
+            {
+                _undoCommand ??= new DelegateCommand(Undo);
+                return _undoCommand;
             }
         }
 
@@ -173,6 +211,7 @@ namespace NetErp.Global.GlobalConfig.ViewModels
 
             if (config is not null)
             {
+                _loadedConfig = config;
                 Id = config.Id;
 
                 _selectedDefaultAwsS3Config = AwsS3Configs.FirstOrDefault(x => x.Id == config.DefaultAwsS3Config?.Id);
@@ -191,6 +230,22 @@ namespace NetErp.Global.GlobalConfig.ViewModels
             this.SeedValue(nameof(SelectedDefaultDianCertificate), SelectedDefaultDianCertificate);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        #endregion
+
+        #region Undo
+
+        private void Undo()
+        {
+            _selectedDefaultAwsS3Config = AwsS3Configs.FirstOrDefault(x => x.Id == _loadedConfig?.DefaultAwsS3Config?.Id);
+            NotifyOfPropertyChange(nameof(SelectedDefaultAwsS3Config));
+
+            _selectedDefaultDianCertificate = DianCertificates.FirstOrDefault(x => x.Id == _loadedConfig?.DefaultDianCertificate?.Id);
+            NotifyOfPropertyChange(nameof(SelectedDefaultDianCertificate));
+
+            SeedCurrentValues();
+            IsEditing = false;
         }
 
         #endregion
@@ -231,12 +286,14 @@ namespace NetErp.Global.GlobalConfig.ViewModels
 
                 if (result.Entity is not null)
                 {
+                    _loadedConfig = result.Entity;
                     Id = result.Entity.Id;
                     SessionInfo.DefaultAwsS3Config = result.Entity.DefaultAwsS3Config;
                 }
 
                 _notificationService.ShowSuccess(result.Message);
                 SeedCurrentValues();
+                IsEditing = false;
             }
             catch (Exception ex)
             {

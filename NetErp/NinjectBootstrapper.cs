@@ -151,6 +151,9 @@ namespace NetErp
             _ = kernel.Bind<AuxiliaryAccountingAccountCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuxiliaryAccountingAccountCache>());
 
+            _ = kernel.Bind<SubAccountingAccountCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<SubAccountingAccountCache>());
+
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CtasRestVtasAccountingAccountGroupCache>());
 
@@ -370,7 +373,8 @@ namespace NetErp
             _ = kernel.Bind<IRepository<CompanyLocationGraphQLModel>>().To<GraphQLRepository<CompanyLocationGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CostCenterGraphQLModel>>().To<GraphQLRepository<CostCenterGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TreasuryConceptGraphQLModel>>().To<GraphQLRepository<TreasuryConceptGraphQLModel>>().InSingletonScope();
-            
+            _ = kernel.Bind<IRepository<TreasuryConfigGraphQLModel>>().To<GraphQLRepository<TreasuryConfigGraphQLModel>>().InSingletonScope();
+
             // Global module repositories
             _ = kernel.Bind<IRepository<CompanyGraphQLModel>>().To<GraphQLRepository<CompanyGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CountryGraphQLModel>>().To<GraphQLRepository<CountryGraphQLModel>>().InSingletonScope();

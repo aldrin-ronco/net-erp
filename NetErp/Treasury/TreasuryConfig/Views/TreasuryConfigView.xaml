@@ -1,0 +1,308 @@
+<UserControl x:Class="NetErp.Treasury.TreasuryConfig.Views.TreasuryConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="900"
+             Background="#EEF1F5"
+             FontFamily="Century Gothic">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.8*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="0.8*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Panel central -->
+        <Border Grid.Column="1"
+                Grid.Row="1"
+                Background="White"
+                CornerRadius="12"
+                Padding="40">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000"
+                                  Opacity="0.1"
+                                  ShadowDepth="8"
+                                  BlurRadius="20"/>
+            </Border.Effect>
+
+            <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                    IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0">
+
+                <StackPanel>
+                    <!-- Título -->
+                    <TextBlock Text="CONFIGURACIÓN DE TESORERÍA"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,8"
+                               Foreground="#2c3e50"/>
+
+                    <!-- Subtítulo -->
+                    <TextBlock Text="Parámetros contables predeterminados de tesorería"
+                               FontSize="13"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,35"
+                               Foreground="#6c757d"/>
+
+                    <!-- Cuenta grupo tarjetas -->
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock Text="Cuenta grupo tarjetas"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"
+                                   Foreground="#2c3e50"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta contable (opcional)"
+                                        IsEnabled="{Binding IsEditing}"
+                                        ItemsSource="{Binding AccountingAccounts}"
+                                        EditValue="{Binding SelectedCardGroupAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="FullName">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Cuenta contable" FieldName="FullName"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                    </StackPanel>
+
+                    <!-- Cuenta grupo efectivo -->
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock Text="Cuenta grupo efectivo"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"
+                                   Foreground="#2c3e50"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta contable (opcional)"
+                                        IsEnabled="{Binding IsEditing}"
+                                        ItemsSource="{Binding AccountingAccounts}"
+                                        EditValue="{Binding SelectedCashGroupAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="FullName">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Cuenta contable" FieldName="FullName"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                    </StackPanel>
+
+                    <!-- Cuenta grupo cheques -->
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock Text="Cuenta grupo cheques"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"
+                                   Foreground="#2c3e50"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta contable (opcional)"
+                                        IsEnabled="{Binding IsEditing}"
+                                        ItemsSource="{Binding AccountingAccounts}"
+                                        EditValue="{Binding SelectedCheckGroupAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="FullName">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Cuenta contable" FieldName="FullName"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                    </StackPanel>
+
+                    <!-- Cuenta grupo corriente -->
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock Text="Cuenta grupo corriente"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"
+                                   Foreground="#2c3e50"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta contable (opcional)"
+                                        IsEnabled="{Binding IsEditing}"
+                                        ItemsSource="{Binding AccountingAccounts}"
+                                        EditValue="{Binding SelectedCheckingGroupAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="FullName">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Cuenta contable" FieldName="FullName"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                    </StackPanel>
+
+                    <!-- Cuenta grupo ahorros -->
+                    <StackPanel Margin="0,0,0,30">
+                        <TextBlock Text="Cuenta grupo ahorros"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"
+                                   Foreground="#2c3e50"/>
+                        <dxg:LookUpEdit Padding="3"
+                                        AutoPopulateColumns="False"
+                                        IsCaseSensitiveSearch="False"
+                                        FilterCondition="Contains"
+                                        ImmediatePopup="True"
+                                        ClearSelectionOnBackspace="True"
+                                        NullText="Seleccione una cuenta contable (opcional)"
+                                        IsEnabled="{Binding IsEditing}"
+                                        ItemsSource="{Binding AccountingAccounts}"
+                                        EditValue="{Binding SelectedSavingsGroupAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMember="FullName">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Cuenta contable" FieldName="FullName"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                    </StackPanel>
+
+                    <!-- Botones -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <!-- Editar -->
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding CanEdit}"
+                                Command="{Binding EditCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Deshacer -->
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding IsEditing}"
+                                Command="{Binding UndoCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Guardar -->
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                                Command="{Binding SaveCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </busyIndicator:BusyMask>
+        </Border>
+    </Grid>
+</UserControl>
