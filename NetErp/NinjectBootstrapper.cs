@@ -386,6 +386,7 @@ namespace NetErp
             // Billing module repositories
             _ = kernel.Bind<IRepository<SellerGraphQLModel>>().To<GraphQLRepository<SellerGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ZoneGraphQLModel>>().To<GraphQLRepository<ZoneGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<BillingConfigGraphQLModel>>().To<GraphQLRepository<BillingConfigGraphQLModel>>().InSingletonScope();
             
             // Suppliers module repositories
             _ = kernel.Bind<IRepository<SupplierGraphQLModel>>().To<GraphQLRepository<SupplierGraphQLModel>>().InSingletonScope();
