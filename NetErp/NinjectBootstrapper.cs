@@ -326,6 +326,7 @@ namespace NetErp
             _ = kernel.Bind<IRepository<AwsS3ConfigGraphQLModel>>().To<GraphQLRepository<AwsS3ConfigGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<GlobalConfigGraphQLModel>>().To<GraphQLRepository<GlobalConfigGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<S3StorageLocationGraphQLModel>>().To<GraphQLRepository<S3StorageLocationGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<InventoryConfigGraphQLModel>>().To<GraphQLRepository<InventoryConfigGraphQLModel>>().InSingletonScope();
 
             // Books
             _ = kernel.Bind<IRepository<TaxGraphQLModel>>().To<GraphQLRepository<TaxGraphQLModel>>().InSingletonScope();

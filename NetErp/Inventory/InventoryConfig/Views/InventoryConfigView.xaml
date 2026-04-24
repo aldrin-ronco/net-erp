@@ -1,0 +1,273 @@
+<UserControl x:Class="NetErp.Inventory.InventoryConfig.Views.InventoryConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="900"
+             Background="#EEF1F5"
+             FontFamily="Century Gothic">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.8*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="0.8*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Panel central -->
+        <Border Grid.Column="1"
+                Grid.Row="1"
+                Background="White"
+                CornerRadius="12"
+                Padding="40">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000"
+                                  Opacity="0.1"
+                                  ShadowDepth="8"
+                                  BlurRadius="20"/>
+            </Border.Effect>
+
+            <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                    IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0">
+
+                <ScrollViewer dx:ScrollBarExtensions.ScrollBarMode="TouchOverlap"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              MaxHeight="600">
+                    <StackPanel Margin="0,0,16,0">
+                        <!-- Título -->
+                        <TextBlock Text="CONFIGURACIÓN DE INVENTARIO"
+                                   FontSize="22"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"
+                                   Foreground="#2c3e50"/>
+
+                        <!-- Subtítulo -->
+                        <TextBlock Text="Parámetros predeterminados de inventario y traslados"
+                                   FontSize="13"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,35"
+                                   Foreground="#6c757d"/>
+
+                        <!-- Configuración AWS S3 por defecto -->
+                        <StackPanel Margin="0,0,0,20">
+                            <TextBlock Text="Configuración AWS S3 por defecto"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding AwsS3Configs}"
+                                              EditValue="{Binding SelectedDefaultAwsS3Config, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Description"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione una configuración (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Bodega de tránsito -->
+                        <StackPanel Margin="0,0,0,20">
+                            <TextBlock Text="Bodega de tránsito"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding Storages}"
+                                              EditValue="{Binding SelectedTransitStorage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione una bodega (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Origen contable del documento de traslado -->
+                        <StackPanel Margin="0,0,0,20">
+                            <TextBlock Text="Origen contable del documento de traslado"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                                              EditValue="{Binding SelectedTransferDocAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione un origen contable (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Origen contable de salida (bodega origen) -->
+                        <StackPanel Margin="0,0,0,20">
+                            <TextBlock Text="Origen contable de salida (bodega origen)"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                                              EditValue="{Binding SelectedTransferSourceOutAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione un origen contable (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Origen contable de entrada (bodega destino) -->
+                        <StackPanel Margin="0,0,0,20">
+                            <TextBlock Text="Origen contable de entrada (bodega destino)"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                                              EditValue="{Binding SelectedTransferDestinationInAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione un origen contable (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Origen contable de salida en tránsito -->
+                        <StackPanel Margin="0,0,0,20">
+                            <TextBlock Text="Origen contable de salida en tránsito"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                                              EditValue="{Binding SelectedTransferTransitOutAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione un origen contable (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Origen contable de entrada en tránsito -->
+                        <StackPanel Margin="0,0,0,30">
+                            <TextBlock Text="Origen contable de entrada en tránsito"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"
+                                       Foreground="#2c3e50"/>
+                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                                              EditValue="{Binding SelectedTransferTransitInAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              IsEnabled="{Binding IsEditing}"
+                                              FontSize="14"
+                                              Padding="10"
+                                              Height="40"
+                                              BorderThickness="2"
+                                              NullText="Seleccione un origen contable (opcional)"
+                                              ShowNullTextForEmptyValue="True"/>
+                        </StackPanel>
+
+                        <!-- Botones -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <!-- Editar -->
+                            <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    IsEnabled="{Binding CanEdit}"
+                                    Command="{Binding EditCommand}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Deshacer -->
+                            <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    IsEnabled="{Binding IsEditing}"
+                                    Command="{Binding UndoCommand}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Guardar -->
+                            <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                                    Command="{Binding SaveCommand}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </busyIndicator:BusyMask>
+        </Border>
+    </Grid>
+</UserControl>
