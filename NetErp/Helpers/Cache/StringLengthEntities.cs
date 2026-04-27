@@ -25,7 +25,7 @@ namespace NetErp.Helpers.Cache
         /// the corresponding type MUST be removed from this list so that
         /// StringLengthCache starts fetching its constraints from the API.
         /// </summary>
-        public static readonly HashSet<Type> NoStringFieldEntities = [typeof(SellerGraphQLModel)];
+        public static readonly HashSet<Type> NoStringFieldEntities = [typeof(SellerGraphQLModel), typeof(StockMovementLineGraphQLModel)];
 
         /// <summary>
         /// Explicit entity name overrides for models whose class name does not match
@@ -77,6 +77,7 @@ namespace NetErp.Helpers.Cache
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];
         public static readonly Type[] MeasurementUnit = [typeof(MeasurementUnitGraphQLModel)];
+        public static readonly Type[] StockMovement = [typeof(StockMovementGraphQLModel), typeof(StockMovementLineGraphQLModel)];
 
         // Global
         public static readonly Type[] MenuItem = [typeof(MenuItemGraphQLModel)];

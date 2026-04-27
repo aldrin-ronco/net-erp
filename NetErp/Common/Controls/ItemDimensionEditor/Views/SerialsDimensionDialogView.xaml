@@ -1,0 +1,142 @@
+<UserControl x:Class="NetErp.UserControls.ItemDimensionEditor.Views.SerialsDimensionDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             mc:Ignorable="d"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
+             Background="#EEF1F5">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="8,0,8,8">
+        <Grid Margin="15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{Binding ItemHeader}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+            <!-- Input captura: ENTER apila (entrada) o mueve seleccionado (salida) -->
+            <dxe:ButtonEdit Grid.Row="1"
+                            Text="{Binding CaptureInput, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            NullText="Escribe o escanea un serial y presiona ENTER..."
+                            MinHeight="28"
+                            Margin="0,0,0,8"
+                            CharacterCasing="Upper"
+                            BorderBrush="#C8CED6"
+                            AllowDefaultButton="False"
+                            cal:Message.Attach="[Event KeyDown] = [Action OnCaptureKeyDown($eventArgs)]">
+                <h:FocusBehavior.IsFocused>
+                    <Binding Path="CaptureFocus" Mode="TwoWay"/>
+                </h:FocusBehavior.IsFocused>
+                <dxe:ButtonEdit.Buttons>
+                    <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                </dxe:ButtonEdit.Buttons>
+            </dxe:ButtonEdit>
+
+            <!-- Entradas: lista de seriales nuevos -->
+            <Border Grid.Row="2" BorderBrush="#C8CED6" BorderThickness="1"
+                    Visibility="{Binding IsInbound, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ListBox ItemsSource="{Binding NewSerials}" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                        cal:Message.Attach="RemoveNewSerial($dataContext)">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Width="16" Height="16"/>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- Salidas: dos paneles -->
+            <Grid Grid.Row="2" Visibility="{Binding IsOutbound, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" BorderBrush="#C8CED6" BorderThickness="1">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Disponibles" FontWeight="SemiBold" Margin="6"/>
+                        <dxg:GridControl x:Name="AvailableGrid"
+                                         ItemsSource="{Binding AvailableRows}"
+                                         AutoGenerateColumns="None"
+                                         cal:Message.Attach="[Event MouseDoubleClick] = [Action MoveToSelected($source.SelectedItem)]">
+                            <dxg:GridControl.View>
+                                <dxg:TableView ShowGroupPanel="False" AllowEditing="False"
+                                               AllowSorting="False" AllowColumnFiltering="False"
+                                               AlternateRowBackground="Beige" AutoWidth="True"/>
+                            </dxg:GridControl.View>
+                            <dxg:GridControl.Columns>
+                                <dxg:GridColumn Header="Serial" FieldName="SerialNumber" Width="*"/>
+                            </dxg:GridControl.Columns>
+                        </dxg:GridControl>
+                    </DockPanel>
+                </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0">
+                    <Image Source="{dx:DXImage 'Images/Actions/Arrow_Right_16x16.png'}" Width="16" Height="16"/>
+                    <Image Source="{dx:DXImage 'Images/Actions/Arrow_Left_16x16.png'}" Width="16" Height="16" Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <Border Grid.Column="2" BorderBrush="#C8CED6" BorderThickness="1">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Seleccionados" FontWeight="SemiBold" Margin="6"/>
+                        <dxg:GridControl x:Name="SelectedGrid"
+                                         ItemsSource="{Binding SelectedRows}"
+                                         AutoGenerateColumns="None"
+                                         cal:Message.Attach="[Event MouseDoubleClick] = [Action MoveToAvailable($source.SelectedItem)]">
+                            <dxg:GridControl.View>
+                                <dxg:TableView ShowGroupPanel="False" AllowEditing="False"
+                                               AllowSorting="False" AllowColumnFiltering="False"
+                                               AlternateRowBackground="Beige" AutoWidth="True"/>
+                            </dxg:GridControl.View>
+                            <dxg:GridControl.Columns>
+                                <dxg:GridColumn Header="Serial" FieldName="SerialNumber" Width="*"/>
+                            </dxg:GridControl.Columns>
+                        </dxg:GridControl>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                <Button cal:Message.Attach="AcceptAsync"
+                        IsEnabled="{Binding CanAccept}"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32"/>
+                        <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="CancelAsync" IsCancel="True"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32"/>
+                        <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

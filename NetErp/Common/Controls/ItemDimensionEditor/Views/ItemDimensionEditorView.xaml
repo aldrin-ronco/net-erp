@@ -1,0 +1,154 @@
+<UserControl x:Class="NetErp.UserControls.ItemDimensionEditor.Views.ItemDimensionEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:currency="clr-namespace:CurrencyTextBoxControl;assembly=CurrencyTextbox"
+             mc:Ignorable="d"
+             d:DesignHeight="160" d:DesignWidth="900">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="KeyboardFocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="-2" StrokeThickness="2" Stroke="#1565C0" RadiusX="4" RadiusY="4" SnapsToDevicePixels="True"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel KeyboardNavigation.TabNavigation="Local">
+        <!-- Búsqueda: una sola línea -->
+        <dxe:ButtonEdit x:Name="SearchTermBox"
+                        TabIndex="1"
+                        Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        NullText="Buscar por código, referencia o EAN; ENTER abre lista..."
+                        ToolTip="ENTER busca por código/referencia/EAN exacto; sin match abre la lista"
+                        MinHeight="28"
+                        CharacterCasing="Upper"
+                        BorderBrush="#C8CED6"
+                        AllowDefaultButton="False"
+                        IsEnabled="{Binding IsStorageReady}"
+                        cal:Message.Attach="[Event KeyDown] = [Action OnSearchKeyDown($eventArgs)]">
+            <h:FocusBehavior.IsFocused>
+                <Binding Path="SearchFieldFocus" Mode="TwoWay"/>
+            </h:FocusBehavior.IsFocused>
+            <dxe:ButtonEdit.Buttons>
+                <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+            </dxe:ButtonEdit.Buttons>
+        </dxe:ButtonEdit>
+
+        <!-- Panel info ítem (visible solo si hay match): code + reference + nombre + cantidad + UND + costo + dimensiones en una sola línea -->
+        <Border Margin="0,8,0,0"
+                Padding="10,8"
+                Background="#F8FBFD"
+                BorderBrush="#C8CED6"
+                BorderThickness="1"
+                CornerRadius="4"
+                Visibility="{Binding HasSelectedItem, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                    <TextBlock Text="Código" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="{Binding SelectedItemCode}" FontSize="13" FontWeight="SemiBold" Height="28" VerticalAlignment="Center" Padding="0,6,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                    <TextBlock Text="Referencia" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="{Binding SelectedItemReference}" FontSize="13" Height="28" VerticalAlignment="Center" Padding="0,6,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Margin="0,0,16,0">
+                    <TextBlock Text="Producto" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="{Binding SelectedItemName}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Height="28" VerticalAlignment="Center" Padding="0,6,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Margin="0,0,12,0" MinWidth="120">
+                    <TextBlock Text="Cantidad" FontSize="11" Foreground="Gray"/>
+                    <dxe:SpinEdit TabIndex="2" Height="28" Padding="3" BorderBrush="#C8CED6"
+                                  MinValue="0"
+                                  EditValueType="{x:Type sys:Decimal}"
+                                  IsFloatValue="True"
+                                  MaskType="Numeric" Mask="N2"
+                                  AllowNullInput="False"
+                                  IsReadOnly="{Binding QuantityIsReadOnly}"
+                                  EditValue="{Binding TotalQuantity, Mode=OneWay}"
+                                  Visibility="{Binding QuantityIsReadOnly, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <dxe:SpinEdit TabIndex="2" Height="28" Padding="3" BorderBrush="#C8CED6"
+                                  MinValue="0"
+                                  EditValueType="{x:Type sys:Decimal}"
+                                  IsFloatValue="True"
+                                  MaskType="Numeric" Mask="N2"
+                                  AllowNullInput="False"
+                                  EditValue="{Binding BaseQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <h:FocusBehavior.IsFocused>
+                            <Binding Path="QuantityFieldFocus" Mode="TwoWay"/>
+                        </h:FocusBehavior.IsFocused>
+                        <dxe:SpinEdit.Style>
+                            <Style TargetType="dxe:SpinEdit">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding QuantityIsReadOnly}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxe:SpinEdit.Style>
+                    </dxe:SpinEdit>
+                </StackPanel>
+
+                <StackPanel Grid.Column="4" Margin="0,0,12,0">
+                    <TextBlock Text="UND" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="{Binding SelectedItemMeasurementUnit}" FontSize="13" Height="28" VerticalAlignment="Center" Padding="0,6,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="5" Margin="0,0,8,0"
+                            Visibility="{Binding DimensionsButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text=" " FontSize="11"/>
+                    <Border CornerRadius="4" BorderThickness="2" Padding="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="#C8CED6"/>
+                                <Setter Property="Background" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter Property="BorderBrush" Value="#1565C0"/>
+                                        <Setter Property="Background" Value="#EBF5FB"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button x:Name="BtnDim" TabIndex="4" Height="24" Padding="10,0"
+                                FocusVisualStyle="{x:Null}"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                cal:Message.Attach="OpenDimensionsDialogAsync">
+                            <StackPanel Orientation="Horizontal" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Maps/Properties_16x16.png'}" Width="16" Height="16" Margin="0,0,6,0" Focusable="False"/>
+                                <TextBlock Text="Dimensiones" VerticalAlignment="Center" Focusable="False"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                </StackPanel>
+
+                <ContentPresenter Grid.Column="6"
+                                  Content="{Binding AdditionalContent, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            </Grid>
+        </Border>
+    </StackPanel>
+</UserControl>

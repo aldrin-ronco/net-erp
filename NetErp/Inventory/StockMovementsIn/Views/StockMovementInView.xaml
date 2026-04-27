@@ -1,0 +1,207 @@
+<UserControl x:Class="NetErp.Inventory.StockMovementsIn.Views.StockMovementInView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Detail (cuando hay) -->
+        <ContentControl x:Name="CurrentDetail"
+                        Visibility="{Binding IsDetailVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- Master -->
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="8" Margin="5"
+                Visibility="{Binding IsMasterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Filtros: línea 1 -->
+            <Grid Grid.Row="0" Margin="10,10,10,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                    <TextBlock Text="Documento" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:ButtonEdit x:Name="FilterDocumentNumber"
+                                    Text="{Binding FilterDocumentNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    NullText="Filtrar por número de documento..."
+                                    MinHeight="25"
+                                    CharacterCasing="Upper"
+                                    BorderBrush="#C8CED6"
+                                    AllowDefaultButton="False"
+                                    h:FocusBehavior.IsFocused="True">
+                        <dxe:ButtonEdit.Buttons>
+                            <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                        </dxe:ButtonEdit.Buttons>
+                    </dxe:ButtonEdit>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="4,0,4,0">
+                    <TextBlock Text="Centro de costo" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding CostCenters}"
+                                      SelectedItem="{Binding FilterCostCenter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      DisplayMember="Name"
+                                      IsTextEditable="False"
+                                      Padding="2"
+                                      BorderBrush="#C8CED6"
+                                      AllowNullInput="True"
+                                      NullValueButtonPlacement="EditBox"
+                                      NullText="Todos"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Margin="4,0,4,0">
+                    <TextBlock Text="Fuente contable" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                                      SelectedItem="{Binding FilterAccountingSource, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      DisplayMember="Name"
+                                      IsTextEditable="False"
+                                      Padding="2"
+                                      BorderBrush="#C8CED6"
+                                      AllowNullInput="True"
+                                      NullValueButtonPlacement="EditBox"
+                                      NullText="Todas"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Margin="4,0,0,0">
+                    <TextBlock Text="Estado" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding StatusOptions}"
+                                      SelectedItem="{Binding FilterStatus, Mode=TwoWay}"
+                                      Padding="2" MinWidth="120"
+                                      IsTextEditable="False"
+                                      BorderBrush="#C8CED6"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Grid -->
+            <busyIndicator:BusyMask Grid.Row="2"
+                                    IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0"
+                                    Margin="10,6,10,0">
+                <dxg:GridControl ItemsSource="{Binding StockMovements}"
+                                 SelectedItem="{Binding SelectedStockMovement, Mode=TwoWay}"
+                                 AutoGenerateColumns="None">
+                    <dxg:GridControl.View>
+                        <dxg:TableView AllowEditing="False"
+                                       AllowCascadeUpdate="False"
+                                       EnableSelectedRowAppearance="True"
+                                       ShowGroupPanel="False"
+                                       AlternateRowBackground="Beige"
+                                       AllowColumnMoving="False"/>
+                    </dxg:GridControl.View>
+                    <dxg:GridColumn Header="Documento" FieldName="DocumentNumber" Width="120" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Estado" FieldName="Status" Width="80" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Anulado" FieldName="CancelledWith" Width="80" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Fuente" FieldName="AccountingSource.Name" Width="*"/>
+                    <dxg:GridColumn Header="Centro de costo" FieldName="CostCenter.Name" Width="*"/>
+                    <dxg:GridColumn Header="Bodega" FieldName="Storage.Name" Width="*"/>
+                    <dxg:GridColumn Header="Nota" FieldName="Note" Width="*"/>
+                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="140"/>
+                    <dxg:GridColumn Header="Creado" FieldName="InsertedAt" Width="140"/>
+                </dxg:GridControl>
+            </busyIndicator:BusyMask>
+
+            <uc:GridPaging Grid.Row="3"
+                           Margin="10,6,10,0"
+                           PageIndex="{Binding PageIndex, Mode=TwoWay}"
+                           PageSize="{Binding PageSize, Mode=TwoWay}"
+                           TotalCount="{Binding TotalCount, Mode=OneWay}"
+                           ResponseTime="{Binding ResponseTime, Mode=OneWay}"/>
+
+            <!-- Botones -->
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+                <Button cal:Message.Attach="NewAsync"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32"/>
+                        <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="EditAsync" IsEnabled="{Binding CanEdit}"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="PostAsync" IsEnabled="{Binding CanPost}"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Postear" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="CancelAsync" IsEnabled="{Binding CanCancel}"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Anular" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="DeleteDraftAsync" IsEnabled="{Binding CanDelete}"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+        </Border>
+    </Grid>
+</UserControl>
