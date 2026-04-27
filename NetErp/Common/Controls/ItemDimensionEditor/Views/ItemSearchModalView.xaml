@@ -1,0 +1,103 @@
+<UserControl x:Class="NetErp.UserControls.ItemDimensionEditor.Views.ItemSearchModalView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             mc:Ignorable="d"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
+             Background="#EEF1F5">
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="8,0,8,8">
+        <Grid Margin="15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <dxe:ButtonEdit Grid.Row="0"
+                            x:Name="FilterBox"
+                            Text="{Binding FilterTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            NullText="Filtrar productos..."
+                            MinHeight="28"
+                            Margin="0,0,0,8"
+                            CharacterCasing="Upper"
+                            BorderBrush="#C8CED6"
+                            AllowDefaultButton="False"
+                            cal:Message.Attach="[Event KeyDown] = [Action OnFilterKeyDown($eventArgs)]">
+                <h:FocusBehavior.IsFocused>
+                    <Binding Path="FilterFocus" Mode="TwoWay"/>
+                </h:FocusBehavior.IsFocused>
+                <dxe:ButtonEdit.Buttons>
+                    <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                </dxe:ButtonEdit.Buttons>
+            </dxe:ButtonEdit>
+
+            <busyIndicator:BusyMask Grid.Row="1"
+                                    IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Buscando..."
+                                    BusyContentMargin="0,20,0,0">
+                <ListBox x:Name="ResultsList"
+                         ItemsSource="{Binding Items}"
+                         SelectedItem="{Binding Highlighted, Mode=TwoWay}"
+                         BorderBrush="#C8CED6" BorderThickness="1"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         cal:Message.Attach="[Event KeyDown] = [Action OnGridKeyDown($eventArgs, $source.SelectedItem)]">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="6,4" Background="Transparent"
+                                    cal:Action.TargetWithoutContext="{Binding DataContext, ElementName=ResultsList}"
+                                    cal:Message.Attach="[Event MouseLeftButtonUp] = [Action Pick($dataContext)]">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="60"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Code}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Reference}" Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding MeasurementUnit.Abbreviation}" HorizontalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </busyIndicator:BusyMask>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                <Button cal:Message.Attach="AcceptAsync" IsEnabled="{Binding CanAccept}"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Seleccionar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button cal:Message.Attach="CancelAsync" IsCancel="True"
+                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32"/>
+                        <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

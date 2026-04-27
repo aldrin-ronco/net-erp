@@ -17,6 +17,7 @@ using Models.DTO.Billing;
 using Models.DTO.Global;
 using Models.Global;
 using Models.Inventory;
+using Models.Purchasing;
 using Models.Suppliers;
 using Models.Treasury;
 using NetErp.Billing.CreditLimit.DTO;
@@ -394,6 +395,26 @@ namespace NetErp
             
             // Suppliers module repositories
             _ = kernel.Bind<IRepository<SupplierGraphQLModel>>().To<GraphQLRepository<SupplierGraphQLModel>>().InSingletonScope();
+
+            // Inventory: stock movement, lot, serial, stock-by-* (disponibilidad)
+            _ = kernel.Bind<IRepository<StockMovementGraphQLModel>>().To<GraphQLRepository<StockMovementGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockMovementLineGraphQLModel>>().To<GraphQLRepository<StockMovementLineGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockMovementLineLotGraphQLModel>>().To<GraphQLRepository<StockMovementLineLotGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockMovementLineSerialGraphQLModel>>().To<GraphQLRepository<StockMovementLineSerialGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockMovementLineSizeGraphQLModel>>().To<GraphQLRepository<StockMovementLineSizeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<LotGraphQLModel>>().To<GraphQLRepository<LotGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<SerialGraphQLModel>>().To<GraphQLRepository<SerialGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockByLotGraphQLModel>>().To<GraphQLRepository<StockByLotGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockBySerialGraphQLModel>>().To<GraphQLRepository<StockBySerialGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockBySizeGraphQLModel>>().To<GraphQLRepository<StockBySizeGraphQLModel>>().InSingletonScope();
+
+            // Purchasing: purchase invoice + sublíneas
+            _ = kernel.Bind<IRepository<PurchaseInvoiceGraphQLModel>>().To<GraphQLRepository<PurchaseInvoiceGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PurchaseInvoiceLineGraphQLModel>>().To<GraphQLRepository<PurchaseInvoiceLineGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PurchaseInvoiceLineLotGraphQLModel>>().To<GraphQLRepository<PurchaseInvoiceLineLotGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PurchaseInvoiceLineSerialGraphQLModel>>().To<GraphQLRepository<PurchaseInvoiceLineSerialGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PurchaseInvoiceLineSizeGraphQLModel>>().To<GraphQLRepository<PurchaseInvoiceLineSizeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PurchaseInvoiceWithholdingGraphQLModel>>().To<GraphQLRepository<PurchaseInvoiceWithholdingGraphQLModel>>().InSingletonScope();
             
             // Email module repositories
             _ = kernel.Bind<IRepository<EmailGraphQLModel>>().To<GraphQLRepository<EmailGraphQLModel>>().InSingletonScope();

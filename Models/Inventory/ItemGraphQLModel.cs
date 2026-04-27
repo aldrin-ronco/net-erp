@@ -22,6 +22,13 @@ namespace Models.Inventory
         public bool AiuBasedService { get; set; }
         public bool Billable { get; set; }
         public bool AmountBasedOnWeight { get; set; }
+
+        /// <summary>True si el ítem maneja lotes. Mutuamente excluyente con <see cref="IsSerialTracked"/> y <c>SizeCategory</c>.</summary>
+        public bool IsLotTracked { get; set; }
+
+        /// <summary>True si el ítem maneja seriales. Mutuamente excluyente con <see cref="IsLotTracked"/> y <c>SizeCategory</c>.</summary>
+        public bool IsSerialTracked { get; set; }
+
         public CompanyGraphQLModel Company { get; set; } = new();
         public MeasurementUnitGraphQLModel MeasurementUnit { get; set; } = new();
         public ItemBrandGraphQLModel Brand { get; set; } = new();
