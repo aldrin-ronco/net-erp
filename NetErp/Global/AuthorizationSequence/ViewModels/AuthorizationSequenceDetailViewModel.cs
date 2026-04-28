@@ -794,11 +794,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .For(fragment, "documentCategory", "INVOICE")
                 .Build();
 
-            ActiveDianSoftwareConfigDataContext context = await _dianConfigService.GetDataContextAsync<ActiveDianSoftwareConfigDataContext>(query, variables);
-            DianSoftwareConfigGraphQLModel? config = context?.ActiveDianSoftwareConfig;
+            DianSoftwareConfigByScopeDataContext context = await _dianConfigService.GetDataContextAsync<DianSoftwareConfigByScopeDataContext>(query, variables);
+            DianSoftwareConfigGraphQLModel? config = context?.DianSoftwareConfigByScope;
 
             if (config == null || config.Id < 1) return null;
-            if (!config.IsActive) return null;
 
             return config;
         }
@@ -1145,10 +1144,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(f => f.SoftwareId)
                 .Field(f => f.ServiceUrl)
                 .Field(f => f.WsdlUrl)
-                .Field(f => f.IsActive)
                 .Build();
 
-            var fragment = new GraphQLQueryFragment("activeDianSoftwareConfig",
+            var fragment = new GraphQLQueryFragment("dianSoftwareConfigByScope",
                 [new("environment", "DianEnvironment!"), new("documentCategory", "DianDocumentCategory!")],
                 fields);
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());

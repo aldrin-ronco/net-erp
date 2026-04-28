@@ -14,13 +14,13 @@ namespace Models.Global
         public string TestSetId { get; set; } = string.Empty;
         public string ServiceUrl { get; set; } = string.Empty;
         public string WsdlUrl { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
         public DateTime? InsertedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public CompanyGraphQLModel Company { get; set; } = new();
     }
 
-    public class ActiveDianSoftwareConfigDataContext
+    public class DianSoftwareConfigByScopeDataContext
     {
-        public DianSoftwareConfigGraphQLModel ActiveDianSoftwareConfig { get; set; }
+        public DianSoftwareConfigGraphQLModel DianSoftwareConfigByScope { get; set; }
     }
 }
