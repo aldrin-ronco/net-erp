@@ -25,7 +25,7 @@ namespace NetErp.Helpers.Cache
         /// the corresponding type MUST be removed from this list so that
         /// StringLengthCache starts fetching its constraints from the API.
         /// </summary>
-        public static readonly HashSet<Type> NoStringFieldEntities = [typeof(SellerGraphQLModel), typeof(StockMovementLineGraphQLModel)];
+        public static readonly HashSet<Type> NoStringFieldEntities = [typeof(SellerGraphQLModel), typeof(SupplierGraphQLModel), typeof(StockMovementLineGraphQLModel)];
 
         /// <summary>
         /// Explicit entity name overrides for models whose class name does not match
@@ -43,7 +43,7 @@ namespace NetErp.Helpers.Cache
 
         // Billing
         public static readonly Type[] Customer = [typeof(CustomerGraphQLModel), typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
-        public static readonly Type[] Seller = [typeof(SellerGraphQLModel), typeof(AccountingEntityGraphQLModel)];
+        public static readonly Type[] Seller = [typeof(SellerGraphQLModel), typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
         public static readonly Type[] Zone = [typeof(ZoneGraphQLModel)];
         public static readonly Type[] PriceList = [typeof(PriceListGraphQLModel)];
 
@@ -69,7 +69,7 @@ namespace NetErp.Helpers.Cache
         public static readonly Type[] S3StorageLocation = [typeof(S3StorageLocationGraphQLModel)];
 
         // Suppliers
-        public static readonly Type[] Supplier = [typeof(SupplierGraphQLModel), typeof(AccountingEntityGraphQLModel)];
+        public static readonly Type[] Supplier = [typeof(SupplierGraphQLModel), typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
 
         // CostCenters
         public static readonly Type[] CostCenters = [typeof(CompanyGraphQLModel), typeof(CompanyLocationGraphQLModel), typeof(CostCenterGraphQLModel), typeof(StorageGraphQLModel)];

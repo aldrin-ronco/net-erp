@@ -392,7 +392,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             get => !IsNewRecord
                    ? field
-                   : SelectedIdentificationType == null
+                   : SelectedIdentificationType == null || !SelectedIdentificationType.HasVerificationDigit
                    ? string.Empty
                    : IdentificationNumber.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength
                    ? IdentificationNumber.GetVerificationDigit()
