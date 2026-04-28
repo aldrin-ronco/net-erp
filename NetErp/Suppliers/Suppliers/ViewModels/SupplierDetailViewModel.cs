@@ -580,7 +580,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get => !IsNewRecord
                     ? _verificationDigit
-                    : SelectedIdentificationType == null
+                    : SelectedIdentificationType == null || !SelectedIdentificationType.HasVerificationDigit
                     ? string.Empty
                     : IdentificationNumber.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength
                     ? IdentificationNumber.GetVerificationDigit()
