@@ -15,6 +15,7 @@ using Models.DTO.Global;
 using Models.Global;
 using NetErp.Billing.Sellers.Validators;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.CostCenters.Shared;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -710,14 +711,16 @@ namespace NetErp.Billing.Sellers.ViewModels
                 if (SelectedCountry is not null) SelectedDepartment = SelectedCountry.Departments.Find(x => x.Code == Constant.DefaultDepartmentCode);
                 if (SelectedDepartment is not null && SelectedDepartment.Cities is not null) SelectedCityId = SelectedDepartment.Cities.Find(x => x.Code == Constant.DefaultCityCode)?.Id;
 
-                foreach (CostCenterDTO costCenter in _mapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
+                foreach (CostCenterDTO costCenter in _mapper.Map<ObservableCollection<CostCenterDTO>>(
+                    _costCenterCache.Items.Where(c => c.Status == CostCentersStatus.Active)))
                 {
                     costCenters.Add(new CostCenterDTO()
                     {
                         Id = costCenter.Id,
                         Name = costCenter.Name,
                         IsSelected = false,
-                        CompanyLocation = costCenter.CompanyLocation
+                        CompanyLocation = costCenter.CompanyLocation,
+                        Status = costCenter.Status
                     });
                 }
 
@@ -1083,15 +1086,22 @@ namespace NetErp.Billing.Sellers.ViewModels
             SelectedZone = seller?.Zone is null ? null : Zones?.FirstOrDefault(z => z.Id == seller.Zone.Id);
 
             ObservableCollection<CostCenterDTO> costCentersSelection = [];
-            foreach (CostCenterDTO costCenter in _mapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
+            HashSet<int> assignedIds = seller?.CostCenters is null
+                ? []
+                : [.. seller.CostCenters.Select(c => c.Id)];
+
+            IEnumerable<CostCenterGraphQLModel> visibleCostCenters = _costCenterCache.Items
+                .Where(c => c.Status == CostCentersStatus.Active || assignedIds.Contains(c.Id));
+
+            foreach (CostCenterDTO costCenter in _mapper.Map<ObservableCollection<CostCenterDTO>>(visibleCostCenters))
             {
-                bool exist = seller?.CostCenters is not null && seller.CostCenters.Any(c => c.Id == costCenter.Id);
                 costCentersSelection.Add(new CostCenterDTO()
                 {
                     Id = costCenter.Id,
                     Name = costCenter.Name,
-                    IsSelected = exist,
-                    CompanyLocation = costCenter.CompanyLocation
+                    IsSelected = assignedIds.Contains(costCenter.Id),
+                    CompanyLocation = costCenter.CompanyLocation,
+                    Status = costCenter.Status
                 });
             }
             CostCenters = costCentersSelection;
