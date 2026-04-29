@@ -278,6 +278,17 @@
                                 <TextBlock Text="El vendedor debe estar asociado como mínimo a un centro de costo"
                                            Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,4"/>
                                 <ListView ItemsSource="{Binding Path=CostCenters, Mode=OneWay}">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsStatusActive}" Value="False">
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                    <Setter Property="Foreground" Value="#888888"/>
+                                                    <Setter Property="ToolTip" Value="{Binding StatusTooltip}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
                                     <ListView.View>
                                         <GridView>
                                             <GridViewColumn Width="auto">
@@ -289,6 +300,7 @@
                                             </GridViewColumn>
                                             <GridViewColumn Width="auto" Header="Centro de Costo" DisplayMemberBinding="{Binding Path=Name, Mode=OneWay}"/>
                                             <GridViewColumn Width="auto" Header="Agrupación" DisplayMemberBinding="{Binding Path=CompanyLocation.Name, Mode=OneWay}"/>
+                                            <GridViewColumn Width="auto" Header="Estado" DisplayMemberBinding="{Binding Path=StatusDisplayName, Mode=OneWay}"/>
                                         </GridView>
                                     </ListView.View>
                                 </ListView>

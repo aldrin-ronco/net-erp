@@ -1056,6 +1056,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                         .Field(c => c.Name))
                     .Select(f => f.CompanyLocation, loc => loc
                         .Field(l => l.Id)
+                        .Field(l => l.Name)
                         .Select(l => l.Company, company => company
                             .Field(c => c.Id)))
                     .Select(f => f.FeCreditDefaultAuthorizationSequence!, seq => seq

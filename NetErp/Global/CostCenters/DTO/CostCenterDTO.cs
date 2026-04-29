@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using Models.Books;
 using Models.Global;
+using NetErp.Global.CostCenters.Shared;
 using NetErp.Global.CostCenters.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -90,9 +91,29 @@ namespace NetErp.Global.CostCenters.DTO
                 {
                     _status = value;
                     NotifyOfPropertyChange(nameof(Status));
+                    NotifyOfPropertyChange(nameof(IsStatusActive));
+                    NotifyOfPropertyChange(nameof(StatusDisplayName));
+                    NotifyOfPropertyChange(nameof(StatusTooltip));
                 }
             }
         }
+
+        public bool IsStatusActive => _status == CostCentersStatus.Active;
+
+        public string StatusDisplayName => _status switch
+        {
+            CostCentersStatus.Active => "Activo",
+            CostCentersStatus.ReadOnly => "Solo lectura",
+            CostCentersStatus.Inactive => "Inactivo",
+            _ => _status ?? string.Empty
+        };
+
+        public string StatusTooltip => _status switch
+        {
+            CostCentersStatus.ReadOnly => "Este centro de costo está en estado solo lectura. Permanece visible porque ya estaba asignado al vendedor.",
+            CostCentersStatus.Inactive => "Este centro de costo está inactivo. Permanece visible porque ya estaba asignado al vendedor.",
+            _ => string.Empty
+        };
 
         private string _address;
         public string Address
