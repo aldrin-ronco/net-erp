@@ -17,6 +17,7 @@ using Models.DTO.Billing;
 using Models.DTO.Global;
 using Models.Global;
 using Models.Inventory;
+using Models.Payroll;
 using Models.Purchasing;
 using Models.Suppliers;
 using Models.Treasury;
@@ -422,6 +423,11 @@ namespace NetErp
 
             // AccessProfile module repositories
             _ = kernel.Bind<IRepository<AccessProfileGraphQLModel>>().To<GraphQLRepository<AccessProfileGraphQLModel>>().InSingletonScope();
+
+
+            //Payroll Module Repositories
+            _ = kernel.Bind<IRepository<JobPositionGraphQLModel>>().To<GraphQLRepository<JobPositionGraphQLModel>>().InSingletonScope();
+
 
             // PermissionDefinition / CompanyPermissionDefault / UserPermission module repositories
             _ = kernel.Bind<IRepository<PermissionDefinitionGraphQLModel>>().To<GraphQLRepository<PermissionDefinitionGraphQLModel>>().InSingletonScope();

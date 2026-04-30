@@ -2,6 +2,7 @@ using Models.Billing;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
+using Models.Payroll;
 using Models.Suppliers;
 using Models.Treasury;
 using System;
@@ -91,5 +92,10 @@ namespace NetErp.Helpers.Cache
             typeof(CostCenterGraphQLModel),
             typeof(CompanyLocationGraphQLModel)
         ];
+
+        // Payroll
+        public static readonly Type[] JobPosition = [typeof(JobPositionGraphQLModel)];
+
+
     }
 }
