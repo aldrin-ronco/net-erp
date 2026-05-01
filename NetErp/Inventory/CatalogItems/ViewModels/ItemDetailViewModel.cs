@@ -346,10 +346,75 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedSize));
                     this.TrackChange(nameof(SelectedSize), value);
+                    ValidateProperty(nameof(SelectedSize), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
+
+        [ExpandoPath("isLotTracked")]
+        public bool IsLotTracked
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsLotTracked));
+                    this.TrackChange(nameof(IsLotTracked), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        [ExpandoPath("isSerialTracked")]
+        public bool IsSerialTracked
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsSerialTracked));
+                    this.TrackChange(nameof(IsSerialTracked), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Modo de dimensión seleccionado por el usuario. Mutuamente exclusivo:
+        /// setea flags + limpia <see cref="SelectedSize"/> cuando no es Size.
+        /// </summary>
+        public ItemDimensionMode SelectedDimensionMode
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                NotifyOfPropertyChange(nameof(SelectedDimensionMode));
+                NotifyOfPropertyChange(nameof(IsSizeMode));
+                NotifyOfPropertyChange(nameof(DimensionDescription));
+                IsLotTracked = value == ItemDimensionMode.Lot;
+                IsSerialTracked = value == ItemDimensionMode.Serial;
+                if (value != ItemDimensionMode.Size) SelectedSize = null;
+                ValidateProperty(nameof(SelectedSize), SelectedSize);
+                NotifyOfPropertyChange(nameof(CanSave));
+            }
+        } = ItemDimensionMode.Generic;
+
+        public bool IsSizeMode => SelectedDimensionMode == ItemDimensionMode.Size;
+
+        public string DimensionDescription => SelectedDimensionMode switch
+        {
+            ItemDimensionMode.Lot => "Trazabilidad por lote (número + fecha de vencimiento). Stock segmentado por lote.",
+            ItemDimensionMode.Serial => "Trazabilidad individual por serial. Cada unidad identificada únicamente.",
+            ItemDimensionMode.Size => "Stock segmentado por valores de talla (ej. S/M/L). Requiere categoría de tallas.",
+            _ => "Sin trazabilidad por unidad. Stock agregado por bodega."
+        };
 
         #endregion
 
@@ -715,6 +780,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             Reference = Reference,
             HasMeasurementUnit = SelectedMeasurementUnit != null,
             HasAccountingGroup = SelectedAccountingGroup != null,
+            RequiresSizeCategory = IsSizeMode,
+            HasSizeCategory = SelectedSize != null,
             HasChanges = this.HasChanges(),
             HasErrors = _errors.Count > 0
         });
@@ -1084,6 +1151,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 : null;
             SelectedBrand = null;
             SelectedSize = null;
+            IsLotTracked = false;
+            IsSerialTracked = false;
+            SelectedDimensionMode = ItemDimensionMode.Generic;
 
             SeedDefaultValues();
         }
@@ -1125,6 +1195,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             SelectedSize = entity.SizeCategory != null
                 ? Sizes.FirstOrDefault(x => x.Id == entity.SizeCategory.Id)
                 : null;
+            IsLotTracked = entity.IsLotTracked;
+            IsSerialTracked = entity.IsSerialTracked;
+            // Derivar modo desde flags + size. Suprimir setter side-effects asignando field directo.
+            ItemDimensionMode mode = entity.IsLotTracked ? ItemDimensionMode.Lot
+                : entity.IsSerialTracked ? ItemDimensionMode.Serial
+                : entity.SizeCategory != null ? ItemDimensionMode.Size
+                : ItemDimensionMode.Generic;
+            // Asignación via setter NO ejecuta efectos secundarios porque flags + SelectedSize
+            // ya quedaron en estado consistente arriba; setter detecta value coincidente y noop.
+            SelectedDimensionMode = mode;
 
             EanCodes = entity.EanCodes != null
                 ? [.. entity.EanCodes.Select(e => new EanCodeByItemDTO { EanCode = e.EanCode, IsInternal = e.IsInternal })]
@@ -1203,6 +1283,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             SelectedBrand = null;
             SelectedAccountingGroup = null;
             SelectedSize = null;
+            IsLotTracked = false;
+            IsSerialTracked = false;
+            SelectedDimensionMode = ItemDimensionMode.Generic;
             EanCodes = [];
             Components = [];
             Images = [];
@@ -1238,6 +1321,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             this.SeedValue(nameof(AmountBasedOnWeight), AmountBasedOnWeight);
             this.SeedValue(nameof(HasExtendedInformation), HasExtendedInformation);
             this.SeedValue(nameof(AiuBasedService), AiuBasedService);
+            this.SeedValue(nameof(IsLotTracked), IsLotTracked);
+            this.SeedValue(nameof(IsSerialTracked), IsSerialTracked);
             this.SeedValue(nameof(SelectedMeasurementUnit), SelectedMeasurementUnit);
             this.SeedValue(nameof(SelectedAccountingGroup), SelectedAccountingGroup);
             this.SeedValue(nameof(SelectedBrand), SelectedBrand);
@@ -1255,6 +1340,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             this.SeedValue(nameof(AmountBasedOnWeight), AmountBasedOnWeight);
             this.SeedValue(nameof(HasExtendedInformation), HasExtendedInformation);
             this.SeedValue(nameof(AiuBasedService), AiuBasedService);
+            this.SeedValue(nameof(IsLotTracked), IsLotTracked);
+            this.SeedValue(nameof(IsSerialTracked), IsSerialTracked);
             this.SeedValue(nameof(SelectedMeasurementUnit), SelectedMeasurementUnit);
             this.SeedValue(nameof(SelectedBrand), SelectedBrand);
             this.SeedValue(nameof(SelectedAccountingGroup), SelectedAccountingGroup);
@@ -1422,7 +1509,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Name = Name,
                 Reference = Reference,
                 HasMeasurementUnit = SelectedMeasurementUnit != null,
-                HasAccountingGroup = SelectedAccountingGroup != null
+                HasAccountingGroup = SelectedAccountingGroup != null,
+                RequiresSizeCategory = IsSizeMode,
+                HasSizeCategory = SelectedSize != null
             };
             IReadOnlyList<string> errors = _validator.Validate(propertyName, value, context);
             SetPropertyErrors(propertyName, errors);
@@ -1435,13 +1524,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Name = Name,
                 Reference = Reference,
                 HasMeasurementUnit = SelectedMeasurementUnit != null,
-                HasAccountingGroup = SelectedAccountingGroup != null
+                HasAccountingGroup = SelectedAccountingGroup != null,
+                RequiresSizeCategory = IsSizeMode,
+                HasSizeCategory = SelectedSize != null
             };
             Dictionary<string, IReadOnlyList<string>> all = _validator.ValidateAll(context);
             SetPropertyErrors(nameof(Name), all.TryGetValue(nameof(Name), out IReadOnlyList<string>? e1) ? e1 : []);
             SetPropertyErrors(nameof(Reference), all.TryGetValue(nameof(Reference), out IReadOnlyList<string>? e2) ? e2 : []);
             SetPropertyErrors(nameof(SelectedMeasurementUnit), all.TryGetValue("SelectedMeasurementUnit", out IReadOnlyList<string>? e3) ? e3 : []);
             SetPropertyErrors(nameof(SelectedAccountingGroup), all.TryGetValue("SelectedAccountingGroup", out IReadOnlyList<string>? e4) ? e4 : []);
+            SetPropertyErrors(nameof(SelectedSize), all.TryGetValue("SelectedSize", out IReadOnlyList<string>? e5) ? e5 : []);
         }
 
         #endregion
@@ -1463,6 +1555,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     .Field(e => e.AiuBasedService)
                     .Field(e => e.AmountBasedOnWeight)
                     .Field(e => e.Billable)
+                    .Field(e => e.IsLotTracked)
+                    .Field(e => e.IsSerialTracked)
                     .SelectList(e => e.EanCodes, ean => ean
                         .Field(ec => ec.EanCode)
                         .Field(ec => ec.IsInternal))

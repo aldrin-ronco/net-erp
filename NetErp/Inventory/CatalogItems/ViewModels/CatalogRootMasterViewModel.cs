@@ -1982,6 +1982,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     .Field(e => e.Billable)
                     .Field(e => e.AmountBasedOnWeight)
                     .Field(e => e.AiuBasedService)
+                    .Field(e => e.IsLotTracked)
+                    .Field(e => e.IsSerialTracked)
                     .SelectList(e => e.EanCodes, ean => ean
                         .Field(ec => ec.EanCode)
                         .Field(ec => ec.IsInternal))

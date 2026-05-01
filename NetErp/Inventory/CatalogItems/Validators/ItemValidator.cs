@@ -19,6 +19,8 @@ namespace NetErp.Inventory.CatalogItems.Validators
                     => ["Debe seleccionar una unidad de medida"],
                 "SelectedAccountingGroup" when value is null
                     => ["Debe seleccionar un grupo contable"],
+                "SelectedSize" when context.RequiresSizeCategory && value is null
+                    => ["Debe seleccionar una categoría de tallas para el modo Talla"],
                 _ => []
             };
         }
@@ -30,6 +32,7 @@ namespace NetErp.Inventory.CatalogItems.Validators
             AddIfErrors(result, "Reference", Validate("Reference", context.Reference, context));
             AddIfErrors(result, "SelectedMeasurementUnit", Validate("SelectedMeasurementUnit", context.HasMeasurementUnit ? new object() : null, context));
             AddIfErrors(result, "SelectedAccountingGroup", Validate("SelectedAccountingGroup", context.HasAccountingGroup ? new object() : null, context));
+            AddIfErrors(result, "SelectedSize", Validate("SelectedSize", context.HasSizeCategory ? new object() : null, context));
             return result;
         }
 
@@ -40,6 +43,7 @@ namespace NetErp.Inventory.CatalogItems.Validators
             if (string.IsNullOrWhiteSpace(context.Reference)) return false;
             if (!context.HasMeasurementUnit) return false;
             if (!context.HasAccountingGroup) return false;
+            if (context.RequiresSizeCategory && !context.HasSizeCategory) return false;
             if (!context.HasChanges) return false;
             if (context.HasErrors) return false;
             return true;
@@ -58,6 +62,8 @@ namespace NetErp.Inventory.CatalogItems.Validators
         public string? Reference { get; init; }
         public bool HasMeasurementUnit { get; init; }
         public bool HasAccountingGroup { get; init; }
+        public bool RequiresSizeCategory { get; init; }
+        public bool HasSizeCategory { get; init; }
     }
 
     public class ItemCanSaveContext
@@ -67,6 +73,8 @@ namespace NetErp.Inventory.CatalogItems.Validators
         public string? Reference { get; init; }
         public bool HasMeasurementUnit { get; init; }
         public bool HasAccountingGroup { get; init; }
+        public bool RequiresSizeCategory { get; init; }
+        public bool HasSizeCategory { get; init; }
         public bool HasChanges { get; init; }
         public bool HasErrors { get; init; }
     }

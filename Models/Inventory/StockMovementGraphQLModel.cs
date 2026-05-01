@@ -14,7 +14,16 @@ namespace Models.Inventory
     public class StockMovementGraphQLModel
     {
         public int Id { get; set; }
-        public string DocumentNumber { get; set; } = string.Empty;
+        public string? DocumentNumber { get; set; }
+
+        /// <summary>
+        /// Etiqueta de presentación: "{AccountingSource.Code}-{DocumentNumber}" si posted,
+        /// "B#{Id}" si es draft sin número asignado.
+        /// </summary>
+        public string DocumentDisplay =>
+            string.IsNullOrEmpty(DocumentNumber)
+                ? $"B#{Id}"
+                : $"{AccountingSource?.Code}-{DocumentNumber}";
 
         /// <summary>DRAFT | POSTED.</summary>
         public string Status { get; set; } = string.Empty;
@@ -191,5 +200,28 @@ namespace Models.Inventory
     public class StockMovementCancelMessage
     {
         public StockMovementMutationPayload CancelledStockMovement { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Payload de la query <c>validateInboundSerials</c>.
+    /// </summary>
+    public class ValidateInboundSerialsPayload
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<GlobalErrorGraphQLModel> Errors { get; set; } = [];
+        public List<SerialConflictGraphQLModel> SerialsInConflict { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Conflicto detectado en un serial propuesto para entrada.
+    /// <c>Reason</c> mapea al enum <c>SerialConflictReason</c> del schema.
+    /// </summary>
+    public class SerialConflictGraphQLModel
+    {
+        public string SerialNumber { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+        public StorageGraphQLModel? Storage { get; set; }
+        public StockMovementGraphQLModel? Draft { get; set; }
     }
 }

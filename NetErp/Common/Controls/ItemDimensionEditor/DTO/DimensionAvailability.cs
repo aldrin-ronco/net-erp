@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NetErp.UserControls.ItemDimensionEditor.DTO
 {
@@ -29,4 +32,36 @@ namespace NetErp.UserControls.ItemDimensionEditor.DTO
         string SizeName,
         decimal AvailableQuantity,
         decimal Cost);
+
+    /// <summary>
+    /// Conflicto detectado en un serial propuesto para entrada (validateInboundSerials).
+    /// </summary>
+    public sealed record SerialInboundConflict(
+        string SerialNumber,
+        SerialValidationStatus Status,
+        string? StorageName,
+        int? DraftId,
+        string? DraftDocumentNumber);
+
+    /// <summary>
+    /// Estado de validación de un serial en captura de entrada.
+    /// </summary>
+    public enum SerialValidationStatus
+    {
+        Pending,
+        Available,
+        AlreadyActive,
+        PreselectedInDraft,
+        DuplicateInList
+    }
+
+    /// <summary>
+    /// Validador de seriales para entrada — pre-check contra master + drafts ajenos.
+    /// Retorna lista de conflictos (vacía = todos disponibles).
+    /// </summary>
+    public delegate Task<IReadOnlyList<SerialInboundConflict>> InboundSerialValidator(
+        int itemId,
+        IReadOnlyList<string> serialNumbers,
+        int? excludeStockMovementId,
+        CancellationToken cancellationToken);
 }

@@ -27,31 +27,34 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Filtros: línea 1 -->
+            <!-- Filtros: línea única -->
             <Grid Grid.Row="0" Margin="10,10,10,3">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="160"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="176"/>
+                    <ColumnDefinition Width="144"/>
+                    <ColumnDefinition Width="144"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,4,0">
                     <TextBlock Text="Documento" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:ButtonEdit x:Name="FilterDocumentNumber"
                                     Text="{Binding FilterDocumentNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    NullText="Filtrar por número de documento..."
+                                    NullText="Escribe número de documento (mín. 2 caracteres)"
+                                    ToolTip="Escribe aquí para buscar por número de documento"
                                     MinHeight="25"
                                     CharacterCasing="Upper"
                                     BorderBrush="#C8CED6"
-                                    AllowDefaultButton="False"
-                                    h:FocusBehavior.IsFocused="True">
+                                    AllowDefaultButton="False">
                         <dxe:ButtonEdit.Buttons>
                             <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
                         </dxe:ButtonEdit.Buttons>
@@ -84,18 +87,50 @@
                                       NullText="Todas"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="3" Margin="4,0,0,0">
+                <StackPanel Grid.Column="3" Margin="4,0,4,0">
                     <TextBlock Text="Estado" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding StatusOptions}"
-                                      SelectedItem="{Binding FilterStatus, Mode=TwoWay}"
+                                      EditValue="{Binding FilterStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       Padding="2" MinWidth="120"
                                       IsTextEditable="False"
                                       BorderBrush="#C8CED6"/>
                 </StackPanel>
+
+                <StackPanel Grid.Column="4" Margin="4,0,4,0">
+                    <TextBlock Text="Período" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding PeriodOptions}"
+                                      SelectedItem="{Binding SelectedPeriod, Mode=TwoWay}"
+                                      DisplayMember="Label"
+                                      IsTextEditable="False"
+                                      Padding="2"
+                                      BorderBrush="#C8CED6"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="5" Margin="4,0,4,0"
+                            Visibility="{Binding IsCustomPeriod, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Desde" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:DateEdit EditValue="{Binding CustomDateFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  AllowNullInput="True"
+                                  NullValueButtonPlacement="EditBox"
+                                  NullText="Sin límite inferior"
+                                  Padding="2"
+                                  BorderBrush="#C8CED6"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="6" Margin="4,0,0,0"
+                            Visibility="{Binding IsCustomPeriod, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Hasta" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:DateEdit EditValue="{Binding CustomDateTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  AllowNullInput="True"
+                                  NullValueButtonPlacement="EditBox"
+                                  NullText="Sin límite superior"
+                                  Padding="2"
+                                  BorderBrush="#C8CED6"/>
+                </StackPanel>
             </Grid>
 
             <!-- Grid -->
-            <busyIndicator:BusyMask Grid.Row="2"
+            <busyIndicator:BusyMask Grid.Row="1"
                                     IsBusy="{Binding IsBusy}"
                                     IndicatorType="BouncingDot"
                                     BusyContent="Por favor espere..."
@@ -112,17 +147,52 @@
                                        AlternateRowBackground="Beige"
                                        AllowColumnMoving="False"/>
                     </dxg:GridControl.View>
-                    <dxg:GridColumn Header="Documento" FieldName="DocumentNumber" Width="120" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Documento" FieldName="DocumentDisplay" Width="108" HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding RowData.Row.DocumentDisplay, Mode=OneWay}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
                     <dxg:GridColumn Header="Estado" FieldName="Status" Width="80" HorizontalHeaderContentAlignment="Center"/>
                     <dxg:GridColumn Header="Anulado" FieldName="CancelledWith" Width="80" HorizontalHeaderContentAlignment="Center"/>
-                    <dxg:GridColumn Header="Fuente" FieldName="AccountingSource.Name" Width="*"/>
-                    <dxg:GridColumn Header="Centro de costo" FieldName="CostCenter.Name" Width="*"/>
-                    <dxg:GridColumn Header="Bodega" FieldName="Storage.Name" Width="*"/>
-                    <dxg:GridColumn Header="Nota" FieldName="Note" Width="*"/>
-                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="140"/>
-                    <dxg:GridColumn Header="Creado" FieldName="InsertedAt" Width="140"/>
+                    <dxg:GridColumn Header="Fuente" FieldName="AccountingSource.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Centro de costo" FieldName="CostCenter.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Bodega" FieldName="Storage.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Creado por" FieldName="CreatedBy.FullName" Width="*" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="144"
+                                    HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:TextEditSettings DisplayFormat="yyyy-MM-dd HH:mm:ss"
+                                                  HorizontalContentAlignment="Center"/>
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
+                    <dxg:GridColumn Header="Creado" FieldName="InsertedAt" Width="144"
+                                    HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:TextEditSettings DisplayFormat="yyyy-MM-dd HH:mm:ss"
+                                                  HorizontalContentAlignment="Center"/>
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
+
+            <!-- Note documento seleccionado -->
+            <StackPanel Grid.Row="2" Margin="10,6,10,0">
+                <TextBlock Text="Observación" FontSize="13" Foreground="Gray" Margin="0,0,0,3"/>
+                <dxe:TextEdit Text="{Binding SelectedStockMovement.Note, Mode=OneWay}"
+                              IsReadOnly="True"
+                              TextWrapping="Wrap"
+                              AcceptsReturn="True"
+                              VerticalContentAlignment="Top"
+                              HorizontalContentAlignment="Left"
+                              VerticalScrollBarVisibility="Auto"
+                              MinHeight="42"
+                              MaxHeight="80"
+                              Padding="3"
+                              BorderBrush="#C8CED6"/>
+            </StackPanel>
 
             <uc:GridPaging Grid.Row="3"
                            Margin="10,6,10,0"

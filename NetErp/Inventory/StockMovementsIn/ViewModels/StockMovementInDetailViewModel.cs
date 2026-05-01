@@ -55,16 +55,21 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             JoinableTaskFactory joinableTaskFactory,
             IBackgroundQueueService backgroundQueueService)
         {
-            _eventAggregator = eventAggregator;
-            _notificationService = notificationService;
-            _dialogService = dialogService;
-            _service = service;
-            _lineService = lineService;
-            _itemService = itemService;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
-            _backgroundQueueService = backgroundQueueService;
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _lineService = lineService ?? throw new ArgumentNullException(nameof(lineService));
+            _itemService = itemService ?? throw new ArgumentNullException(nameof(itemService));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
+            _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
             _eventAggregator.SubscribeOnUIThread(this);
+            Lines.CollectionChanged += (_, __) =>
+            {
+                NotifyOfPropertyChange(nameof(CanPost));
+                NotifyOfPropertyChange(nameof(CanRemoveLine));
+            };
         }
 
         public int NoteMaxLength => _stringLengthCache.GetMaxLength<StockMovementGraphQLModel>(nameof(StockMovementGraphQLModel.Note));
@@ -74,21 +79,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private StockMovementGraphQLModel _model = new();
 
         public int Id { get => _model.Id; }
-        public string DocumentNumber { get => _model.DocumentNumber; }
+        public string? DocumentNumber { get => _model.DocumentNumber; }
         public string Status { get => _model.Status; }
         public string AccountingSourceName { get => _model.AccountingSource?.Name ?? string.Empty; }
         public string AccountingSourceCode { get => _model.AccountingSource?.Code ?? string.Empty; }
-        public string DocumentDisplay
-        {
-            get
-            {
-                string code = AccountingSourceCode;
-                string num = DocumentNumber;
-                if (string.IsNullOrEmpty(code)) return num;
-                if (string.IsNullOrEmpty(num)) return code;
-                return $"{code} - {num}";
-            }
-        }
+        public string DocumentDisplay => _model.DocumentDisplay;
         public string CostCenterName { get => _model.CostCenter?.Name ?? string.Empty; }
         public string StorageName { get => _model.Storage?.Name ?? string.Empty; }
         public DateTime InsertedAt { get => _model.InsertedAt; }
@@ -187,7 +182,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 if (payload == null || !payload.Success)
                 {
                     NoteStatus = OperationStatus.Failed;
-                    _notificationService.ShowError(payload?.Message ?? "No se pudo actualizar la nota.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(payload?.Message, payload?.Errors, "No se pudo actualizar la nota."),
+                        durationMs: 8000);
                     return;
                 }
                 SeedNote = Note ?? string.Empty;
@@ -216,7 +213,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public bool CanPost => IsDraft && Lines.Count > 0 && !IsBusy;
         public bool CanRemoveLine => IsDraft && SelectedLine != null && !IsBusy;
         public bool CanSaveNote => IsDraft && NoteHasChanges && !IsBusy;
-        public bool IsBusy { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsBusy)); NotifyOfPropertyChange(nameof(CanPost)); NotifyOfPropertyChange(nameof(CanRemoveLine)); NotifyOfPropertyChange(nameof(CanSaveNote)); NotifyOfPropertyChange(nameof(CanCommitLine)); } } }
+        public bool IsBusy { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsBusy)); NotifyOfPropertyChange(nameof(CanPost)); NotifyOfPropertyChange(nameof(CanRemoveLine)); NotifyOfPropertyChange(nameof(CanSaveNote)); NotifyOfPropertyChange(nameof(CanCommitLine)); NotifyOfPropertyChange(nameof(CanTryCommitLine)); } } }
 
         #endregion
 
@@ -233,15 +230,30 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             Editor = new ItemDimensionEditorViewModel(
                 searchProvider: SearchItemsAsync,
                 direction: DimensionDirection.In,
-                dialogService: _dialogService);
+                dialogService: _dialogService,
+                inboundSerialValidator: ValidateInboundSerialsAsync);
             Editor.StorageId = _model.Storage?.Id ?? 0;
+            Editor.ExcludeStockMovementId = _model.Id;
             Editor.LineCompleted += OnLineCompletedHandler;
+            Editor.RequestUnitCostFocus += OnRequestUnitCostFocus;
             Editor.ItemPickerProvider = OpenItemSearchModalAsync;
             Editor.PropertyChanged += (_, e) =>
             {
-                if (e.PropertyName == nameof(ItemDimensionEditorViewModel.CanComplete))
+                if (e.PropertyName == nameof(ItemDimensionEditorViewModel.CanComplete)
+                    || e.PropertyName == nameof(ItemDimensionEditorViewModel.HasSelectedItem)
+                    || e.PropertyName == nameof(ItemDimensionEditorViewModel.BaseQuantity)
+                    || e.PropertyName == nameof(ItemDimensionEditorViewModel.IsBaseDimension))
+                {
                     NotifyOfPropertyChange(nameof(CanCommitLine));
+                    NotifyOfPropertyChange(nameof(CanTryCommitLine));
+                }
             };
+        }
+
+        private void OnRequestUnitCostFocus(object? sender, EventArgs e)
+        {
+            LineUnitCostFocus = false;
+            LineUnitCostFocus = true;
         }
 
         private async Task<ItemGraphQLModel?> OpenItemSearchModalAsync(string initialTerm)
@@ -308,6 +320,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             };
             optimistic.SetQuantitySilently(args.TotalQuantity);
             optimistic.SetUnitCostSilently(cost);
+            optimistic.ApplyLocalDimensions(args.Lots, args.Serials, args.Sizes);
             optimistic.LineChanged += OnLineChanged;
             Lines.Add(optimistic);
 
@@ -333,7 +346,18 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 field = value;
                 NotifyOfPropertyChange();
                 NotifyOfPropertyChange(nameof(CanCommitLine));
+                NotifyOfPropertyChange(nameof(CanTryCommitLine));
             }
+        }
+
+        /// <summary>
+        /// Foco al campo de costo. UC dispara esto cuando se selecciona ítem dimensionado.
+        /// Toggle false→true para forzar refoco aunque el binding no detecte cambio.
+        /// </summary>
+        public bool LineUnitCostFocus
+        {
+            get;
+            set { field = value; NotifyOfPropertyChange(); }
         }
 
         public bool CanCommitLine => !IsBusy && IsDraft && Editor != null && Editor.CanComplete && LineUnitCost > 0;
@@ -342,6 +366,32 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         {
             if (!CanCommitLine) return;
             Editor!.RaiseCompleted();
+        }
+
+        /// <summary>
+        /// Habilita botón Add. Para items base requiere qty>0; para dimensionados
+        /// solo requiere item + costo (modal abre al presionar Add).
+        /// </summary>
+        public bool CanTryCommitLine => !IsBusy && IsDraft && Editor != null
+            && Editor.HasSelectedItem
+            && LineUnitCost > 0
+            && (Editor.IsBaseDimension ? Editor.BaseQuantity > 0 : true);
+
+        /// <summary>
+        /// Acción del botón Add. Si el item es dimensionado y aún no tiene dimensiones
+        /// completas, abre el modal correspondiente. Si el modal queda vacío
+        /// (cancelado o sin datos), la línea NO se persiste.
+        /// </summary>
+        public async Task TryCommitLineAsync()
+        {
+            if (!CanTryCommitLine) return;
+            if (Editor!.IsDimensioned && !Editor.IsLineComplete)
+            {
+                await Editor.OpenDimensionsDialogAsync();
+                if (!Editor.IsLineComplete) return;
+            }
+            if (!CanCommitLine) return;
+            Editor.RaiseCompleted();
         }
 
         private async Task<IReadOnlyList<ItemGraphQLModel>> SearchItemsAsync(ItemSearchFilters filters, CancellationToken token)
@@ -368,6 +418,45 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             return page.Entries.ToList();
         }
 
+        /// <summary>
+        /// Pre-valida lista de seriales propuestos contra master + drafts ajenos vía
+        /// <c>validateInboundSerials</c>. Convierte payload GraphQL al DTO genérico del UC.
+        /// </summary>
+        private async Task<IReadOnlyList<NetErp.UserControls.ItemDimensionEditor.DTO.SerialInboundConflict>> ValidateInboundSerialsAsync(
+            int itemId,
+            IReadOnlyList<string> serialNumbers,
+            int? excludeStockMovementId,
+            CancellationToken token)
+        {
+            var (fragment, query) = StockMovementInQueries.ValidateInboundSerials.Value;
+            dynamic input = new ExpandoObject();
+            input.itemId = itemId;
+            input.serialNumbers = serialNumbers.ToArray();
+            if (excludeStockMovementId.HasValue) input.excludeStockMovementId = excludeStockMovementId.Value;
+
+            object variables = new GraphQLVariables().For(fragment, "input", input).Build();
+            ValidateSerialsResponse? response = await _service.GetDataContextAsync<ValidateSerialsResponse>(query, variables, token);
+            ValidateInboundSerialsPayload? payload = response?.ValidateResponse;
+            if (payload == null || !payload.Success)
+            {
+                throw new Exception(StockMovementErrorFormatter.Format(
+                    payload?.Message, payload?.Errors, "No se pudo validar la lista de seriales."));
+            }
+            return [.. payload.SerialsInConflict.Select(c => new NetErp.UserControls.ItemDimensionEditor.DTO.SerialInboundConflict(
+                SerialNumber: c.SerialNumber,
+                Status: MapConflictReason(c.Reason),
+                StorageName: c.Storage?.Name,
+                DraftId: c.Draft?.Id,
+                DraftDocumentNumber: c.Draft?.DocumentDisplay))];
+        }
+
+        private static NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus MapConflictReason(string reason) => reason switch
+        {
+            "ALREADY_ACTIVE" => NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus.AlreadyActive,
+            "PRESELECTED_IN_DRAFT" => NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus.PreselectedInDraft,
+            _ => NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus.AlreadyActive
+        };
+
         #endregion
 
         #region Lifecycle
@@ -379,6 +468,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 if (Editor != null)
                 {
                     Editor.LineCompleted -= OnLineCompletedHandler;
+                    Editor.RequestUnitCostFocus -= OnRequestUnitCostFocus;
                     Editor = null;
                 }
                 UnsubscribeLines();
@@ -453,7 +543,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 StockMovementMutationPayload? payload = responseObj?.UpdateResponse;
                 if (payload == null || !payload.Success)
                 {
-                    _notificationService.ShowError(payload?.Message ?? "No se pudo actualizar la nota.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(payload?.Message, payload?.Errors, "No se pudo actualizar la nota."),
+                        durationMs: 8000);
                     return;
                 }
                 SeedNote = Note;
@@ -500,7 +592,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 {
                     await _joinableTaskFactory.SwitchToMainThreadAsync();
                     Lines.Remove(dto);
-                    _notificationService.ShowError(addPayload?.Message ?? "No se pudo agregar la línea.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(addPayload?.Message, addPayload?.Errors, "No se pudo agregar la línea."),
+                        durationMs: 8000);
                     return;
                 }
                 int realId = addPayload.StockMovementLine.Id;
@@ -536,7 +630,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 object[] lotsArr = args.Lots.Select((l, i) => (object)new
                 {
                     lotNumber = l.LotNumber,
-                    expirationDate = l.ExpirationDate,
+                    expirationDate = l.ExpirationDate?.ToString("yyyy-MM-dd"),
                     quantity = l.Quantity,
                     unitCost,
                     displayOrder = i
@@ -547,7 +641,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 SetLotsResponse? responseObj = await _service.MutationContextAsync<SetLotsResponse>(query, vars);
                 if (responseObj?.UpdateResponse?.Success != true)
                 {
-                    _notificationService.ShowError(responseObj?.UpdateResponse?.Message ?? "Error guardando lotes.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(responseObj?.UpdateResponse?.Message, responseObj?.UpdateResponse?.Errors, "Error guardando lotes."),
+                        durationMs: 8000);
                     return false;
                 }
             }
@@ -566,7 +662,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 SetSerialsResponse? responseObj = await _service.MutationContextAsync<SetSerialsResponse>(query, vars);
                 if (responseObj?.UpdateResponse?.Success != true)
                 {
-                    _notificationService.ShowError(responseObj?.UpdateResponse?.Message ?? "Error guardando seriales.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(responseObj?.UpdateResponse?.Message, responseObj?.UpdateResponse?.Errors, "Error guardando seriales."),
+                        durationMs: 8000);
                     return false;
                 }
             }
@@ -586,7 +684,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 SetSizesResponse? responseObj = await _service.MutationContextAsync<SetSizesResponse>(query, vars);
                 if (responseObj?.UpdateResponse?.Success != true)
                 {
-                    _notificationService.ShowError(responseObj?.UpdateResponse?.Message ?? "Error guardando tallas.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(responseObj?.UpdateResponse?.Message, responseObj?.UpdateResponse?.Errors, "Error guardando tallas."),
+                        durationMs: 8000);
                     return false;
                 }
             }
@@ -660,11 +760,13 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             }
             catch (InvalidOperationException)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 dto.Status = OperationStatus.Failed;
                 _notificationService.ShowError(_backgroundQueueService.GetCriticalErrorMessage());
             }
             catch (Exception ex)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 dto.Status = OperationStatus.Failed;
                 _notificationService.ShowError($"Error inesperado al actualizar línea #{dto.Id}: {ex.GetErrorMessage()}", durationMs: 6000);
             }
@@ -712,7 +814,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 DeleteLineResponse? responseObj = await _service.MutationContextAsync<DeleteLineResponse>(query, vars);
                 if (responseObj?.DeleteResponse?.Success != true)
                 {
-                    _notificationService.ShowError(responseObj?.DeleteResponse?.Message ?? "No se pudo eliminar la línea.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(responseObj?.DeleteResponse?.Message, responseObj?.DeleteResponse?.Errors, "No se pudo eliminar la línea."),
+                        durationMs: 8000);
                     return;
                 }
                 await ReloadAsync();
@@ -728,6 +832,79 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             finally { IsBusy = false; }
         }
 
+        public async Task EditLineDimensionsAsync(StockMovementLineDTO line)
+        {
+            if (!IsDraft || line == null || line.Id <= 0 || !line.HasDimensions) return;
+            int storageId = _model.Storage?.Id ?? 0;
+            decimal cost = line.UnitCost ?? 0m;
+            try
+            {
+                LineCompletedEventArgs? newArgs = null;
+                if (line.IsLot)
+                {
+                    IEnumerable<LotDraft> initial = line.LotRows
+                        .Select(r => new LotDraft(r.LotId, r.LotNumber, r.ExpirationDate, r.Quantity));
+                    LotsDimensionDialogViewModel dialog = new(line.Item, DimensionDirection.In, storageId, initial, null);
+                    bool? ok = await _dialogService.ShowDialogAsync(dialog, "Editar lotes");
+                    if (ok != true) return;
+                    newArgs = new LineCompletedEventArgs
+                    {
+                        Item = line.Item,
+                        Direction = DimensionDirection.In,
+                        Lots = dialog.Result
+                    };
+                }
+                else if (line.IsSerial)
+                {
+                    IEnumerable<SerialDraft> initial = line.SerialRows
+                        .Select(r => new SerialDraft(r.SerialId, r.SerialNumber));
+                    SerialsDimensionDialogViewModel dialog = new(line.Item, DimensionDirection.In, storageId, initial, null);
+                    bool? ok = await _dialogService.ShowDialogAsync(dialog, "Editar seriales");
+                    if (ok != true) return;
+                    newArgs = new LineCompletedEventArgs
+                    {
+                        Item = line.Item,
+                        Direction = DimensionDirection.In,
+                        Serials = dialog.Result
+                    };
+                }
+                else if (line.IsSize)
+                {
+                    IEnumerable<SizeDraft> initial = line.SizeRows
+                        .Select(r => new SizeDraft(r.SizeId, r.SizeName, r.Quantity));
+                    SizesDimensionDialogViewModel dialog = new(line.Item, DimensionDirection.In, storageId, initial, null);
+                    bool? ok = await _dialogService.ShowDialogAsync(dialog, "Editar tallas");
+                    if (ok != true) return;
+                    newArgs = new LineCompletedEventArgs
+                    {
+                        Item = line.Item,
+                        Direction = DimensionDirection.In,
+                        Sizes = dialog.Result
+                    };
+                }
+                if (newArgs == null) return;
+                line.Status = OperationStatus.Pending;
+                bool ok2 = await SetDimensionsAsync(line.Id, newArgs, cost);
+                if (ok2)
+                {
+                    line.Status = OperationStatus.Saved;
+                    await ReloadAsync();
+                }
+                else
+                {
+                    line.Status = OperationStatus.Failed;
+                }
+            }
+            catch (Exception ex)
+            {
+                line.Status = OperationStatus.Failed;
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{nameof(EditLineDimensionsAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         #endregion
 
         #region Post
@@ -737,21 +914,28 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             if (!CanPost) return;
             await FlushNoteAsync();
             if (ThemedMessageBox.Show("Confirmar postear",
-                $"¿Confirma postear el documento {DocumentNumber}?",
+                $"¿Confirma postear este borrador? Se asignará un consecutivo definitivo al postear.",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
             try
             {
                 IsBusy = true;
                 var (frag, query) = StockMovementInQueries.PostMovement.Value;
                 object vars = new GraphQLVariables().For(frag, "id", _model.Id).Build();
+                System.Diagnostics.Debug.WriteLine($"[POST MUTATION - Detail]\nQUERY:\n{query}\nVARIABLES:\n{Newtonsoft.Json.JsonConvert.SerializeObject(vars, Newtonsoft.Json.Formatting.Indented)}");
                 PostResponse? responseObj = await _service.MutationContextAsync<PostResponse>(query, vars);
                 StockMovementMutationPayload? payload = responseObj?.UpdateResponse;
                 if (payload == null || !payload.Success)
                 {
-                    _notificationService.ShowError(payload?.Message ?? "No se pudo postear.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(payload?.Message, payload?.Errors, "No se pudo postear."),
+                        durationMs: 8000);
                     return;
                 }
-                _notificationService.ShowSuccess(payload.Message);
+                string? assignedNumber = payload.StockMovement?.DocumentNumber;
+                string successMsg = string.IsNullOrEmpty(assignedNumber)
+                    ? payload.Message
+                    : $"{payload.Message} (Documento: {assignedNumber})";
+                _notificationService.ShowSuccess(successMsg);
                 await _eventAggregator.PublishOnCurrentThreadAsync(
                     new StockMovementPostMessage { PostedStockMovement = payload }, CancellationToken.None);
                 RaiseRequestClose();
@@ -795,5 +979,6 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private class SetSizesResponse { public StockMovementLineSizesMutationPayload UpdateResponse { get; set; } = new(); }
         private class UpdateDraftResponse { public StockMovementMutationPayload UpdateResponse { get; set; } = new(); }
         private class PostResponse { public StockMovementMutationPayload UpdateResponse { get; set; } = new(); }
+        private class ValidateSerialsResponse { public ValidateInboundSerialsPayload ValidateResponse { get; set; } = new(); }
     }
 }

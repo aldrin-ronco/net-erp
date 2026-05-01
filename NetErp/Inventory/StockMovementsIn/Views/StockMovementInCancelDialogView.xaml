@@ -7,12 +7,17 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
-             Width="{Binding DialogWidth}"
              Background="#EEF1F5">
+    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="8,0,8,8">
-        <Grid Margin="15">
+            CornerRadius="8" Margin="8,0,8,8"
+            Width="{Binding DialogWidth}">
+        <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -29,6 +34,7 @@
                 <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
                               CharacterCasing="Upper"
                               Text="{Binding Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              MaxLength="{Binding NoteMaxLength}"
                               Padding="3"
                               BorderBrush="#C8CED6"
                               h:FocusBehavior.IsFocused="True"
@@ -64,4 +70,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </busyIndicator:BusyMask>
 </UserControl>

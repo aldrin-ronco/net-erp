@@ -23,7 +23,14 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         private readonly Func<int, int, CancellationToken, Task<IReadOnlyList<LotAvailability>>>? _lotProvider;
         private readonly Func<int, int, CancellationToken, Task<IReadOnlyList<SerialAvailability>>>? _serialProvider;
         private readonly Func<int, int, CancellationToken, Task<IReadOnlyList<SizeAvailability>>>? _sizeStockProvider;
+        private readonly InboundSerialValidator? _inboundSerialValidator;
         private readonly IDialogService _dialogService;
+
+        /// <summary>
+        /// Id del documento actual (para excluirlo de la validación de PRESELECTED_IN_DRAFT
+        /// al re-validar seriales del propio draft).
+        /// </summary>
+        public int? ExcludeStockMovementId { get; set; }
 
         /// <summary>
         /// Func que el caller proporciona para abrir el modal de búsqueda de ítems.
@@ -38,13 +45,15 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             IDialogService dialogService,
             Func<int, int, CancellationToken, Task<IReadOnlyList<LotAvailability>>>? lotProvider = null,
             Func<int, int, CancellationToken, Task<IReadOnlyList<SerialAvailability>>>? serialProvider = null,
-            Func<int, int, CancellationToken, Task<IReadOnlyList<SizeAvailability>>>? sizeStockProvider = null)
+            Func<int, int, CancellationToken, Task<IReadOnlyList<SizeAvailability>>>? sizeStockProvider = null,
+            InboundSerialValidator? inboundSerialValidator = null)
         {
             _searchProvider = searchProvider ?? throw new ArgumentNullException(nameof(searchProvider));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _lotProvider = lotProvider;
             _serialProvider = serialProvider;
             _sizeStockProvider = sizeStockProvider;
+            _inboundSerialValidator = inboundSerialValidator;
             Direction = direction;
         }
 
@@ -193,7 +202,6 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                 NotifyOfPropertyChange(nameof(IsBaseDimension));
                 NotifyOfPropertyChange(nameof(IsDimensioned));
                 NotifyOfPropertyChange(nameof(QuantityIsReadOnly));
-                NotifyOfPropertyChange(nameof(DimensionsButtonVisible));
                 NotifyOfPropertyChange(nameof(IsLineComplete));
             }
         }
@@ -219,7 +227,6 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         public bool IsBaseDimension => DimensionType == DimensionType.Base;
         public bool IsDimensioned => DimensionType != DimensionType.Base;
         public bool QuantityIsReadOnly => IsDimensioned;
-        public bool DimensionsButtonVisible => HasSelectedItem && IsDimensioned;
 
         public void SelectItem(ItemGraphQLModel item)
         {
@@ -233,10 +240,25 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             NotifyOfPropertyChange(nameof(TotalQuantity));
             NotifyOfPropertyChange(nameof(DimensionSummary));
             NotifyOfPropertyChange(nameof(IsLineComplete));
-            // Pasa foco a cantidad para captura inmediata
-            QuantityFieldFocus = false;
-            QuantityFieldFocus = true;
+            // Foco según dimensión:
+            //   Base → Cantidad (captura inmediata).
+            //   Dimensionado → emitir evento para que el caller enfoque el costo.
+            if (IsBaseDimension)
+            {
+                QuantityFieldFocus = false;
+                QuantityFieldFocus = true;
+            }
+            else
+            {
+                RequestUnitCostFocus?.Invoke(this, System.EventArgs.Empty);
+            }
         }
+
+        /// <summary>
+        /// Disparado cuando se selecciona un ítem dimensionado. El caller debería
+        /// enfocar su campo de costo (no manejado por el UC).
+        /// </summary>
+        public event System.EventHandler? RequestUnitCostFocus;
 
         public void ClearSelection()
         {
@@ -340,7 +362,10 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         private async Task OpenSerialsDialogAsync()
         {
             if (Direction == DimensionDirection.Out && _serialProvider == null) return;
-            var dialogVm = new SerialsDimensionDialogViewModel(_selectedItem!, Direction, _storageId, _serials, _serialProvider);
+            var dialogVm = new SerialsDimensionDialogViewModel(
+                _selectedItem!, Direction, _storageId, _serials, _serialProvider,
+                inboundValidator: Direction == DimensionDirection.In ? _inboundSerialValidator : null,
+                excludeStockMovementId: ExcludeStockMovementId);
             var result = await _dialogService.ShowDialogAsync(dialogVm, "Asignar seriales");
             if (result == true)
             {

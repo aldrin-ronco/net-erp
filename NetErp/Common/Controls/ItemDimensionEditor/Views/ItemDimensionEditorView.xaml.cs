@@ -12,14 +12,27 @@ namespace NetErp.UserControls.ItemDimensionEditor.Views
                 new PropertyMetadata(null));
 
         /// <summary>
-        /// Slot inyectable por el caller para añadir captura adicional (costo, precio,
-        /// descuento, botón de confirmación). El contenido se renderiza al final del
-        /// panel info (junto al botón "Dimensiones").
+        /// Slot caller para captura entre UND y el botón "Dimensiones". Típicamente
+        /// costo unitario, precio, descuento.
         /// </summary>
         public object AdditionalContent
         {
             get => GetValue(AdditionalContentProperty);
             set => SetValue(AdditionalContentProperty, value);
+        }
+
+        public static readonly DependencyProperty TrailingContentProperty =
+            DependencyProperty.Register(nameof(TrailingContent), typeof(object), typeof(ItemDimensionEditorView),
+                new PropertyMetadata(null));
+
+        /// <summary>
+        /// Slot caller después del botón "Dimensiones". Típicamente botón de confirmación
+        /// (Agregar). Permite que el foco fluya: cost → Dimensiones → Agregar.
+        /// </summary>
+        public object TrailingContent
+        {
+            get => GetValue(TrailingContentProperty);
+            set => SetValue(TrailingContentProperty, value);
         }
 
         public ItemDimensionEditorView()

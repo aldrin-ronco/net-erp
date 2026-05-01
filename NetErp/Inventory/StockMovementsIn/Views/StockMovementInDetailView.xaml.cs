@@ -27,15 +27,27 @@ namespace NetErp.Inventory.StockMovementsIn.Views
 
         private void LinesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Delete) return;
-            if (e.OriginalSource is TextBox) return;
             if (DataContext is not StockMovementInDetailViewModel vm) return;
-            // SelectionUnit=CellOrRowHeader: clicar celda no setea SelectedItem.
-            // Tomar la fila desde CurrentItem (fila de la celda enfocada).
             if (LinesGrid.CurrentItem is not NetErp.Inventory.StockMovementsIn.DTO.StockMovementLineDTO row) return;
-            vm.SelectedLine = row;
-            e.Handled = true;
-            _ = vm.RemoveLineAsync();
+
+            // Ctrl+Enter → abrir modal de dimensiones (si la línea es dimensionada)
+            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                if (e.OriginalSource is TextBox) return;
+                if (!row.HasDimensions) return;
+                e.Handled = true;
+                _ = vm.EditLineDimensionsAsync(row);
+                return;
+            }
+
+            // Delete → eliminar línea
+            if (e.Key == Key.Delete)
+            {
+                if (e.OriginalSource is TextBox) return;
+                vm.SelectedLine = row;
+                e.Handled = true;
+                _ = vm.RemoveLineAsync();
+            }
         }
 
         // CellEditingTemplate con CurrencyTextBox: el TextBox interno NO recibe foco
@@ -53,6 +65,27 @@ namespace NetErp.Inventory.StockMovementsIn.Views
                     tb.SelectAll();
                 }
             }), DispatcherPriority.Input);
+        }
+
+        // Bloquea edición de Cantidad cuando la línea es dimensionada (la cantidad sale
+        // de la suma de preselecciones — se edita via doble-click → dialog de dimensiones).
+        private void LinesGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            if (e.Row.Item is not NetErp.Inventory.StockMovementsIn.DTO.StockMovementLineDTO row) return;
+            if (!ReferenceEquals(e.Column, QuantityColumn)) return;
+            if (row.HasDimensions) e.Cancel = true;
+        }
+
+        // Doble-click sobre fila dimensionada → abre dialog de edición de dimensiones.
+        // Si está en edit-mode (CurrentCell.IsEditing), no interferir.
+        private void LinesGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is TextBox) return;
+            if (LinesGrid.CurrentItem is not NetErp.Inventory.StockMovementsIn.DTO.StockMovementLineDTO row) return;
+            if (!row.HasDimensions) return;
+            if (DataContext is not StockMovementInDetailViewModel vm) return;
+            e.Handled = true;
+            _ = vm.EditLineDimensionsAsync(row);
         }
 
         private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject

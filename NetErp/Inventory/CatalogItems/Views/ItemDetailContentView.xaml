@@ -14,6 +14,7 @@
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
     </UserControl.Resources>
 
     <Grid>
@@ -153,13 +154,15 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="Código" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
+                                <TextBlock Text="Código" FontSize="13" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"
                                            Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
                                 <dxe:TextEdit Grid.Row="0" Grid.Column="1"
@@ -169,7 +172,7 @@
                                               BorderBrush="#C8CED6"
                                               Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
 
-                                <TextBlock Text="Nombre" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"
+                                <TextBlock Text="Nombre" FontSize="13" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
                                 <dxe:TextEdit x:Name="NameEdit" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
                                               Style="{StaticResource FocusedHighlightStyle}"
@@ -178,7 +181,7 @@
                                               MaxLength="{Binding NameMaxLength}"
                                               Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"/>
 
-                                <TextBlock Text="Referencia" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
+                                <TextBlock Text="Referencia" FontSize="13" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
                                 <dxe:TextEdit Grid.Row="2" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
                                               Style="{StaticResource FocusedHighlightStyle}"
@@ -187,7 +190,7 @@
                                               MaxLength="{Binding ReferenceMaxLength}"
                                               Text="{Binding Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"/>
 
-                                <TextBlock Text="Unidad de medida" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right"
+                                <TextBlock Text="Unidad de medida" FontSize="13" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
                                 <dxe:ComboBoxEdit Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
                                                   ItemsSource="{Binding MeasurementUnits}"
@@ -197,21 +200,54 @@
                                                   BorderBrush="#C8CED6"
                                                   IsTextEditable="False"/>
 
-                                <TextBlock Text="Grupo de tallaje" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
+                                <TextBlock Text="Dimensión" FontSize="13" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <dxe:ComboBoxEdit Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,3">
+                                    <RadioButton Content="Genérico" GroupName="Dimension" Margin="0,0,12,0" VerticalAlignment="Center"
+                                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                                 IsChecked="{Binding SelectedDimensionMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Generic}"/>
+                                    <RadioButton Content="Lote" GroupName="Dimension" Margin="0,0,12,0" VerticalAlignment="Center"
+                                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                                 IsChecked="{Binding SelectedDimensionMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Lot}"/>
+                                    <RadioButton Content="Serial" GroupName="Dimension" Margin="0,0,12,0" VerticalAlignment="Center"
+                                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                                 IsChecked="{Binding SelectedDimensionMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Serial}"/>
+                                    <RadioButton Content="Talla" GroupName="Dimension" VerticalAlignment="Center"
+                                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                                 IsChecked="{Binding SelectedDimensionMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Size}"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,0,0,8"
+                                           Text="{Binding DimensionDescription}"
+                                           FontSize="11" Foreground="#5F6B7A" TextWrapping="Wrap"/>
+
+                                <TextBlock Text="Grupo de tallaje" FontSize="13" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="Black"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSizeMode}" Value="False">
+                                                    <Setter Property="Foreground" Value="#A0A0A0"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <dxe:ComboBoxEdit Grid.Row="6" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
                                                   ItemsSource="{Binding Sizes}"
                                                   DisplayMember="Name"
-                                                  SelectedItem="{Binding SelectedSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  SelectedItem="{Binding SelectedSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                                   Padding="2"
                                                   BorderBrush="#C8CED6"
                                                   IsTextEditable="False"
+                                                  IsEnabled="{Binding IsSizeMode}"
                                                   NullText="SELECCIONE UN GRUPO DE TALLAJE"
                                                   AllowNullInput="True" NullValueButtonPlacement="EditBox"/>
 
-                                <TextBlock Text="Grupo contable" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right"
+                                <TextBlock Text="Grupo contable" FontSize="13" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <dxe:ComboBoxEdit Grid.Row="5" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                <dxe:ComboBoxEdit Grid.Row="7" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
                                                   ItemsSource="{Binding AccountingGroups}"
                                                   DisplayMember="Name"
                                                   SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"

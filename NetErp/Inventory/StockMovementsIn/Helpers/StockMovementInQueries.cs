@@ -1,13 +1,37 @@
+using Extensions.Global;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
+using Models.Login;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections.Generic;
 using static Models.Global.GraphQLResponseTypes;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 
 namespace NetErp.Inventory.StockMovementsIn.Helpers
 {
+    /// <summary>
+    /// Utilidades compartidas para presentación de errores GraphQL en el módulo.
+    /// </summary>
+    internal static class StockMovementErrorFormatter
+    {
+        /// <summary>
+        /// Combina <c>payload.Message</c> + <c>payload.Errors[].ToUserMessage()</c>.
+        /// Devuelve <paramref name="fallback"/> si ambos vacíos.
+        /// </summary>
+        public static string Format(string? message, List<GlobalErrorGraphQLModel>? errors, string fallback)
+        {
+            string detail = errors?.ToUserMessage() ?? string.Empty;
+            bool hasMsg = !string.IsNullOrWhiteSpace(message);
+            bool hasDetail = !string.IsNullOrWhiteSpace(detail);
+            if (hasMsg && hasDetail) return $"{message}\n{detail}";
+            if (hasDetail) return detail;
+            if (hasMsg) return message!;
+            return fallback;
+        }
+    }
+
     /// <summary>
     /// Lazy GraphQL queries y mutations para el módulo Stock Movements In.
     /// Centraliza la construcción de queries para reutilizar entre Master, NewDialog y Detail.
@@ -41,7 +65,10 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                         .Field(c => c.Name))
                     .Select(s => s.Storage, st => st
                         .Field(g => g.Id)
-                        .Field(g => g.Name)))
+                        .Field(g => g.Name))
+                    .Select(s => s.CreatedBy, cb => cb
+                        .Field(u => u.Id)
+                        .Field(u => u.FullName)))
                 .Build();
 
             var fragment = new GraphQLQueryFragment("stockMovementsPage",
@@ -126,7 +153,11 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                             .Field(m => m.Abbreviation))
                         .Select(i => i.SizeCategory, sc => sc
                             .Field(c => c.Id)
-                            .Field(c => c.Name)))
+                            .Field(c => c.Name)
+                            .SelectList(c => c.ItemSizeValues, sv => sv
+                                .Field(v => v.Id)
+                                .Field(v => v.Name)
+                                .Field(v => v.DisplayOrder))))
                     .SelectList(l => l.LotPreselections, lp => lp
                         .Field(lt => lt.Id)
                         .Field(lt => lt.LotNumber)
@@ -154,6 +185,31 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
 
             var fragment = new GraphQLQueryFragment("stockMovement",
                 [new("id", "ID!")], fields, "SingleItemResponse");
+            return (fragment, new QueryBuilder([fragment]).GetQuery());
+        });
+
+        // -------- Validate inbound serials --------
+        public static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> ValidateInboundSerials = new(() =>
+        {
+            var fields = FieldSpec<ValidateInboundSerialsPayload>
+                .Create()
+                .Field(p => p.Success)
+                .Field(p => p.Message)
+                .SelectList(p => p.Errors, err => err.Field(e => e.Fields).Field(e => e.Message))
+                .SelectList(p => p.SerialsInConflict, c => c
+                    .Field(x => x.SerialNumber)
+                    .Field(x => x.Reason)
+                    .Select(x => x.Storage, st => st
+                        .Field(s => s.Id)
+                        .Field(s => s.Name))
+                    .Select(x => x.Draft, dr => dr
+                        .Field(d => d.Id)
+                        .Field(d => d.DocumentNumber)
+                        .Field(d => d.Status)))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("validateInboundSerials",
+                [new("input", "ValidateInboundSerialsInput!")], fields, "validateResponse");
             return (fragment, new QueryBuilder([fragment]).GetQuery());
         });
 
