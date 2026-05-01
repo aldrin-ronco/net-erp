@@ -281,6 +281,36 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
+        private bool _isLotTracked;
+
+        public bool IsLotTracked
+        {
+            get { return _isLotTracked; }
+            set
+            {
+                if (_isLotTracked != value)
+                {
+                    _isLotTracked = value;
+                    NotifyOfPropertyChange(nameof(IsLotTracked));
+                }
+            }
+        }
+
+        private bool _isSerialTracked;
+
+        public bool IsSerialTracked
+        {
+            get { return _isSerialTracked; }
+            set
+            {
+                if (_isSerialTracked != value)
+                {
+                    _isSerialTracked = value;
+                    NotifyOfPropertyChange(nameof(IsSerialTracked));
+                }
+            }
+        }
+
         private AccountingGroupDTO _accountingGroup;
 
         public AccountingGroupDTO AccountingGroup

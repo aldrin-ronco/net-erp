@@ -24,6 +24,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Header -->
@@ -41,40 +42,102 @@
                 </Button>
             </StackPanel>
 
-            <!-- Grid entradas -->
-            <dxg:GridControl Grid.Row="2"
-                             ItemsSource="{Binding Rows}"
-                             AutoGenerateColumns="None"
-                             Visibility="{Binding IsInbound, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <dxg:GridControl.View>
-                    <dxg:TableView ShowGroupPanel="False"
-                                   AllowEditing="True"
-                                   AllowSorting="False"
-                                   AllowColumnFiltering="False"
-                                   AlternateRowBackground="Beige"
-                                   AutoWidth="True"
-                                   NavigationStyle="Cell"
-                                   AllowPerPixelScrolling="True"/>
-                </dxg:GridControl.View>
-                <dxg:GridControl.Columns>
-                    <dxg:GridColumn Header="Lote" FieldName="LotNumber" Width="*"/>
-                    <dxg:GridColumn Header="Vencimiento" FieldName="ExpirationDate" Width="160">
-                        <dxg:GridColumn.EditSettings>
-                            <dxe:DateEditSettings AllowNullInput="True"/>
-                        </dxg:GridColumn.EditSettings>
-                    </dxg:GridColumn>
-                    <dxg:GridColumn Header="Cantidad" FieldName="Quantity" Width="120"
-                                    HorizontalHeaderContentAlignment="Right">
-                        <dxg:GridColumn.EditSettings>
-                            <dxe:SpinEditSettings MinValue="0"
-                                                  IsFloatValue="True"
-                                                  MaskType="Numeric"
-                                                  Mask="N2"
-                                                  AllowNullInput="False"/>
-                        </dxg:GridColumn.EditSettings>
-                    </dxg:GridColumn>
-                    <dxg:GridColumn Width="40">
-                        <dxg:GridColumn.CellTemplate>
+            <!-- Grid entradas - WPF DataGrid -->
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding Rows}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserResizeRows="False"
+                      CanUserSortColumns="False"
+                      CanUserReorderColumns="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#EAECEF"
+                      AlternatingRowBackground="#FAF9F2"
+                      RowHeaderWidth="0"
+                      SelectionUnit="CellOrRowHeader"
+                      BorderBrush="#D9DDE3"
+                      BorderThickness="1"
+                      Visibility="{Binding IsInbound, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Quantity}" Value="0">
+                                <Setter Property="Background" Value="#FFE0E0"/>
+                            </DataTrigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="Focusable" Value="False"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter Property="Background" Value="#D6E9F8"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Lote" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:TextEdit Text="{Binding LotNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Padding="3"
+                                              BorderBrush="Transparent"
+                                              ShowBorder="False"
+                                              VerticalContentAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Vencimiento" Width="180">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:DateEdit EditValue="{Binding ExpirationDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AllowNullInput="True"
+                                              NullText="Sin vencimiento"
+                                              NullValueButtonPlacement="EditBox"
+                                              MinValue="{x:Static sys:DateTime.Today}"
+                                              MaskType="DateTime"
+                                              Mask="d"
+                                              Padding="3"
+                                              BorderBrush="Transparent"
+                                              ShowBorder="False"
+                                              VerticalContentAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Cantidad" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:TextEdit MaskType="Numeric"
+                                              Mask="N2"
+                                              MaskUseAsDisplayFormat="True"
+                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Padding="3"
+                                              BorderBrush="Transparent"
+                                              ShowBorder="False"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Right"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Width="40" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
                                         cal:Message.Attach="RemoveRow($dataContext)"
@@ -82,46 +145,80 @@
                                     <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Width="16" Height="16"/>
                                 </Button>
                             </DataTemplate>
-                        </dxg:GridColumn.CellTemplate>
-                    </dxg:GridColumn>
-                </dxg:GridControl.Columns>
-            </dxg:GridControl>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
 
-            <!-- Grid salidas -->
-            <dxg:GridControl Grid.Row="2"
-                             ItemsSource="{Binding AvailableRows}"
-                             AutoGenerateColumns="None"
-                             Visibility="{Binding IsOutbound, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <dxg:GridControl.View>
-                    <dxg:TableView ShowGroupPanel="False"
-                                   AllowEditing="True"
-                                   AllowSorting="False"
-                                   AllowColumnFiltering="False"
-                                   AlternateRowBackground="Beige"
-                                   AutoWidth="True"
-                                   NavigationStyle="Cell"
-                                   AllowPerPixelScrolling="True"/>
-                </dxg:GridControl.View>
-                <dxg:GridControl.Columns>
-                    <dxg:GridColumn Header="Lote" FieldName="LotNumber" Width="*" ReadOnly="True"/>
-                    <dxg:GridColumn Header="Vencimiento" FieldName="ExpirationDate" Width="160" ReadOnly="True"/>
-                    <dxg:GridColumn Header="Disponible" FieldName="Available" Width="120" ReadOnly="True"
-                                    HorizontalHeaderContentAlignment="Right"/>
-                    <dxg:GridColumn Header="A sacar" FieldName="Quantity" Width="120"
-                                    HorizontalHeaderContentAlignment="Right">
-                        <dxg:GridColumn.EditSettings>
-                            <dxe:SpinEditSettings MinValue="0"
-                                                  IsFloatValue="True"
-                                                  MaskType="Numeric"
-                                                  Mask="N2"
-                                                  AllowNullInput="False"/>
-                        </dxg:GridColumn.EditSettings>
-                    </dxg:GridColumn>
-                </dxg:GridControl.Columns>
-            </dxg:GridControl>
+            <!-- Grid salidas - WPF DataGrid -->
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding AvailableRows}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserResizeRows="False"
+                      CanUserSortColumns="False"
+                      CanUserReorderColumns="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#EAECEF"
+                      AlternatingRowBackground="#FAF9F2"
+                      RowHeaderWidth="0"
+                      SelectionUnit="CellOrRowHeader"
+                      BorderBrush="#D9DDE3"
+                      BorderThickness="1"
+                      Visibility="{Binding IsOutbound, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#D6E9F8"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Lote" Width="*" Binding="{Binding LotNumber}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Vencimiento" Width="180" Binding="{Binding ExpirationDate, StringFormat=d, TargetNullValue='Sin vencimiento'}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Disponible" Width="140" Binding="{Binding Available, StringFormat=N2}" IsReadOnly="True">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right"/>
+                                <Setter Property="Padding" Value="6,4"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Header="A sacar" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" Padding="6,4"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <dxe:TextEdit MaskType="Numeric"
+                                              Mask="N2"
+                                              MaskUseAsDisplayFormat="True"
+                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Right"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Mensaje validación inbound -->
+            <TextBlock Grid.Row="3" Text="{Binding ValidationMessage}" Foreground="#D32F2F" FontSize="12"
+                       Margin="0,6,0,0" HorizontalAlignment="Left"
+                       Visibility="{Binding IsInbound, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
             <!-- Botones -->
-            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
                 <Button cal:Message.Attach="AcceptAsync"
                         IsEnabled="{Binding CanAccept}"
                         Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">

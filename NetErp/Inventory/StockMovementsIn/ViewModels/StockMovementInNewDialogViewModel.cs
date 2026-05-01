@@ -122,7 +122,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 if (payload == null || !payload.Success || payload.StockMovement == null)
                 {
                     ThemedMessageBox.Show("Error",
-                        payload?.Message ?? "No se pudo crear el draft.",
+                        StockMovementErrorFormatter.Format(payload?.Message, payload?.Errors, "No se pudo crear el draft."),
                         MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }

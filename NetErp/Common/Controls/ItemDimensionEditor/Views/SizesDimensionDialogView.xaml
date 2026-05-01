@@ -27,36 +27,85 @@
 
             <TextBlock Grid.Row="0" Text="{Binding ItemHeader}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
-            <dxg:GridControl Grid.Row="1"
-                             ItemsSource="{Binding Rows}"
-                             AutoGenerateColumns="None">
-                <dxg:GridControl.View>
-                    <dxg:TableView ShowGroupPanel="False"
-                                   AllowEditing="True"
-                                   AllowSorting="False"
-                                   AllowColumnFiltering="False"
-                                   AlternateRowBackground="Beige"
-                                   AutoWidth="True"
-                                   NavigationStyle="Cell"
-                                   AllowPerPixelScrolling="True"/>
-                </dxg:GridControl.View>
-                <dxg:GridControl.Columns>
-                    <dxg:GridColumn Header="Talla" FieldName="SizeName" Width="*" ReadOnly="True"/>
-                    <dxg:GridColumn Header="Disponible" FieldName="Available" Width="120" ReadOnly="True"
-                                    HorizontalHeaderContentAlignment="Right"
-                                    Visible="{Binding DataContext.IsOutbound, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                    <dxg:GridColumn Header="Cantidad" FieldName="Quantity" Width="120"
-                                    HorizontalHeaderContentAlignment="Right">
-                        <dxg:GridColumn.EditSettings>
-                            <dxe:SpinEditSettings MinValue="0"
-                                                  IsFloatValue="True"
-                                                  MaskType="Numeric"
-                                                  Mask="N2"
-                                                  AllowNullInput="False"/>
-                        </dxg:GridColumn.EditSettings>
-                    </dxg:GridColumn>
-                </dxg:GridControl.Columns>
-            </dxg:GridControl>
+            <DataGrid Grid.Row="1"
+                      x:Name="SizesGrid"
+                      Loaded="OnGridLoaded"
+                      PreviewKeyDown="OnGridPreviewKeyDown"
+                      ItemsSource="{Binding Rows}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserResizeRows="False"
+                      CanUserSortColumns="False"
+                      CanUserReorderColumns="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#EAECEF"
+                      AlternatingRowBackground="#FAF9F2"
+                      RowHeaderWidth="0"
+                      SelectionMode="Single"
+                      SelectionUnit="CellOrRowHeader"
+                      EnableRowVirtualization="False"
+                      KeyboardNavigation.TabNavigation="Continue"
+                      BorderBrush="#D9DDE3"
+                      BorderThickness="1">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Quantity}" Value="0">
+                                <Setter Property="Background" Value="#FFE0E0"/>
+                            </DataTrigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="Focusable" Value="False"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter Property="Background" Value="#D6E9F8"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Talla" Width="*" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SizeName}" Padding="6,4" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Cantidad" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:TextEdit MaskType="Numeric"
+                                              Mask="N2"
+                                              MaskUseAsDisplayFormat="True"
+                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Padding="3"
+                                              BorderBrush="Transparent"
+                                              ShowBorder="False"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Right"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
                 <Button cal:Message.Attach="AcceptAsync"

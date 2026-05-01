@@ -77,58 +77,62 @@
                                 Visibility="{Binding IsDraft, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <editor:ItemDimensionEditorView DataContext="{Binding Editor}">
                         <editor:ItemDimensionEditorView.AdditionalContent>
-                            <StackPanel Orientation="Horizontal"
+                            <StackPanel MinWidth="140" Margin="0,0,8,0"
                                         DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl, AncestorLevel=2}}">
-                                <StackPanel MinWidth="140" Margin="0,0,8,0">
-                                    <TextBlock Text="Costo unitario" FontSize="13" Foreground="Gray"/>
-                                    <dxe:TextEdit Height="28"
-                                                  MaskType="Numeric"
-                                                  Mask="C2"
-                                                  MaskUseAsDisplayFormat="True"
-                                                  Padding="3"
-                                                  BorderBrush="#C8CED6"
-                                                  VerticalContentAlignment="Center"
-                                                  HorizontalContentAlignment="Right"
-                                                  EditValue="{Binding LineUnitCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-                                <StackPanel>
-                                    <TextBlock Text=" " FontSize="11"/>
-                                    <Border CornerRadius="4" BorderThickness="2" Padding="0">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="BorderBrush" Value="#C8CED6"/>
-                                                <Setter Property="Background" Value="White"/>
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                                        <Setter Property="BorderBrush" Value="#1565C0"/>
-                                                        <Setter Property="Background" Value="#EBF5FB"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <Button Height="28" Padding="10,0"
-                                                ToolTip="Agregar línea al documento"
-                                                FocusVisualStyle="{x:Null}"
-                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                                IsEnabled="{Binding CanCommitLine}"
-                                                cal:Message.Attach="CommitLine">
-                                            <StackPanel Orientation="Horizontal" Focusable="False">
-                                                <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Width="16" Height="16" Margin="0,0,6,0" Focusable="False">
-                                                    <Image.Style>
-                                                        <Style TargetType="Image">
-                                                            <Style.Triggers>
-                                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Image.Style>
-                                                </Image>
-                                                <TextBlock Text="Agregar" VerticalAlignment="Center" Focusable="False"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </Border>
-                                </StackPanel>
+                                <TextBlock Text="Costo unitario" FontSize="13" Foreground="Gray"/>
+                                <dxe:TextEdit TabIndex="3" Height="28"
+                                              MaskType="Numeric"
+                                              Mask="C2"
+                                              MaskUseAsDisplayFormat="True"
+                                              Padding="3"
+                                              BorderBrush="#C8CED6"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Right"
+                                              EditValue="{Binding LineUnitCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <h:FocusBehavior.IsFocused>
+                                        <Binding Path="LineUnitCostFocus" Mode="TwoWay"/>
+                                    </h:FocusBehavior.IsFocused>
+                                </dxe:TextEdit>
                             </StackPanel>
                         </editor:ItemDimensionEditorView.AdditionalContent>
+                        <editor:ItemDimensionEditorView.TrailingContent>
+                            <StackPanel DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl, AncestorLevel=2}}">
+                                <TextBlock Text=" " FontSize="11"/>
+                                <Border CornerRadius="4" BorderThickness="2" Padding="0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="#C8CED6"/>
+                                            <Setter Property="Background" Value="White"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                                                    <Setter Property="Background" Value="#EBF5FB"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Button TabIndex="5" Height="28" Padding="10,0"
+                                            ToolTip="Agregar línea al documento"
+                                            FocusVisualStyle="{x:Null}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                            IsEnabled="{Binding CanCommitLine}"
+                                            cal:Message.Attach="CommitLine">
+                                        <StackPanel Orientation="Horizontal" Focusable="False">
+                                            <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Width="16" Height="16" Margin="0,0,6,0" Focusable="False">
+                                                <Image.Style>
+                                                    <Style TargetType="Image">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+                                            <TextBlock Text="Agregar" VerticalAlignment="Center" Focusable="False"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                            </StackPanel>
+                        </editor:ItemDimensionEditorView.TrailingContent>
                     </editor:ItemDimensionEditorView>
                 </ContentControl>
 
@@ -152,8 +156,11 @@
                           SelectionUnit="CellOrRowHeader"
                           BorderBrush="#D9DDE3"
                           BorderThickness="1"
+                          ScrollViewer.CanContentScroll="False"
                           PreviewKeyDown="LinesGrid_PreviewKeyDown"
-                          PreparingCellForEdit="LinesGrid_PreparingCellForEdit">
+                          PreparingCellForEdit="LinesGrid_PreparingCellForEdit"
+                          BeginningEdit="LinesGrid_BeginningEdit"
+                          MouseDoubleClick="LinesGrid_MouseDoubleClick">
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="Background" Value="Transparent"/>
@@ -199,9 +206,9 @@
                     </DataGrid.RowStyle>
                     <DataGrid.Resources>
                         <Style x:Key="ReadOnlyTextStyle" TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="VerticalAlignment" Value="Top"/>
                             <Setter Property="HorizontalAlignment" Value="Left"/>
-                            <Setter Property="Padding" Value="6,0"/>
+                            <Setter Property="Padding" Value="6,4"/>
                         </Style>
                         <Style x:Key="HeaderLeftStyle" TargetType="DataGridColumnHeader">
                             <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -215,11 +222,87 @@
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Código" Width="100" Binding="{Binding Item.Code}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
+                        <DataGridTextColumn Header="Código" Width="90" Binding="{Binding Item.Code}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
                         <DataGridTextColumn Header="Referencia" Width="120" Binding="{Binding Item.Reference}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
-                        <DataGridTextColumn Header="Producto" Width="*" Binding="{Binding Item.Name}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}" HeaderStyle="{StaticResource HeaderLeftStyle}"/>
-                        <DataGridTextColumn Header="UND" Width="60" Binding="{Binding Item.MeasurementUnit.Abbreviation}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
-                        <DataGridTemplateColumn Header="Cantidad" Width="120">
+                        <DataGridTemplateColumn Header="Nombre del item" Width="*" IsReadOnly="True" HeaderStyle="{StaticResource HeaderLeftStyle}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="6,4" VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding Item.Name}" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+
+                                        <!-- Tallas: tabla bullet | nombre | qty | UND -->
+                                        <ItemsControl ItemsSource="{Binding SizeRows}" Margin="12,2,0,0"
+                                                      Visibility="{Binding IsSize, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="80"/>
+                                                            <ColumnDefinition Width="60"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding SizeName}" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="3" Margin="6,0,0,0" FontSize="11" Foreground="#5F6B7A"
+                                                                   Text="{Binding DataContext.Item.MeasurementUnit.Abbreviation, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Lotes: tabla bullet | lote | qty | UND | vence -->
+                                        <ItemsControl ItemsSource="{Binding LotRows}" Margin="12,2,0,0"
+                                                      Visibility="{Binding IsLot, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="140"/>
+                                                            <ColumnDefinition Width="60"/>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding LotNumber}" FontSize="11" Foreground="#5F6B7A" FontFamily="Consolas"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="3" Margin="6,0,0,0" FontSize="11" Foreground="#5F6B7A"
+                                                                   Text="{Binding DataContext.Item.MeasurementUnit.Abbreviation, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                                                        <TextBlock Grid.Column="4" Margin="12,0,0,0" FontSize="11" Foreground="#5F6B7A"
+                                                                   Text="{Binding ExpirationDate, StringFormat='vence yyyy-MM-dd', TargetNullValue='sin vencimiento'}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Seriales: tabla 4 columnas -->
+                                        <ItemsControl ItemsSource="{Binding SerialRows}" Margin="12,2,0,0"
+                                                      Visibility="{Binding IsSerial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="5"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,0,8,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding SerialNumber}" FontFamily="Consolas" FontSize="11" Foreground="#5F6B7A" TextTrimming="CharacterEllipsis" ToolTip="{Binding SerialNumber}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn x:Name="QuantityColumn" Header="Cantidad" Width="108">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" Padding="3"/>
@@ -236,7 +319,8 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Costo unit." Width="140">
+                        <DataGridTextColumn Header="UND" Width="60" Binding="{Binding Item.MeasurementUnit.Abbreviation}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
+                        <DataGridTemplateColumn Header="Costo unitario" Width="126">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding UnitCost, StringFormat=C, TargetNullValue=0}" TextAlignment="Right" Padding="3"/>
@@ -253,7 +337,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Subtotal" Width="160" Binding="{Binding Subtotal, StringFormat=N2}" IsReadOnly="True">
+                        <DataGridTextColumn Header="Subtotal" Width="136" Binding="{Binding Subtotal, StringFormat=N2}" IsReadOnly="True">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="TextAlignment" Value="Right"/>

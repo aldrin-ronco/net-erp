@@ -57,7 +57,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 if (payload == null || !payload.Success)
                 {
                     ThemedMessageBox.Show("Error",
-                        payload?.Message ?? "No se pudo anular el movimiento.",
+                        StockMovementErrorFormatter.Format(payload?.Message, payload?.Errors, "No se pudo anular el movimiento."),
                         MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }

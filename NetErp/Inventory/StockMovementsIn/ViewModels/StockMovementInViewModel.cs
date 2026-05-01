@@ -11,6 +11,7 @@ using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Services;
+using NetErp.Inventory.StockMovementsIn.DTO;
 using NetErp.Inventory.StockMovementsIn.Helpers;
 using System;
 using System.Collections.ObjectModel;
@@ -172,6 +173,79 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             }
         } = string.Empty;
 
+        public ObservableCollection<PeriodItem> PeriodOptions { get; } =
+        [
+            new() { Value = PeriodOption.Today, Label = "Hoy" },
+            new() { Value = PeriodOption.Yesterday, Label = "Ayer" },
+            new() { Value = PeriodOption.ThisWeek, Label = "Esta semana" },
+            new() { Value = PeriodOption.Last7Days, Label = "Últimos 7 días" },
+            new() { Value = PeriodOption.LastWeek, Label = "La semana pasada" },
+            new() { Value = PeriodOption.Last14Days, Label = "Últimos 14 días" },
+            new() { Value = PeriodOption.ThisMonth, Label = "Este mes" },
+            new() { Value = PeriodOption.Last30Days, Label = "Últimos 30 días" },
+            new() { Value = PeriodOption.LastMonth, Label = "El mes pasado" },
+            new() { Value = PeriodOption.Custom, Label = "Rango personalizado" },
+        ];
+
+        private bool _suppressPeriodReload = true;
+
+        public PeriodItem? SelectedPeriod
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedPeriod));
+                    NotifyOfPropertyChange(nameof(IsCustomPeriod));
+                    if (!_suppressPeriodReload)
+                    {
+                        PageIndex = 1;
+                        _ = LoadAsync();
+                    }
+                }
+            }
+        }
+
+        public DateTime? CustomDateFrom
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(CustomDateFrom));
+                    if (IsCustomPeriod && !_suppressPeriodReload)
+                    {
+                        PageIndex = 1;
+                        _ = LoadAsync();
+                    }
+                }
+            }
+        }
+
+        public DateTime? CustomDateTo
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(CustomDateTo));
+                    if (IsCustomPeriod && !_suppressPeriodReload)
+                    {
+                        PageIndex = 1;
+                        _ = LoadAsync();
+                    }
+                }
+            }
+        }
+
+        public bool IsCustomPeriod => SelectedPeriod?.Value == PeriodOption.Custom;
+
         public string[] StatusOptions { get; } = ["DRAFT", "POSTED", "ALL"];
 
         /// <summary>Estado mostrado: DRAFT (default), POSTED, ALL.</summary>
@@ -225,6 +299,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                     LoadAccountingSourcesAsync());
                 CostCenters.Clear();
                 foreach (CostCenterGraphQLModel cc in _costCenterCache.Items) CostCenters.Add(cc);
+                SelectedPeriod = PeriodOptions.First(p => p.Value == PeriodOption.ThisMonth);
+                _suppressPeriodReload = false;
                 await LoadAsync();
             }
             catch (Exception ex)
@@ -288,6 +364,10 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                     filters.status = FilterStatus;
                 filters.onlyVigentes = true;
 
+                (DateTime? from, DateTime? to) = ResolveDateRange();
+                if (from.HasValue) filters.insertedAtFrom = from.Value.ToIsoDatetime();
+                if (to.HasValue) filters.insertedAtTo = to.Value.ToIsoDatetime();
+
                 object variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
@@ -308,6 +388,45 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally { IsBusy = false; }
+        }
+
+        private (DateTime? From, DateTime? To) ResolveDateRange()
+        {
+            if (SelectedPeriod == null) return (null, null);
+
+            DateTime today = DateTime.Today;
+            DateTime endOfToday = today.AddDays(1).AddTicks(-1);
+
+            return SelectedPeriod.Value switch
+            {
+                PeriodOption.Today => (today, endOfToday),
+                PeriodOption.Yesterday => (today.AddDays(-1), today.AddTicks(-1)),
+                PeriodOption.ThisWeek => (StartOfWeek(today), endOfToday),
+                PeriodOption.Last7Days => (today.AddDays(-6), endOfToday),
+                PeriodOption.LastWeek => (StartOfWeek(today).AddDays(-7), StartOfWeek(today).AddTicks(-1)),
+                PeriodOption.Last14Days => (today.AddDays(-13), endOfToday),
+                PeriodOption.ThisMonth => (new DateTime(today.Year, today.Month, 1), endOfToday),
+                PeriodOption.Last30Days => (today.AddDays(-29), endOfToday),
+                PeriodOption.LastMonth => GetLastMonthRange(today),
+                PeriodOption.Custom => (
+                    CustomDateFrom?.Date,
+                    CustomDateTo.HasValue ? CustomDateTo.Value.Date.AddDays(1).AddTicks(-1) : (DateTime?)null),
+                _ => (null, null)
+            };
+        }
+
+        private static DateTime StartOfWeek(DateTime date)
+        {
+            int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+            return date.AddDays(-diff).Date;
+        }
+
+        private static (DateTime From, DateTime To) GetLastMonthRange(DateTime today)
+        {
+            DateTime firstOfThisMonth = new(today.Year, today.Month, 1);
+            DateTime firstOfLastMonth = firstOfThisMonth.AddMonths(-1);
+            DateTime lastOfLastMonth = firstOfThisMonth.AddTicks(-1);
+            return (firstOfLastMonth, lastOfLastMonth);
         }
 
         #endregion
@@ -400,7 +519,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 StockMovementMutationPayload? result = payload?.UpdateResponse;
                 if (result == null || !result.Success)
                 {
-                    _notificationService.ShowError(result?.Message ?? "No se pudo postear el movimiento.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(result?.Message, result?.Errors, "No se pudo postear el movimiento."),
+                        durationMs: 8000);
                     return;
                 }
                 _notificationService.ShowSuccess(result.Message);
@@ -425,7 +546,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                StockMovementInCancelDialogViewModel dlg = new(_service, SelectedStockMovement.Id, SelectedStockMovement.DocumentNumber);
+                StockMovementInCancelDialogViewModel dlg = new(_service, SelectedStockMovement.Id, SelectedStockMovement.DocumentNumber ?? string.Empty);
                 IsBusy = false;
                 bool? ok = await _dialogService.ShowDialogAsync(dlg, "Anular movimiento");
                 if (ok == true && dlg.Result?.Success == true)
@@ -449,7 +570,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         {
             if (SelectedStockMovement == null || SelectedStockMovement.Status != "DRAFT") return;
             if (ThemedMessageBox.Show("Confirmar eliminación",
-                $"¿Eliminar definitivamente el draft {SelectedStockMovement.DocumentNumber}? Esta acción no se puede deshacer.",
+                $"¿Eliminar definitivamente el borrador {SelectedStockMovement.DocumentDisplay}? Esta acción no se puede deshacer.",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
 
             try
@@ -461,7 +582,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 StockMovementMutationPayload? result = payload?.DeleteResponse;
                 if (result == null || !result.Success)
                 {
-                    _notificationService.ShowError(result?.Message ?? "No se pudo eliminar el draft.");
+                    _notificationService.ShowError(
+                        StockMovementErrorFormatter.Format(result?.Message, result?.Errors, "No se pudo eliminar el draft."),
+                        durationMs: 8000);
                     return;
                 }
                 _notificationService.ShowSuccess(result.Message);

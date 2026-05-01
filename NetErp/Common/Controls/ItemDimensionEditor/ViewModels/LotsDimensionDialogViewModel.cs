@@ -40,8 +40,17 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             if (direction == DimensionDirection.In)
             {
                 foreach (var lot in initialState)
-                    Rows.Add(new LotEntryRow { LotNumber = lot.LotNumber ?? string.Empty, ExpirationDate = lot.ExpirationDate, Quantity = lot.Quantity });
-                if (Rows.Count == 0) Rows.Add(new LotEntryRow());
+                {
+                    LotEntryRow row = new() { LotNumber = lot.LotNumber ?? string.Empty, ExpirationDate = lot.ExpirationDate, Quantity = lot.Quantity };
+                    row.PropertyChanged += OnRowChanged;
+                    Rows.Add(row);
+                }
+                if (Rows.Count == 0)
+                {
+                    LotEntryRow first = new();
+                    first.PropertyChanged += OnRowChanged;
+                    Rows.Add(first);
+                }
             }
             else
             {
@@ -78,10 +87,11 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             {
                 if (IsInbound)
                 {
-                    var valid = Rows.Where(r => !string.IsNullOrWhiteSpace(r.LotNumber) && r.Quantity > 0).ToList();
-                    if (valid.Count == 0) return false;
-                    var distinct = valid.Select(r => r.LotNumber.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-                    if (distinct != valid.Count) return false; // duplicados
+                    if (Rows.Count == 0) return false;
+                    // Validación dura: TODAS las filas deben estar completas.
+                    if (Rows.Any(r => string.IsNullOrWhiteSpace(r.LotNumber) || r.Quantity <= 0)) return false;
+                    int distinct = Rows.Select(r => r.LotNumber.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                    if (distinct != Rows.Count) return false; // duplicados
                     return true;
                 }
                 else
@@ -91,6 +101,22 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                     if (taken.Any(r => r.Quantity > r.Available)) return false;
                     return true;
                 }
+            }
+        }
+
+        public string ValidationMessage
+        {
+            get
+            {
+                if (!IsInbound) return string.Empty;
+                if (Rows.Count == 0) return "Agregue al menos un lote.";
+                if (Rows.Any(r => string.IsNullOrWhiteSpace(r.LotNumber)))
+                    return "Hay lotes sin número — complete o elimine la fila.";
+                if (Rows.Any(r => r.Quantity <= 0))
+                    return "Hay lotes sin cantidad — complete o elimine la fila.";
+                int distinct = Rows.Select(r => r.LotNumber.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                if (distinct != Rows.Count) return "Hay números de lote duplicados.";
+                return string.Empty;
             }
         }
 
@@ -124,16 +150,25 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         public void AddRow()
         {
             var row = new LotEntryRow();
-            row.PropertyChanged += (_, __) => NotifyOfPropertyChange(nameof(CanAccept));
+            row.PropertyChanged += OnRowChanged;
             Rows.Add(row);
-            NotifyOfPropertyChange(nameof(CanAccept));
+            NotifyAcceptState();
         }
 
         public void RemoveRow(LotEntryRow row)
         {
             if (row == null) return;
+            row.PropertyChanged -= OnRowChanged;
             Rows.Remove(row);
+            NotifyAcceptState();
+        }
+
+        private void OnRowChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifyAcceptState();
+
+        private void NotifyAcceptState()
+        {
             NotifyOfPropertyChange(nameof(CanAccept));
+            NotifyOfPropertyChange(nameof(ValidationMessage));
         }
 
         public async Task AcceptAsync()

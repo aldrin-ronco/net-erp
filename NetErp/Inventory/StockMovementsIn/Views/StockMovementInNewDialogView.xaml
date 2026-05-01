@@ -117,8 +117,13 @@
                 <TextBlock Text="Nota" FontSize="13" Margin="0,0,0,3"/>
                 <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
                               TabIndex="4"
-                              CharacterCasing="Upper"
                               Text="{Binding Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              TextWrapping="Wrap"
+                              AcceptsReturn="True"
+                              VerticalContentAlignment="Top"
+                              HorizontalContentAlignment="Left"
+                              VerticalScrollBarVisibility="Visible"
+                              MinHeight="60"
                               Padding="3"
                               BorderBrush="#C8CED6"/>
             </StackPanel>
