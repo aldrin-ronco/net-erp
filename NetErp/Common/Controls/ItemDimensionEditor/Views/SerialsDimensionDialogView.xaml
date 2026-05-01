@@ -13,7 +13,8 @@
              mc:Ignorable="d"
              Width="{Binding DialogWidth}"
              Height="{Binding DialogHeight}"
-             Background="#EEF1F5">
+             Background="#EEF1F5"
+             PreviewKeyDown="OnPreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
@@ -320,7 +321,7 @@
                         <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-                <Button cal:Message.Attach="CancelAsync" IsCancel="True"
+                <Button cal:Message.Attach="CancelAsync"
                         Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32"/>

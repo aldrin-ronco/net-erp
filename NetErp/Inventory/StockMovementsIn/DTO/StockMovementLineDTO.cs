@@ -33,8 +33,27 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
         public ItemGraphQLModel Item
         {
             get;
-            set { if (field != value) { field = value; NotifyOfPropertyChange(); } }
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange();
+                    NotifyOfPropertyChange(nameof(QuantityMask));
+                    NotifyOfPropertyChange(nameof(QuantityFormat));
+                    NotifyOfPropertyChange(nameof(QuantityDisplay));
+                }
+            }
         } = new();
+
+        /// <summary>Máscara numérica (N0 entero / N2 decimal) según <c>Item.AllowFraction</c>.</summary>
+        public string QuantityMask => Item?.AllowFraction == true ? "N2" : "N0";
+
+        /// <summary>Format string para visualización (`N0` / `N2`) según <c>Item.AllowFraction</c>.</summary>
+        public string QuantityFormat => Item?.AllowFraction == true ? "N2" : "N0";
+
+        /// <summary>Cantidad formateada según <c>QuantityFormat</c> — listo para binding directo en TextBlock.</summary>
+        public string QuantityDisplay => Quantity.ToString(QuantityFormat);
 
         public decimal Quantity
         {
@@ -46,6 +65,7 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
                 field = value;
                 NotifyOfPropertyChange();
                 NotifyOfPropertyChange(nameof(Subtotal));
+                NotifyOfPropertyChange(nameof(QuantityDisplay));
                 if (_suppressChangedEvent) return;
                 LineChanged?.Invoke(this, new LineChangedEventArgs
                 {

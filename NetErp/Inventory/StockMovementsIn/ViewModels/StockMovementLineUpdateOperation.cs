@@ -46,9 +46,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         {
             return new BatchOperationInfo
             {
-                BatchQuery = _batchUpdateMutation.Value,
-                ExtractBatchItem = variables =>
-                    variables.GetType().GetProperty("item")!.GetValue(variables)!,
+                BatchQuery = _batchUpdateMutation.Value.Query,
+                ExtractBatchItem = variables => ((dynamic)variables).item,
                 BuildBatchVariables = batchItems => new
                 {
                     singleItemResponseInput = new
@@ -62,7 +61,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             };
         }
 
-        private static readonly Lazy<string> _batchUpdateMutation = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _batchUpdateMutation = new(() =>
         {
             var fields = FieldSpec<BatchResultGraphQLModel>
                 .Create()
@@ -79,7 +78,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             ];
             GraphQLQueryFragment fragment = new("batchUpdateStockMovementDraftLines",
                 parameters, fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
     }
 }

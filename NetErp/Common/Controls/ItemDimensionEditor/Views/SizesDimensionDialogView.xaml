@@ -11,7 +11,8 @@
              mc:Ignorable="d"
              Width="{Binding DialogWidth}"
              Height="{Binding DialogHeight}"
-             Background="#EEF1F5">
+             Background="#EEF1F5"
+             PreviewKeyDown="OnPreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
@@ -41,7 +42,6 @@
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
                       HorizontalGridLinesBrush="#EAECEF"
-                      AlternatingRowBackground="#FAF9F2"
                       RowHeaderWidth="0"
                       SelectionMode="Single"
                       SelectionUnit="CellOrRowHeader"
@@ -93,9 +93,9 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <dxe:TextEdit MaskType="Numeric"
-                                              Mask="N2"
+                                              Mask="{Binding DataContext.QuantityMask, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                               MaskUseAsDisplayFormat="True"
-                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"
                                               Padding="3"
                                               BorderBrush="Transparent"
                                               ShowBorder="False"
@@ -116,7 +116,7 @@
                         <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-                <Button cal:Message.Attach="CancelAsync" IsCancel="True"
+                <Button cal:Message.Attach="CancelAsync"
                         Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32"/>

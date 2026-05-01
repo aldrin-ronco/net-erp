@@ -11,7 +11,8 @@
              mc:Ignorable="d"
              Width="{Binding DialogWidth}"
              Height="{Binding DialogHeight}"
-             Background="#EEF1F5">
+             Background="#EEF1F5"
+             PreviewKeyDown="OnPreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
@@ -44,6 +45,9 @@
 
             <!-- Grid entradas - WPF DataGrid -->
             <DataGrid Grid.Row="2"
+                      x:Name="LotsGrid"
+                      Loaded="OnGridLoaded"
+                      PreviewKeyDown="OnGridPreviewKeyDown"
                       ItemsSource="{Binding Rows}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -96,7 +100,8 @@
                     <DataGridTemplateColumn Header="Lote" Width="*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <dxe:TextEdit Text="{Binding LotNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                <dxe:TextEdit Text="{Binding LotNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"
+                                              CharacterCasing="Upper"
                                               Padding="3"
                                               BorderBrush="Transparent"
                                               ShowBorder="False"
@@ -105,6 +110,11 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Vencimiento" Width="180">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <dxe:DateEdit EditValue="{Binding ExpirationDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -122,12 +132,18 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Cantidad" Width="140">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <dxe:TextEdit MaskType="Numeric"
-                                              Mask="N2"
+                                <dxe:TextEdit Tag="Quantity"
+                                              MaskType="Numeric"
+                                              Mask="{Binding DataContext.QuantityMask, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                               MaskUseAsDisplayFormat="True"
-                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"
                                               Padding="3"
                                               BorderBrush="Transparent"
                                               ShowBorder="False"
@@ -140,6 +156,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                        IsTabStop="False"
                                         cal:Message.Attach="RemoveRow($dataContext)"
                                         ToolTip="Eliminar fila">
                                     <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Width="16" Height="16"/>
@@ -227,7 +244,7 @@
                         <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-                <Button cal:Message.Attach="CancelAsync" IsCancel="True"
+                <Button cal:Message.Attach="CancelAsync"
                         Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32"/>

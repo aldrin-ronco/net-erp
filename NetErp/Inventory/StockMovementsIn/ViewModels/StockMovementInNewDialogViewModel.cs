@@ -3,6 +3,7 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
@@ -16,6 +17,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.StockMovementsIn.ViewModels
 {
@@ -30,25 +32,33 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private readonly IRepository<StockMovementGraphQLModel> _service;
         private readonly IRepository<StorageGraphQLModel> _storageService;
         private readonly CostCenterCache _costCenterCache;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly IEventAggregator _eventAggregator;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         public StockMovementInNewDialogViewModel(
             IRepository<StockMovementGraphQLModel> service,
-            IRepository<AccountingSourceGraphQLModel> accountingSourceService,
             IRepository<StorageGraphQLModel> storageService,
             CostCenterCache costCenterCache,
+            StringLengthCache stringLengthCache,
             ObservableCollection<AccountingSourceGraphQLModel> inboundAccountingSources,
-            IEventAggregator eventAggregator)
+            IEventAggregator eventAggregator,
+            JoinableTaskFactory joinableTaskFactory)
         {
-            _service = service;
-            _storageService = storageService;
-            _costCenterCache = costCenterCache;
-            _eventAggregator = eventAggregator;
+            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             AccountingSources = inboundAccountingSources ?? [];
             DialogWidth = 600;
         }
 
         public double DialogWidth { get; set; }
+        public double DialogHeight { get; set; } = 420;
+
+        public int NoteMaxLength => _stringLengthCache.GetMaxLength<StockMovementGraphQLModel>(nameof(StockMovementGraphQLModel.Note));
 
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; } = [];
         public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; }
@@ -77,12 +87,13 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             {
                 await _costCenterCache.EnsureLoadedAsync();
                 CostCenters.Clear();
-                foreach (var cc in _costCenterCache.Items) CostCenters.Add(cc);
+                foreach (CostCenterGraphQLModel cc in _costCenterCache.Items) CostCenters.Add(cc);
 
                 await LoadStoragesAsync();
             }
             catch (Exception ex)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
                     $"Error cargando datos. {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
@@ -97,9 +108,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 .For(fragment, "pagination", new { Page = 1, PageSize = -1 })
                 .For(fragment, "filters", new { Status = "ACTIVE" })
                 .Build();
-            var page = await _storageService.GetPageAsync(query, variables);
+            PageType<StorageGraphQLModel> page = await _storageService.GetPageAsync(query, variables);
             Storages.Clear();
-            foreach (var s in page.Entries.OrderBy(x => x.Name)) Storages.Add(s);
+            foreach (StorageGraphQLModel s in page.Entries.OrderBy(x => x.Name)) Storages.Add(s);
         }
 
         public async Task SaveAsync()
@@ -116,8 +127,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 if (!string.IsNullOrWhiteSpace(Note)) input.note = Note.Trim();
 
                 object variables = new GraphQLVariables().For(fragment, "input", input).Build();
-                var responseObj = await _service.MutationContextAsync<NewDraftResponse>(query, variables);
-                var payload = responseObj?.CreateResponse;
+                NewDraftResponse? responseObj = await _service.MutationContextAsync<NewDraftResponse>(query, variables);
+                StockMovementMutationPayload? payload = responseObj?.CreateResponse;
 
                 if (payload == null || !payload.Success || payload.StockMovement == null)
                 {
@@ -135,6 +146,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             }
             catch (Exception ex)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
                     $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);

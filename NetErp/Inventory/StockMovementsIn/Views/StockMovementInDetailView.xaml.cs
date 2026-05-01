@@ -27,15 +27,27 @@ namespace NetErp.Inventory.StockMovementsIn.Views
 
         private void LinesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Delete) return;
-            if (e.OriginalSource is TextBox) return;
             if (DataContext is not StockMovementInDetailViewModel vm) return;
-            // SelectionUnit=CellOrRowHeader: clicar celda no setea SelectedItem.
-            // Tomar la fila desde CurrentItem (fila de la celda enfocada).
             if (LinesGrid.CurrentItem is not NetErp.Inventory.StockMovementsIn.DTO.StockMovementLineDTO row) return;
-            vm.SelectedLine = row;
-            e.Handled = true;
-            _ = vm.RemoveLineAsync();
+
+            // Ctrl+Enter → abrir modal de dimensiones (si la línea es dimensionada)
+            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                if (e.OriginalSource is TextBox) return;
+                if (!row.HasDimensions) return;
+                e.Handled = true;
+                _ = vm.EditLineDimensionsAsync(row);
+                return;
+            }
+
+            // Delete → eliminar línea
+            if (e.Key == Key.Delete)
+            {
+                if (e.OriginalSource is TextBox) return;
+                vm.SelectedLine = row;
+                e.Handled = true;
+                _ = vm.RemoveLineAsync();
+            }
         }
 
         // CellEditingTemplate con CurrencyTextBox: el TextBox interno NO recibe foco

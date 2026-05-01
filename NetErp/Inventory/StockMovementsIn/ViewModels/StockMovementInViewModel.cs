@@ -302,6 +302,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 SelectedPeriod = PeriodOptions.First(p => p.Value == PeriodOption.ThisMonth);
                 _suppressPeriodReload = false;
                 await LoadAsync();
+                this.SetFocus(() => FilterDocumentNumber);
             }
             catch (Exception ex)
             {
@@ -375,7 +376,10 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
                 PageType<StockMovementGraphQLModel> result = await _service.GetPageAsync(query, variables);
 
+                int? prevSelectedId = SelectedStockMovement?.Id;
                 StockMovements = new ObservableCollection<StockMovementGraphQLModel>(result.Entries);
+                if (prevSelectedId.HasValue)
+                    SelectedStockMovement = StockMovements.FirstOrDefault(s => s.Id == prevSelectedId.Value);
                 TotalCount = result.TotalEntries;
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -439,8 +443,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             {
                 IsBusy = true;
                 StockMovementInNewDialogViewModel modal = new(
-                    _service, _accountingSourceService, _storageService,
-                    _costCenterCache, AccountingSources, _eventAggregator);
+                    _service, _storageService,
+                    _costCenterCache, _stringLengthCache, AccountingSources, _eventAggregator, _joinableTaskFactory);
 
                 if (this.GetView() is FrameworkElement parentView)
                 {
@@ -499,9 +503,19 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         private async void OnDetailRequestClose(object? sender, EventArgs e)
         {
-            if (CurrentDetail != null) CurrentDetail.RequestClose -= OnDetailRequestClose;
-            CurrentDetail = null;
-            await LoadAsync();
+            try
+            {
+                if (CurrentDetail != null) CurrentDetail.RequestClose -= OnDetailRequestClose;
+                CurrentDetail = null;
+                await LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(OnDetailRequestClose)} \r\n{ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public async Task PostAsync()
@@ -515,6 +529,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 IsBusy = true;
                 var (fragment, query) = StockMovementInQueries.PostMovement.Value;
                 object variables = new GraphQLVariables().For(fragment, "id", SelectedStockMovement.Id).Build();
+                System.Diagnostics.Debug.WriteLine($"[POST MUTATION - Master]\nQUERY:\n{query}\nVARIABLES:\n{Newtonsoft.Json.JsonConvert.SerializeObject(variables, Newtonsoft.Json.Formatting.Indented)}");
                 StockMovementPostResponse? payload = await _service.MutationContextAsync<StockMovementPostResponse>(query, variables);
                 StockMovementMutationPayload? result = payload?.UpdateResponse;
                 if (result == null || !result.Success)
@@ -546,7 +561,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                StockMovementInCancelDialogViewModel dlg = new(_service, SelectedStockMovement.Id, SelectedStockMovement.DocumentNumber ?? string.Empty);
+                StockMovementInCancelDialogViewModel dlg = new(_service, _stringLengthCache, _joinableTaskFactory, SelectedStockMovement.Id, SelectedStockMovement.DocumentNumber ?? string.Empty);
                 IsBusy = false;
                 bool? ok = await _dialogService.ShowDialogAsync(dlg, "Anular movimiento");
                 if (ok == true && dlg.Result?.Success == true)

@@ -202,7 +202,6 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                 NotifyOfPropertyChange(nameof(IsBaseDimension));
                 NotifyOfPropertyChange(nameof(IsDimensioned));
                 NotifyOfPropertyChange(nameof(QuantityIsReadOnly));
-                NotifyOfPropertyChange(nameof(DimensionsButtonVisible));
                 NotifyOfPropertyChange(nameof(IsLineComplete));
             }
         }
@@ -228,7 +227,6 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         public bool IsBaseDimension => DimensionType == DimensionType.Base;
         public bool IsDimensioned => DimensionType != DimensionType.Base;
         public bool QuantityIsReadOnly => IsDimensioned;
-        public bool DimensionsButtonVisible => HasSelectedItem && IsDimensioned;
 
         public void SelectItem(ItemGraphQLModel item)
         {

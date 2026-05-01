@@ -3,7 +3,9 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Inventory;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Inventory.StockMovementsIn.Helpers;
 using System;
@@ -19,14 +21,20 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
     public class StockMovementInCancelDialogViewModel : Screen
     {
         private readonly IRepository<StockMovementGraphQLModel> _service;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly int _stockMovementId;
 
         public StockMovementInCancelDialogViewModel(
             IRepository<StockMovementGraphQLModel> service,
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory,
             int stockMovementId,
             string documentNumber)
         {
-            _service = service;
+            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             _stockMovementId = stockMovementId;
             DocumentNumber = documentNumber ?? string.Empty;
             DialogWidth = 520;
@@ -34,6 +42,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         public double DialogWidth { get; set; }
         public string DocumentNumber { get; }
+
+        public int NoteMaxLength => _stringLengthCache.GetMaxLength<StockMovementGraphQLModel>(nameof(StockMovementGraphQLModel.Note));
 
         public string Note { get; set { if (field != value) { field = value ?? string.Empty; NotifyOfPropertyChange(nameof(Note)); NotifyOfPropertyChange(nameof(CanConfirm)); } } } = string.Empty;
         public bool IsBusy { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsBusy)); NotifyOfPropertyChange(nameof(CanConfirm)); } } }
@@ -52,8 +62,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 input.id = _stockMovementId;
                 input.note = Note.Trim();
                 object variables = new GraphQLVariables().For(fragment, "input", input).Build();
-                var responseObj = await _service.MutationContextAsync<CancelResponse>(query, variables);
-                var payload = responseObj?.UpdateResponse;
+                CancelResponse? responseObj = await _service.MutationContextAsync<CancelResponse>(query, variables);
+                StockMovementMutationPayload? payload = responseObj?.UpdateResponse;
                 if (payload == null || !payload.Success)
                 {
                     ThemedMessageBox.Show("Error",
@@ -66,6 +76,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             }
             catch (Exception ex)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
                     $"{GetType().Name}.{nameof(ConfirmAsync)} \r\n{ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);

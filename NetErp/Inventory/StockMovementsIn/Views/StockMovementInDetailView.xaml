@@ -115,8 +115,8 @@
                                             ToolTip="Agregar línea al documento"
                                             FocusVisualStyle="{x:Null}"
                                             Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                            IsEnabled="{Binding CanCommitLine}"
-                                            cal:Message.Attach="CommitLine">
+                                            IsEnabled="{Binding CanTryCommitLine}"
+                                            cal:Message.Attach="TryCommitLineAsync">
                                         <StackPanel Orientation="Horizontal" Focusable="False">
                                             <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Width="16" Height="16" Margin="0,0,6,0" Focusable="False">
                                                 <Image.Style>
@@ -224,7 +224,7 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Código" Width="90" Binding="{Binding Item.Code}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
                         <DataGridTextColumn Header="Referencia" Width="120" Binding="{Binding Item.Reference}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
-                        <DataGridTemplateColumn Header="Nombre del item" Width="*" IsReadOnly="True" HeaderStyle="{StaticResource HeaderLeftStyle}">
+                        <DataGridTemplateColumn Header="Nombre del ítem" Width="*" IsReadOnly="True" HeaderStyle="{StaticResource HeaderLeftStyle}">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Margin="6,4" VerticalAlignment="Top">
@@ -305,13 +305,13 @@
                         <DataGridTemplateColumn x:Name="QuantityColumn" Header="Cantidad" Width="108">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" Padding="3"/>
+                                    <TextBlock Text="{Binding QuantityDisplay}" TextAlignment="Right" Padding="3"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
                                     <dxe:TextEdit MaskType="Numeric"
-                                                  Mask="N2"
+                                                  Mask="{Binding QuantityMask}"
                                                   MaskUseAsDisplayFormat="True"
                                                   EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                   VerticalContentAlignment="Center"

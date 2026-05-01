@@ -1,4 +1,5 @@
 using Caliburn.Micro;
+using DevExpress.Xpf.Core;
 using Models.Inventory;
 using NetErp.UserControls.ItemDimensionEditor.DTO;
 using System;
@@ -179,6 +180,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             if (!HasSelected) return;
             var toRemove = NewSerials.Where(r => r.IsSelected).ToList();
             foreach (var r in toRemove) NewSerials.Remove(r);
+            _isDirty = true;
             NotifyOfPropertyChange(nameof(CanAccept));
             ResetAllStatus();
         }
@@ -188,6 +190,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             if (!HasConflicts) return;
             var toRemove = NewSerials.Where(IsConflict).ToList();
             foreach (var r in toRemove) NewSerials.Remove(r);
+            _isDirty = true;
             NotifyOfPropertyChange(nameof(CanAccept));
         }
 
@@ -234,6 +237,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                 }
                 NewSerials.Add(new NewSerialRow { SerialNumber = normalized });
                 CaptureInput = string.Empty;
+                _isDirty = true;
                 NotifyOfPropertyChange(nameof(CanAccept));
                 ResetAllStatus();
             }
@@ -245,6 +249,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                     AvailableRows.Remove(match);
                     SelectedRows.Add(match);
                     CaptureInput = string.Empty;
+                    _isDirty = true;
                     NotifyOfPropertyChange(nameof(CanAccept));
                 }
             }
@@ -254,6 +259,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         {
             if (row == null) return;
             NewSerials.Remove(row);
+            _isDirty = true;
             NotifyOfPropertyChange(nameof(CanAccept));
             ResetAllStatus();
         }
@@ -292,6 +298,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                     NewSerials.Add(new NewSerialRow { SerialNumber = token });
                     added++;
                 }
+                if (added > 0) _isDirty = true;
                 NotifyOfPropertyChange(nameof(CanAccept));
                 ResetAllStatus();
                 MessageBox.Show($"Cargados {added} seriales · omitidos {skipped} duplicados.",
@@ -309,6 +316,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             if (row == null) return;
             AvailableRows.Remove(row);
             SelectedRows.Add(row);
+            _isDirty = true;
             NotifyOfPropertyChange(nameof(CanAccept));
         }
 
@@ -317,6 +325,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             if (row == null) return;
             SelectedRows.Remove(row);
             AvailableRows.Add(row);
+            _isDirty = true;
             NotifyOfPropertyChange(nameof(CanAccept));
         }
 
@@ -400,7 +409,20 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             return allOk;
         }
 
-        public Task CancelAsync() => TryCloseAsync(false);
+        private bool _isDirty;
+
+        public Task CancelAsync()
+        {
+            if (_isDirty)
+            {
+                MessageBoxResult res = DXMessageBox.Show(
+                    "Hay cambios sin guardar. ¿Desea descartarlos y salir?",
+                    "Confirmar",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                if (res != MessageBoxResult.Yes) return Task.CompletedTask;
+            }
+            return TryCloseAsync(false);
+        }
     }
 
     /// <summary>Fila de un serial nuevo con estado de validación reactivo.</summary>

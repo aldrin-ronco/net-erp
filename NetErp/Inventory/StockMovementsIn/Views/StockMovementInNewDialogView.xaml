@@ -7,8 +7,8 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
-             Width="{Binding DialogWidth}"
              Background="#EEF1F5">
     <UserControl.Resources>
         <Style x:Key="FocusComboBoxEdit" TargetType="dxe:ComboBoxEdit">
@@ -18,55 +18,15 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <Style x:Key="KeyboardFocusVisual">
-            <Setter Property="Control.Template">
-                <Setter.Value>
-                    <ControlTemplate>
-                        <Rectangle Margin="-2" StrokeThickness="2" Stroke="#1565C0" RadiusX="4" RadiusY="4" SnapsToDevicePixels="True"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Padding" Value="13,3"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter Margin="{TemplateBinding Padding}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
-                                <Setter TargetName="Bd" Property="Background" Value="#EBF5FB"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#F0F7FB"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.55"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
+    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="8,0,8,8">
+            CornerRadius="8" Margin="8,0,8,8"
+            Width="{Binding DialogWidth}"
+            Height="{Binding DialogHeight}">
         <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -86,6 +46,9 @@
                                   IsTextEditable="False"
                                   Padding="2"
                                   BorderBrush="#C8CED6"
+                                  AllowNullInput="True"
+                                  NullValueButtonPlacement="EditBox"
+                                  NullText="Selecciona un centro de costo"
                                   h:FocusBehavior.IsFocused="True"/>
             </StackPanel>
 
@@ -98,7 +61,10 @@
                                   DisplayMember="Name"
                                   IsTextEditable="False"
                                   Padding="2"
-                                  BorderBrush="#C8CED6"/>
+                                  BorderBrush="#C8CED6"
+                                  AllowNullInput="True"
+                                  NullValueButtonPlacement="EditBox"
+                                  NullText="Selecciona una fuente contable"/>
             </StackPanel>
 
             <StackPanel Grid.Row="2" Margin="0,0,0,8">
@@ -110,7 +76,10 @@
                                   DisplayMember="Name"
                                   IsTextEditable="False"
                                   Padding="2"
-                                  BorderBrush="#C8CED6"/>
+                                  BorderBrush="#C8CED6"
+                                  AllowNullInput="True"
+                                  NullValueButtonPlacement="EditBox"
+                                  NullText="Selecciona una bodega"/>
             </StackPanel>
 
             <StackPanel Grid.Row="3" Margin="0,0,0,8">
@@ -118,6 +87,7 @@
                 <dxe:TextEdit Style="{StaticResource FocusedHighlightStyle}"
                               TabIndex="4"
                               Text="{Binding Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              MaxLength="{Binding NoteMaxLength}"
                               TextWrapping="Wrap"
                               AcceptsReturn="True"
                               VerticalContentAlignment="Top"
@@ -186,4 +156,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </busyIndicator:BusyMask>
 </UserControl>

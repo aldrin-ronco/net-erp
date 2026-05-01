@@ -14,6 +14,14 @@ namespace NetErp.UserControls.ItemDimensionEditor.Views
             InitializeComponent();
         }
 
+        private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape) return;
+            e.Handled = true;
+            if (DataContext is NetErp.UserControls.ItemDimensionEditor.ViewModels.SizesDimensionDialogViewModel vm)
+                _ = vm.CancelAsync();
+        }
+
         private void OnGridLoaded(object sender, RoutedEventArgs e)
         {
             Dispatcher.BeginInvoke(new System.Action(() => FocusQuantityAt(0)), DispatcherPriority.Loaded);

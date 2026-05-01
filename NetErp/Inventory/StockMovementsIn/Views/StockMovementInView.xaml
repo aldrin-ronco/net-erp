@@ -49,12 +49,12 @@
                     <TextBlock Text="Documento" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:ButtonEdit x:Name="FilterDocumentNumber"
                                     Text="{Binding FilterDocumentNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    NullText="Buscar..."
+                                    NullText="Escribe número de documento (mín. 2 caracteres)"
+                                    ToolTip="Escribe aquí para buscar por número de documento"
                                     MinHeight="25"
                                     CharacterCasing="Upper"
                                     BorderBrush="#C8CED6"
-                                    AllowDefaultButton="False"
-                                    h:FocusBehavior.IsFocused="True">
+                                    AllowDefaultButton="False">
                         <dxe:ButtonEdit.Buttons>
                             <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
                         </dxe:ButtonEdit.Buttons>
@@ -161,7 +161,13 @@
                     <dxg:GridColumn Header="Centro de costo" FieldName="CostCenter.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
                     <dxg:GridColumn Header="Bodega" FieldName="Storage.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
                     <dxg:GridColumn Header="Creado por" FieldName="CreatedBy.FullName" Width="*" HorizontalHeaderContentAlignment="Center"/>
-                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="140" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="144"
+                                    HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:TextEditSettings DisplayFormat="yyyy-MM-dd HH:mm:ss"
+                                                  HorizontalContentAlignment="Center"/>
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
                     <dxg:GridColumn Header="Creado" FieldName="InsertedAt" Width="144"
                                     HorizontalHeaderContentAlignment="Center">
                         <dxg:GridColumn.EditSettings>
