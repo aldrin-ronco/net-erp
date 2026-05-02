@@ -14,6 +14,20 @@
              d:DesignHeight="700" d:DesignWidth="1200">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="ActionButtonBorder" TargetType="Border">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                    <Setter Property="Background" Value="#EBF5FB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -49,7 +63,7 @@
                     <TextBlock Text="Documento" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:ButtonEdit x:Name="FilterDocumentNumber"
                                     Text="{Binding FilterDocumentNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    NullText="Escribe número de documento (mín. 2 caracteres)"
+                                    NullText="Número de documento"
                                     ToolTip="Escribe aquí para buscar por número de documento"
                                     MinHeight="25"
                                     CharacterCasing="Upper"
@@ -203,73 +217,88 @@
 
             <!-- Botones -->
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
-                <Button cal:Message.Attach="NewAsync"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32"/>
-                        <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
-                <Button cal:Message.Attach="EditAsync" IsEnabled="{Binding CanEdit}"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
-                <Button cal:Message.Attach="PostAsync" IsEnabled="{Binding CanPost}"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="Postear" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
-                <Button cal:Message.Attach="CancelAsync" IsEnabled="{Binding CanCancel}"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="Anular" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
-                <Button cal:Message.Attach="DeleteDraftAsync" IsEnabled="{Binding CanDelete}"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="NewAsync"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="EditAsync" IsEnabled="{Binding CanEdit}"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="PostAsync" IsEnabled="{Binding CanPost}"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Postear" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="CancelAsync" IsEnabled="{Binding CanCancel}"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Anular" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="DeleteDraftAsync" IsEnabled="{Binding CanDelete}"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
             </StackPanel>
         </Grid>
         </Border>

@@ -1,4 +1,3 @@
-using Amazon;
 using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
@@ -115,7 +114,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        } = "us-east-1";
+        } = "US_EAST_1";
 
         public string AccessKey
         {
@@ -149,7 +148,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             }
         } = string.Empty;
 
-        public Dictionary<string, RegionEndpoint> AwsSesRegionDictionary => GlobalDictionaries.AwsSesRegionDictionary;
+        public IReadOnlyList<AwsRegionItem> AwsRegions => GlobalDictionaries.AwsRegions;
 
         #endregion
 

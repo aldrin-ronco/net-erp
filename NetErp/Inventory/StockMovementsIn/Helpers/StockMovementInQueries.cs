@@ -148,6 +148,7 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                         .Field(i => i.Name)
                         .Field(i => i.IsLotTracked)
                         .Field(i => i.IsSerialTracked)
+                        .Field(i => i.AllowFraction)
                         .Select(i => i.MeasurementUnit, mu => mu
                             .Field(m => m.Id)
                             .Field(m => m.Abbreviation))
@@ -227,6 +228,7 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                     .Field(i => i.IsActive)
                     .Field(i => i.IsLotTracked)
                     .Field(i => i.IsSerialTracked)
+                    .Field(i => i.AllowFraction)
                     .Select(i => i.MeasurementUnit, mu => mu
                         .Field(m => m.Id)
                         .Field(m => m.Abbreviation))
@@ -236,7 +238,12 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                         .SelectList(c => c.ItemSizeValues, sv => sv
                             .Field(v => v.Id)
                             .Field(v => v.Name)
-                            .Field(v => v.DisplayOrder))))
+                            .Field(v => v.DisplayOrder)))
+                    .SelectList(i => i.Images, img => img
+                        .Field(g => g.DisplayOrder)
+                        .Field(g => g.S3Bucket)
+                        .Field(g => g.S3BucketDirectory)
+                        .Field(g => g.S3FileName)))
                 .Build();
 
             var fragment = new GraphQLQueryFragment("itemsPage",

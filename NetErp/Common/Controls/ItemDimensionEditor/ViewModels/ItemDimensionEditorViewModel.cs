@@ -1,9 +1,12 @@
 using Caliburn.Micro;
 using Models.Inventory;
 using NetErp.Helpers;
+using NetErp.Helpers.Services;
+using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.UserControls.ItemDimensionEditor.DTO;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +28,8 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         private readonly Func<int, int, CancellationToken, Task<IReadOnlyList<SizeAvailability>>>? _sizeStockProvider;
         private readonly InboundSerialValidator? _inboundSerialValidator;
         private readonly IDialogService _dialogService;
+        private readonly IItemImageProvider? _imageProvider;
+        private CancellationTokenSource? _imagesCts;
 
         /// <summary>
         /// Id del documento actual (para excluirlo de la validación de PRESELECTED_IN_DRAFT
@@ -46,7 +51,8 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             Func<int, int, CancellationToken, Task<IReadOnlyList<LotAvailability>>>? lotProvider = null,
             Func<int, int, CancellationToken, Task<IReadOnlyList<SerialAvailability>>>? serialProvider = null,
             Func<int, int, CancellationToken, Task<IReadOnlyList<SizeAvailability>>>? sizeStockProvider = null,
-            InboundSerialValidator? inboundSerialValidator = null)
+            InboundSerialValidator? inboundSerialValidator = null,
+            IItemImageProvider? imageProvider = null)
         {
             _searchProvider = searchProvider ?? throw new ArgumentNullException(nameof(searchProvider));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
@@ -54,6 +60,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             _serialProvider = serialProvider;
             _sizeStockProvider = sizeStockProvider;
             _inboundSerialValidator = inboundSerialValidator;
+            _imageProvider = imageProvider;
             Direction = direction;
         }
 
@@ -83,7 +90,35 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         public string SearchTerm
         {
             get => _searchTerm;
-            set { if (_searchTerm != value) { _searchTerm = value ?? string.Empty; NotifyOfPropertyChange(); } }
+            set
+            {
+                if (_searchTerm != value)
+                {
+                    _searchTerm = value ?? string.Empty;
+                    NotifyOfPropertyChange();
+                    NotifyOfPropertyChange(nameof(HasSearchTerm));
+                    NotifyOfPropertyChange(nameof(IsSearchReadOnly));
+                }
+            }
+        }
+
+        public bool HasSearchTerm => !string.IsNullOrEmpty(_searchTerm);
+
+        /// <summary>
+        /// Bloquea edición del texto de búsqueda mientras hay un item seleccionado
+        /// con texto no vacío — fuerza al usuario a agregar el item o presionar X
+        /// para limpiar antes de teclear otro término.
+        /// </summary>
+        public bool IsSearchReadOnly => HasSelectedItem && HasSearchTerm;
+
+        private ICommand? _clearSearchCommand;
+        public ICommand ClearSearchCommand => _clearSearchCommand ??= new DevExpress.Mvvm.DelegateCommand(ClearSearch);
+
+        public void ClearSearch()
+        {
+            SearchTerm = string.Empty;
+            if (HasSelectedItem) ClearSelection();
+            FocusSearch();
         }
 
         private bool _searchFieldFocus;
@@ -194,6 +229,8 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                 _selectedItem = value;
                 NotifyOfPropertyChange();
                 NotifyOfPropertyChange(nameof(HasSelectedItem));
+                NotifyOfPropertyChange(nameof(IsSearchReadOnly));
+                NotifyOfPropertyChange(nameof(QuantityMask));
                 NotifyOfPropertyChange(nameof(SelectedItemCode));
                 NotifyOfPropertyChange(nameof(SelectedItemName));
                 NotifyOfPropertyChange(nameof(SelectedItemReference));
@@ -203,10 +240,48 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                 NotifyOfPropertyChange(nameof(IsDimensioned));
                 NotifyOfPropertyChange(nameof(QuantityIsReadOnly));
                 NotifyOfPropertyChange(nameof(IsLineComplete));
+                _ = RefreshImagesAsync();
             }
         }
 
+        /// <summary>
+        /// Imágenes del item seleccionado. Vacío si no hay item, no hay provider o
+        /// el item no tiene imágenes. La descarga de bitmaps es lazy — los DTOs
+        /// notifican <c>SourceImage</c> al completar.
+        /// </summary>
+        public ObservableCollection<ImageByItemDTO> CurrentImages { get; } = [];
+
+        public bool HasImagesToShow
+        {
+            get;
+            private set { if (field != value) { field = value; NotifyOfPropertyChange(); } }
+        }
+
+        private async Task RefreshImagesAsync()
+        {
+            CurrentImages.Clear();
+            HasImagesToShow = false;
+            if (_selectedItem == null || _imageProvider == null) return;
+
+            _imagesCts?.Cancel();
+            _imagesCts = new CancellationTokenSource();
+            CancellationToken token = _imagesCts.Token;
+            try
+            {
+                IReadOnlyList<ImageByItemDTO> images = await _imageProvider.GetImagesAsync(_selectedItem, token);
+                if (token.IsCancellationRequested) return;
+                foreach (ImageByItemDTO img in images) CurrentImages.Add(img);
+                HasImagesToShow = images.Count > 0;
+            }
+            catch (OperationCanceledException) { }
+            catch { /* silenciar — panel queda vacío si falla */ }
+        }
+
         public bool HasSelectedItem => _selectedItem != null;
+
+        /// <summary>Máscara numérica según <c>Item.AllowFraction</c> (N0 entero / N2 decimal).</summary>
+        public string QuantityMask => _selectedItem?.AllowFraction == true ? "N2" : "N0";
+
         public string SelectedItemCode => _selectedItem?.Code ?? string.Empty;
         public string SelectedItemName => _selectedItem?.Name ?? string.Empty;
         public string SelectedItemReference => _selectedItem?.Reference ?? string.Empty;
@@ -269,6 +344,8 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             _baseQuantity = 0m;
             _searchTerm = string.Empty;
             NotifyOfPropertyChange(nameof(SearchTerm));
+            NotifyOfPropertyChange(nameof(HasSearchTerm));
+            NotifyOfPropertyChange(nameof(IsSearchReadOnly));
             NotifyOfPropertyChange(nameof(BaseQuantity));
             NotifyOfPropertyChange(nameof(TotalQuantity));
             NotifyOfPropertyChange(nameof(DimensionSummary));

@@ -41,8 +41,8 @@
                     <!-- Región -->
                     <TextBlock Text="Región" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:ComboBoxEdit Padding="2"
-                                      ItemsSource="{Binding AwsSesRegionDictionary}"
-                                      DisplayMember="Value" ValueMember="Key"
+                                      ItemsSource="{Binding AwsRegions}"
+                                      DisplayMember="Display" ValueMember="EnumValue"
                                       IsTextEditable="False"
                                       EditValue="{Binding Region, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       BorderBrush="#C8CED6"

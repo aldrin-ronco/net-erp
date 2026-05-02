@@ -17,6 +17,7 @@ using NetErp.UserControls.ItemDimensionEditor.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading;
@@ -42,6 +43,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IBackgroundQueueService _backgroundQueueService;
+        private readonly IItemImageProvider _imageProvider;
         private readonly Dictionary<Guid, int> _operationLineMapping = [];
 
         public StockMovementInDetailViewModel(
@@ -53,7 +55,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             IRepository<ItemGraphQLModel> itemService,
             StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory,
-            IBackgroundQueueService backgroundQueueService)
+            IBackgroundQueueService backgroundQueueService,
+            IItemImageProvider imageProvider)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -64,6 +67,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
+            _imageProvider = imageProvider ?? throw new ArgumentNullException(nameof(imageProvider));
             _eventAggregator.SubscribeOnUIThread(this);
             Lines.CollectionChanged += (_, __) =>
             {
@@ -231,23 +235,27 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 searchProvider: SearchItemsAsync,
                 direction: DimensionDirection.In,
                 dialogService: _dialogService,
-                inboundSerialValidator: ValidateInboundSerialsAsync);
+                inboundSerialValidator: ValidateInboundSerialsAsync,
+                imageProvider: _imageProvider);
             Editor.StorageId = _model.Storage?.Id ?? 0;
             Editor.ExcludeStockMovementId = _model.Id;
             Editor.LineCompleted += OnLineCompletedHandler;
             Editor.RequestUnitCostFocus += OnRequestUnitCostFocus;
             Editor.ItemPickerProvider = OpenItemSearchModalAsync;
-            Editor.PropertyChanged += (_, e) =>
+            Editor.PropertyChanged += OnEditorPropertyChanged;
+        }
+
+        private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (Editor == null) return;
+            if (e.PropertyName == nameof(ItemDimensionEditorViewModel.CanComplete)
+                || e.PropertyName == nameof(ItemDimensionEditorViewModel.HasSelectedItem)
+                || e.PropertyName == nameof(ItemDimensionEditorViewModel.BaseQuantity)
+                || e.PropertyName == nameof(ItemDimensionEditorViewModel.IsBaseDimension))
             {
-                if (e.PropertyName == nameof(ItemDimensionEditorViewModel.CanComplete)
-                    || e.PropertyName == nameof(ItemDimensionEditorViewModel.HasSelectedItem)
-                    || e.PropertyName == nameof(ItemDimensionEditorViewModel.BaseQuantity)
-                    || e.PropertyName == nameof(ItemDimensionEditorViewModel.IsBaseDimension))
-                {
-                    NotifyOfPropertyChange(nameof(CanCommitLine));
-                    NotifyOfPropertyChange(nameof(CanTryCommitLine));
-                }
-            };
+                NotifyOfPropertyChange(nameof(CanCommitLine));
+                NotifyOfPropertyChange(nameof(CanTryCommitLine));
+            }
         }
 
         private void OnRequestUnitCostFocus(object? sender, EventArgs e)
@@ -469,6 +477,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 {
                     Editor.LineCompleted -= OnLineCompletedHandler;
                     Editor.RequestUnitCostFocus -= OnRequestUnitCostFocus;
+                    Editor.PropertyChanged -= OnEditorPropertyChanged;
                     Editor = null;
                 }
                 UnsubscribeLines();
@@ -913,8 +922,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         {
             if (!CanPost) return;
             await FlushNoteAsync();
-            if (ThemedMessageBox.Show("Confirmar postear",
-                $"¿Confirma postear este borrador? Se asignará un consecutivo definitivo al postear.",
+            if (ThemedMessageBox.Show("Confirmar publicación",
+                $"¿Confirma que desea publicar este borrador?",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
             try
             {

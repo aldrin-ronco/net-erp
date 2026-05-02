@@ -13,6 +13,10 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
+    <UserControl.Resources>
+        <h:AwsRegionDisplayConverter x:Key="AwsRegionDisplayConverter"/>
+    </UserControl.Resources>
+
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
@@ -78,7 +82,7 @@
                         <dxg:GridColumn Header="Descripción" Width="*" HorizontalHeaderContentAlignment="Center"
                                         Binding="{Binding Description}"/>
                         <dxg:GridColumn Header="Región" Width="Auto" HorizontalHeaderContentAlignment="Center"
-                                        Binding="{Binding Region}"/>
+                                        Binding="{Binding Region, Converter={StaticResource AwsRegionDisplayConverter}}"/>
                     </dxg:GridControl>
                 </busyIndicator:BusyMask>
 

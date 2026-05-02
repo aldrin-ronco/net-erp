@@ -31,7 +31,7 @@ namespace Common.Helpers
             AwsS3ConfigGraphQLModel awsConfig = location.AwsS3Config ?? SessionInfo.DefaultAwsS3Config
                 ?? throw new InvalidOperationException("No se encontró configuración AWS S3. Verifique que la empresa tenga configuración global o que la ubicación de almacenamiento tenga credenciales propias.");
 
-            RegionEndpoint region = GlobalDictionaries.AwsSesRegionDictionary[awsConfig.Region];
+            RegionEndpoint region = GlobalDictionaries.GetAwsRegionEndpoint(awsConfig.Region);
 
             return new S3Helper(
                 awsConfig.AccessKey,

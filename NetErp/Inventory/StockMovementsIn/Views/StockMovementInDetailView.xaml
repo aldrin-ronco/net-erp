@@ -17,6 +17,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
+        <h:BindingProxy x:Key="DetailProxy" Data="{Binding}"/>
     </UserControl.Resources>
 
     <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
@@ -37,26 +38,26 @@
                 <!-- Header readonly -->
                 <Grid Grid.Row="0" Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                    <StackPanel Grid.Column="0" Margin="0,0,20,0">
                         <TextBlock Text="Centro de costo" FontSize="13" Foreground="Gray"/>
                         <TextBlock Text="{Binding CostCenterName}" FontSize="13"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="4,0,4,0">
+                    <StackPanel Grid.Column="1" Margin="0,0,20,0">
                         <TextBlock Text="Bodega" FontSize="13" Foreground="Gray"/>
                         <TextBlock Text="{Binding StorageName}" FontSize="13"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="4,0,4,0">
+                    <StackPanel Grid.Column="2" Margin="0,0,20,0">
                         <TextBlock Text="Fuente contable" FontSize="13" Foreground="Gray"/>
                         <TextBlock Text="{Binding AccountingSourceName}" FontSize="13"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="3" Margin="4,0,4,0">
+                    <StackPanel Grid.Column="3" Margin="0,0,20,0">
                         <TextBlock Text="Fecha y hora" FontSize="13" Foreground="Gray"/>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding DocumentDate}" FontSize="13"/>
@@ -64,7 +65,7 @@
                             <TextBlock Text="{Binding DocumentTime}" FontSize="13" Foreground="Gray"/>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel Grid.Column="4" Margin="4,0,0,0">
+                    <StackPanel Grid.Column="4" Margin="0,0,20,0">
                         <TextBlock Text="Documento" FontSize="13" Foreground="Gray"/>
                         <TextBlock Text="{Binding DocumentDisplay}" FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
@@ -78,7 +79,7 @@
                     <editor:ItemDimensionEditorView DataContext="{Binding Editor}">
                         <editor:ItemDimensionEditorView.AdditionalContent>
                             <StackPanel MinWidth="140" Margin="0,0,8,0"
-                                        DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl, AncestorLevel=2}}">
+                                        DataContext="{Binding Data, Source={StaticResource DetailProxy}}">
                                 <TextBlock Text="Costo unitario" FontSize="13" Foreground="Gray"/>
                                 <dxe:TextEdit TabIndex="3" Height="28"
                                               MaskType="Numeric"
@@ -96,7 +97,7 @@
                             </StackPanel>
                         </editor:ItemDimensionEditorView.AdditionalContent>
                         <editor:ItemDimensionEditorView.TrailingContent>
-                            <StackPanel DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl, AncestorLevel=2}}">
+                            <StackPanel DataContext="{Binding Data, Source={StaticResource DetailProxy}}">
                                 <TextBlock Text=" " FontSize="11"/>
                                 <Border CornerRadius="4" BorderThickness="2" Padding="0">
                                     <Border.Style>
@@ -244,7 +245,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding SizeName}" FontSize="11" Foreground="#5F6B7A"/>
-                                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding QuantityText}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
                                                         <TextBlock Grid.Column="3" Margin="6,0,0,0" FontSize="11" Foreground="#5F6B7A"
                                                                    Text="{Binding DataContext.Item.MeasurementUnit.Abbreviation, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
                                                     </Grid>
@@ -267,7 +268,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding LotNumber}" FontSize="11" Foreground="#5F6B7A" FontFamily="Consolas"/>
-                                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat=N2}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding QuantityText}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
                                                         <TextBlock Grid.Column="3" Margin="6,0,0,0" FontSize="11" Foreground="#5F6B7A"
                                                                    Text="{Binding DataContext.Item.MeasurementUnit.Abbreviation, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
                                                         <TextBlock Grid.Column="4" Margin="12,0,0,0" FontSize="11" Foreground="#5F6B7A"

@@ -187,6 +187,7 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
             IReadOnlyList<NetErp.UserControls.ItemDimensionEditor.DTO.SerialDraft> serials,
             IReadOnlyList<NetErp.UserControls.ItemDimensionEditor.DTO.SizeDraft> sizes)
         {
+            bool allowFraction = Item?.AllowFraction == true;
             if (lots != null && lots.Count > 0)
             {
                 DimensionType = LineDimensionType.Lot;
@@ -195,7 +196,8 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
                     LotId = l.LotId,
                     LotNumber = l.LotNumber ?? "(s/lote)",
                     Quantity = l.Quantity,
-                    ExpirationDate = l.ExpirationDate
+                    ExpirationDate = l.ExpirationDate,
+                    AllowFraction = allowFraction
                 })];
             }
             else if (serials != null && serials.Count > 0)
@@ -214,7 +216,8 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
                 {
                     SizeId = s.SizeId,
                     SizeName = s.SizeName,
-                    Quantity = s.Quantity
+                    Quantity = s.Quantity,
+                    AllowFraction = allowFraction
                 })];
             }
             NotifyOfPropertyChange(nameof(DimensionType));
@@ -241,6 +244,7 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
             dto.SetUnitCostSilently(m.UnitCost);
 
             // Preselecciones → DTO rows + tipo dimensión.
+            bool allowFraction = m.Item?.AllowFraction == true;
             if (m.LotPreselections != null && m.LotPreselections.Any())
             {
                 dto.DimensionType = LineDimensionType.Lot;
@@ -251,7 +255,8 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
                         LotId = l.LotId,
                         LotNumber = l.LotNumber ?? l.Lot?.LotNumber ?? "(s/lote)",
                         Quantity = l.Quantity,
-                        ExpirationDate = l.ExpirationDate
+                        ExpirationDate = l.ExpirationDate,
+                        AllowFraction = allowFraction
                     })];
             }
             else if (m.SerialPreselections != null && m.SerialPreselections.Any())
@@ -274,7 +279,8 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
                     {
                         SizeId = s.Size?.Id ?? s.SizeId,
                         SizeName = s.Size?.Name ?? "(s/talla)",
-                        Quantity = s.Quantity
+                        Quantity = s.Quantity,
+                        AllowFraction = allowFraction
                     })];
             }
             return dto;
@@ -289,9 +295,11 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
         public string LotNumber { get; init; } = string.Empty;
         public decimal Quantity { get; init; }
         public DateTime? ExpirationDate { get; init; }
+        public bool AllowFraction { get; init; }
+        public string QuantityText => Quantity.ToString(AllowFraction ? "N2" : "N0");
         public string Display => ExpirationDate.HasValue
-            ? $"{LotNumber} · {Quantity:0.##} UND · vence {ExpirationDate.Value:yyyy-MM-dd}"
-            : $"{LotNumber} · {Quantity:0.##} UND";
+            ? $"{LotNumber} · {QuantityText} UND · vence {ExpirationDate.Value:yyyy-MM-dd}"
+            : $"{LotNumber} · {QuantityText} UND";
     }
 
     public class DimensionSerialRow
@@ -305,7 +313,9 @@ namespace NetErp.Inventory.StockMovementsIn.DTO
         public int SizeId { get; init; }
         public string SizeName { get; init; } = string.Empty;
         public decimal Quantity { get; init; }
-        public string Display => $"{SizeName}, {Quantity:0.##} UND";
+        public bool AllowFraction { get; init; }
+        public string QuantityText => Quantity.ToString(AllowFraction ? "N2" : "N0");
+        public string Display => $"{SizeName}, {QuantityText} UND";
     }
 
     public enum OperationStatus

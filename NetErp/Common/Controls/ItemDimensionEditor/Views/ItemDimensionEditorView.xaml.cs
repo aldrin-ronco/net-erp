@@ -38,6 +38,22 @@ namespace NetErp.UserControls.ItemDimensionEditor.Views
         public ItemDimensionEditorView()
         {
             InitializeComponent();
+            PreviewKeyDown += OnPreviewKeyDown;
+        }
+
+        /// <summary>
+        /// ESC con item seleccionado dentro del UC = cancelar selección + limpiar
+        /// búsqueda (equivalente a presionar X). Marca handled para impedir que
+        /// el ESC propague al contenedor (que típicamente cierra la vista vía
+        /// botón con <c>IsCancel="True"</c>).
+        /// </summary>
+        private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape) return;
+            if (DataContext is not ViewModels.ItemDimensionEditorViewModel vm) return;
+            if (!vm.HasSelectedItem) return;
+            vm.ClearSearch();
+            e.Handled = true;
         }
     }
 }
