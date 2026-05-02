@@ -7,7 +7,10 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:cal="http://caliburnmicro.com"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             s:Shortcuts.Enabled="{DynamicResource DialogShortcuts}"
+             Focusable="True"
              mc:Ignorable="d"
              Width="{Binding DialogWidth}"
              Height="{Binding DialogHeight}"
@@ -15,6 +18,10 @@
              PreviewKeyDown="OnPreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <s:CommandList x:Key="DialogShortcuts">
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Close"/>
+        </s:CommandList>
         <Style x:Key="ActionButtonBorder" TargetType="Border">
             <Setter Property="Margin" Value="4,0"/>
             <Setter Property="CornerRadius" Value="4"/>
@@ -125,6 +132,7 @@
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="AcceptAsync"
                             IsEnabled="{Binding CanAccept}"
+                            ToolTip="Aceptar (Ctrl+S)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
                         <StackPanel HorizontalAlignment="Center" Focusable="False">
@@ -135,6 +143,7 @@
                 </Border>
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="CancelAsync"
+                            ToolTip="Cancelar (Esc)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
                         <StackPanel HorizontalAlignment="Center" Focusable="False">

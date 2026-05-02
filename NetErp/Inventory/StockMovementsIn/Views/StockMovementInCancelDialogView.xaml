@@ -7,16 +7,24 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              Background="#EEF1F5">
+    <UserControl.Resources>
+        <s:CommandList x:Key="DialogShortcuts">
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Close"/>
+        </s:CommandList>
+    </UserControl.Resources>
     <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8"
-            Width="{Binding DialogWidth}">
+            Width="{Binding DialogWidth}"
+            s:Shortcuts.Enabled="{StaticResource DialogShortcuts}" Focusable="True">
         <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

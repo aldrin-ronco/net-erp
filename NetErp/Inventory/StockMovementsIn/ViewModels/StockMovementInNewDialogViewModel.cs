@@ -56,7 +56,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         }
 
         public double DialogWidth { get; set; }
-        public double DialogHeight { get; set; } = 420;
+        public double DialogHeight { get; set; } = 380;
 
         public int NoteMaxLength => _stringLengthCache.GetMaxLength<StockMovementGraphQLModel>(nameof(StockMovementGraphQLModel.Note));
 
@@ -155,6 +155,10 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         }
 
         public Task CancelAsync() => TryCloseAsync(false);
+
+        // Aliases AppCommands
+        public Task CloseAsync() => CancelAsync();
+        public bool CanClose => true;
     }
 
     internal class NewDraftResponse

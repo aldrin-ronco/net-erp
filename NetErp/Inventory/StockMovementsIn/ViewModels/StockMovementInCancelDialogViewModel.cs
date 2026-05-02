@@ -86,6 +86,12 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         public Task CancelAsync() => TryCloseAsync(false);
 
+        // Aliases AppCommands
+        public Task SaveAsync() => ConfirmAsync();
+        public bool CanSave => CanConfirm;
+        public Task CloseAsync() => CancelAsync();
+        public bool CanClose => true;
+
         private class CancelResponse
         {
             public StockMovementMutationPayload UpdateResponse { get; set; } = new();

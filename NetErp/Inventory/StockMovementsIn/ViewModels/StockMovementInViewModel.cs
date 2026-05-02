@@ -35,7 +35,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         IHandle<StockMovementUpdateMessage>,
         IHandle<StockMovementDeleteMessage>,
         IHandle<StockMovementPostMessage>,
-        IHandle<StockMovementCancelMessage>
+        IHandle<StockMovementCancelMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -53,6 +54,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private readonly DebouncedAction _searchDebounce;
         private readonly IBackgroundQueueService _backgroundQueueService;
         private readonly IItemImageProvider _imageProvider;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
@@ -70,7 +72,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             JoinableTaskFactory joinableTaskFactory,
             DebouncedAction searchDebounce,
             IBackgroundQueueService backgroundQueueService,
-            IItemImageProvider imageProvider)
+            IItemImageProvider imageProvider,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -86,6 +89,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
             _imageProvider = imageProvider ?? throw new ArgumentNullException(nameof(imageProvider));
+            _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
 
             _eventAggregator.SubscribeOnUIThread(this);
             DisplayName = "Entradas de inventario por concepto";
@@ -282,10 +286,22 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public bool IsMasterVisible => CurrentDetail == null;
         public bool IsDetailVisible => CurrentDetail != null;
 
-        public bool CanEdit => SelectedStockMovement != null && SelectedStockMovement.Status == "DRAFT";
-        public bool CanPost => SelectedStockMovement != null && SelectedStockMovement.Status == "DRAFT";
-        public bool CanCancel => SelectedStockMovement != null && SelectedStockMovement.Status == "POSTED" && string.IsNullOrEmpty(SelectedStockMovement.CancelledWith);
-        public bool CanDelete => SelectedStockMovement != null && SelectedStockMovement.Status == "DRAFT";
+        public bool CanEdit => HasEditPermission && SelectedStockMovement != null && SelectedStockMovement.Status == "DRAFT";
+        public bool CanPost => HasPostPermission && SelectedStockMovement != null && SelectedStockMovement.Status == "DRAFT";
+        public bool CanCancel => HasAnnulPermission && SelectedStockMovement != null && SelectedStockMovement.Status == "POSTED" && string.IsNullOrEmpty(SelectedStockMovement.CancelledWith);
+        public bool CanDelete => HasDeletePermission && SelectedStockMovement != null && SelectedStockMovement.Status == "DRAFT";
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Delete);
+        public bool HasPostPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Post);
+        public bool HasAnnulPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Annul);
+
+        public bool CanNew => HasCreatePermission && !IsBusy;
 
         #endregion
 
@@ -305,6 +321,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 SelectedPeriod = PeriodOptions.First(p => p.Value == PeriodOption.ThisMonth);
                 _suppressPeriodReload = false;
                 await LoadAsync();
+                NotifyPermissionChanges();
                 this.SetFocus(() => FilterDocumentNumber);
             }
             catch (Exception ex)
@@ -512,6 +529,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 if (CurrentDetail != null) CurrentDetail.RequestClose -= OnDetailRequestClose;
                 CurrentDetail = null;
                 await LoadAsync();
+                this.SetFocus(() => FilterDocumentNumber);
             }
             catch (Exception ex)
             {
@@ -533,7 +551,6 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 IsBusy = true;
                 var (fragment, query) = StockMovementInQueries.PostMovement.Value;
                 object variables = new GraphQLVariables().For(fragment, "id", SelectedStockMovement.Id).Build();
-                System.Diagnostics.Debug.WriteLine($"[POST MUTATION - Master]\nQUERY:\n{query}\nVARIABLES:\n{Newtonsoft.Json.JsonConvert.SerializeObject(variables, Newtonsoft.Json.Formatting.Indented)}");
                 StockMovementPostResponse? payload = await _service.MutationContextAsync<StockMovementPostResponse>(query, variables);
                 StockMovementMutationPayload? result = payload?.UpdateResponse;
                 if (result == null || !result.Success)
@@ -622,6 +639,21 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         #endregion
 
+        #region Shortcut aliases
+
+        public Task RefreshAsync() => LoadAsync();
+        public Task DeleteAsync() => DeleteDraftAsync();
+        public Task AnnulAsync() => CancelAsync();
+        public bool CanAnnul => CanCancel;
+        public bool CanRefresh => !IsBusy;
+
+        public void Search()
+        {
+            this.SetFocus(() => FilterDocumentNumber);
+        }
+
+        #endregion
+
         #region IHandle
 
         public Task HandleAsync(StockMovementCreateMessage message, CancellationToken cancellationToken) => LoadAsync();
@@ -629,6 +661,26 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public Task HandleAsync(StockMovementDeleteMessage message, CancellationToken cancellationToken) => LoadAsync();
         public Task HandleAsync(StockMovementPostMessage message, CancellationToken cancellationToken) => LoadAsync();
         public Task HandleAsync(StockMovementCancelMessage message, CancellationToken cancellationToken) => LoadAsync();
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyPermissionChanges();
+            return Task.CompletedTask;
+        }
+
+        private void NotifyPermissionChanges()
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(HasPostPermission));
+            NotifyOfPropertyChange(nameof(HasAnnulPermission));
+            NotifyOfPropertyChange(nameof(CanNew));
+            NotifyOfPropertyChange(nameof(CanEdit));
+            NotifyOfPropertyChange(nameof(CanDelete));
+            NotifyOfPropertyChange(nameof(CanPost));
+            NotifyOfPropertyChange(nameof(CanCancel));
+        }
 
         #endregion
     }

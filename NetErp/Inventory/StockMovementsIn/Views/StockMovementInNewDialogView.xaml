@@ -7,6 +7,7 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              Background="#EEF1F5">
@@ -18,6 +19,19 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <s:CommandList x:Key="DialogShortcuts">
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Close"/>
+        </s:CommandList>
     </UserControl.Resources>
     <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
@@ -26,13 +40,15 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8"
             Width="{Binding DialogWidth}"
-            Height="{Binding DialogHeight}">
-        <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
+            Height="{Binding DialogHeight}"
+            s:Shortcuts.Enabled="{StaticResource DialogShortcuts}" Focusable="True">
+        <Grid Margin="15,15,15,8" h:EnterKeyTraversal.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
@@ -98,7 +114,7 @@
                               BorderBrush="#C8CED6"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,5,0,0">
                 <Border Margin="4,0" CornerRadius="4" BorderThickness="2" Padding="0">
                     <Border.Style>
                         <Style TargetType="Border">
@@ -113,21 +129,41 @@
                         </Style>
                     </Border.Style>
                     <Button x:Name="BtnSave" TabIndex="5" Padding="13,3"
+                            ToolTip="Guardar (Ctrl+S)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             cal:Message.Attach="SaveAsync" IsEnabled="{Binding CanSave}">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False">
-                                <Image.Style>
-                                    <Style TargetType="Image">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                                </Border.Style>
+                                <TextBlock Text="⌃S" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
                 <Border Margin="4,0" CornerRadius="4" BorderThickness="2" Padding="0">
@@ -144,13 +180,33 @@
                         </Style>
                     </Border.Style>
                     <Button x:Name="BtnCancel" TabIndex="6" Padding="13,3" IsCancel="True"
+                            ToolTip="Cancelar (Esc)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             cal:Message.Attach="CancelAsync">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
-                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                                <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="Esc" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
             </StackPanel>

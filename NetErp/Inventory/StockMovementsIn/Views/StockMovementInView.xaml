@@ -8,12 +8,31 @@
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:uc="clr-namespace:NetErp.UserControls"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <s:CommandList x:Key="MasterShortcuts">
+            <x:Static Member="s:AppCommands.New"/>
+            <x:Static Member="s:AppCommands.Edit"/>
+            <x:Static Member="s:AppCommands.Post"/>
+            <x:Static Member="s:AppCommands.Annul"/>
+            <x:Static Member="s:AppCommands.Delete"/>
+            <x:Static Member="s:AppCommands.Refresh"/>
+            <x:Static Member="s:AppCommands.Search"/>
+        </s:CommandList>
         <Style x:Key="ActionButtonBorder" TargetType="Border">
             <Setter Property="Margin" Value="4,0"/>
             <Setter Property="CornerRadius" Value="4"/>
@@ -37,7 +56,8 @@
 
         <!-- Master -->
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="8" Margin="5"
-                Visibility="{Binding IsMasterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                Visibility="{Binding IsMasterVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                s:Shortcuts.Enabled="{StaticResource MasterShortcuts}" Focusable="True">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -219,84 +239,273 @@
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="NewAsync"
+                            IsEnabled="{Binding CanNew}"
+                            ToolTip="Nuevo (Ctrl+N)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" Focusable="False"/>
-                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasCreatePermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasCreatePermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="⌃N" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="EditAsync" IsEnabled="{Binding CanEdit}"
+                            ToolTip="Editar (F2)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" Focusable="False">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasEditPermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="F2" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="PostAsync" IsEnabled="{Binding CanPost}"
+                            ToolTip="Postear (F9)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Postear" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            <DataTrigger Binding="{Binding HasPostPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Postear" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasPostPermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="F9" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="CancelAsync" IsEnabled="{Binding CanCancel}"
+                            ToolTip="Anular (Ctrl+Shift+X)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Anular" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            <DataTrigger Binding="{Binding HasAnnulPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Anular" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasAnnulPermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="⌃⇧X" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
                 <Border Style="{StaticResource ActionButtonBorder}">
                     <Button cal:Message.Attach="DeleteDraftAsync" IsEnabled="{Binding CanDelete}"
+                            ToolTip="Eliminar (Del)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" Focusable="False">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                   Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                            <DataTrigger Binding="{Binding HasDeletePermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasDeletePermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="Del" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
             </StackPanel>
