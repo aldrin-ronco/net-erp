@@ -84,6 +84,7 @@ namespace NetErp
 
             protected override void OnStartup(object sender, StartupEventArgs e)
             {
+                NetErp.Helpers.Shortcuts.ShortcutHintState.Initialize();
                 _ = DisplayRootViewForAsync<ShellViewModel>();
             }
 

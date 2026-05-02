@@ -15,6 +15,15 @@
              d:DesignHeight="700" d:DesignWidth="1200">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
         <s:CommandList x:Key="MasterShortcuts">
             <x:Static Member="s:AppCommands.New"/>
             <x:Static Member="s:AppCommands.Edit"/>
@@ -262,6 +271,24 @@
                                     </Style>
                                 </Image.Style>
                             </Image>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasCreatePermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="⌃N" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
                         </Grid>
                     </Button>
                 </Border>
@@ -298,6 +325,24 @@
                                     </Style>
                                 </Image.Style>
                             </Image>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasEditPermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="F2" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
                         </Grid>
                     </Button>
                 </Border>
@@ -334,6 +379,24 @@
                                     </Style>
                                 </Image.Style>
                             </Image>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasPostPermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="F9" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
                         </Grid>
                     </Button>
                 </Border>
@@ -370,6 +433,24 @@
                                     </Style>
                                 </Image.Style>
                             </Image>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasAnnulPermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="⌃⇧X" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
                         </Grid>
                     </Button>
                 </Border>
@@ -406,6 +487,24 @@
                                     </Style>
                                 </Image.Style>
                             </Image>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    <Condition Binding="{Binding HasDeletePermission}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="Del" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
                         </Grid>
                     </Button>
                 </Border>
