@@ -36,12 +36,17 @@
                         BorderBrush="#C8CED6"
                         AllowDefaultButton="False"
                         IsEnabled="{Binding IsStorageReady}"
+                        IsReadOnly="{Binding IsSearchReadOnly}"
                         cal:Message.Attach="[Event KeyDown] = [Action OnSearchKeyDown($eventArgs)]">
             <h:FocusBehavior.IsFocused>
                 <Binding Path="SearchFieldFocus" Mode="TwoWay"/>
             </h:FocusBehavior.IsFocused>
             <dxe:ButtonEdit.Buttons>
                 <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                <dxe:ButtonInfo IsLeft="False" GlyphKind="Cancel" Margin="2,0,4,0"
+                                ToolTip="Limpiar búsqueda"
+                                Visibility="{Binding HasSearchTerm, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Command="{Binding ClearSearchCommand}"/>
             </dxe:ButtonEdit.Buttons>
         </dxe:ButtonEdit>
 
@@ -86,7 +91,7 @@
                                   MinValue="0"
                                   EditValueType="{x:Type sys:Decimal}"
                                   IsFloatValue="True"
-                                  MaskType="Numeric" Mask="N2"
+                                  MaskType="Numeric" Mask="{Binding QuantityMask}"
                                   AllowNullInput="False"
                                   IsReadOnly="{Binding QuantityIsReadOnly}"
                                   EditValue="{Binding TotalQuantity, Mode=OneWay}"
@@ -95,7 +100,7 @@
                                   MinValue="0"
                                   EditValueType="{x:Type sys:Decimal}"
                                   IsFloatValue="True"
-                                  MaskType="Numeric" Mask="N2"
+                                  MaskType="Numeric" Mask="{Binding QuantityMask}"
                                   AllowNullInput="False"
                                   EditValue="{Binding BaseQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <h:FocusBehavior.IsFocused>
@@ -125,6 +130,30 @@
                 <ContentPresenter Grid.Column="6"
                                   Content="{Binding TrailingContent, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
             </Grid>
+        </Border>
+
+        <!-- Panel imágenes del item seleccionado. Oculto si no hay imágenes o S3 no disponible. -->
+        <Border Margin="0,8,0,0"
+                Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="6"
+                Visibility="{Binding HasImagesToShow, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="6">
+                <ItemsControl ItemsSource="{Binding CurrentImages}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="4" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="4"
+                                    Background="White" Width="120" Height="120">
+                                <Image Source="{Binding SourceImage, UpdateSourceTrigger=PropertyChanged}"
+                                       Stretch="Uniform" Margin="2"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Border>
     </StackPanel>
 </UserControl>

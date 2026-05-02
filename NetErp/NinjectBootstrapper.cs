@@ -248,6 +248,12 @@ namespace NetErp
             _ = kernel.Bind<StringLengthCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StringLengthCache>());
 
+            // Item image provider (singleton — cache de imágenes cross-module)
+            _ = kernel.Bind<NetErp.Helpers.Services.ItemImageProvider>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Helpers.Services.IItemImageProvider>()
+                .ToMethod(ctx => ctx.Kernel.Get<NetErp.Helpers.Services.ItemImageProvider>());
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<NetErp.Helpers.Services.ItemImageProvider>());
+
             _ = kernel.Bind<SmtpCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<SmtpCache>());
 

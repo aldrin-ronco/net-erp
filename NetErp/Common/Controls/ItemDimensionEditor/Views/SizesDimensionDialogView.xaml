@@ -15,6 +15,20 @@
              PreviewKeyDown="OnPreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="ActionButtonBorder" TargetType="Border">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                    <Setter Property="Background" Value="#EBF5FB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
@@ -108,21 +122,27 @@
             </DataGrid>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
-                <Button cal:Message.Attach="AcceptAsync"
-                        IsEnabled="{Binding CanAccept}"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32"/>
-                        <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
-                <Button cal:Message.Attach="CancelAsync"
-                        Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32"/>
-                        <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="AcceptAsync"
+                            IsEnabled="{Binding CanAccept}"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                            <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="CancelAsync"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center" Focusable="False">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
             </StackPanel>
         </Grid>
     </Border>

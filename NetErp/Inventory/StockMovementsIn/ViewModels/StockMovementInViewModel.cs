@@ -52,6 +52,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly DebouncedAction _searchDebounce;
         private readonly IBackgroundQueueService _backgroundQueueService;
+        private readonly IItemImageProvider _imageProvider;
 
         #endregion
 
@@ -68,7 +69,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory,
             DebouncedAction searchDebounce,
-            IBackgroundQueueService backgroundQueueService)
+            IBackgroundQueueService backgroundQueueService,
+            IItemImageProvider imageProvider)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -83,6 +85,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
+            _imageProvider = imageProvider ?? throw new ArgumentNullException(nameof(imageProvider));
 
             _eventAggregator.SubscribeOnUIThread(this);
             DisplayName = "Entradas de inventario por concepto";
@@ -484,7 +487,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 StockMovementInDetailViewModel detail = new(
                     _eventAggregator, _notificationService, _dialogService,
                     _service, _lineService, _itemService, _stringLengthCache,
-                    _joinableTaskFactory, _backgroundQueueService);
+                    _joinableTaskFactory, _backgroundQueueService,
+                    _imageProvider);
 
                 await detail.LoadDataForEditAsync(id);
                 detail.RequestClose += OnDetailRequestClose;
@@ -521,8 +525,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public async Task PostAsync()
         {
             if (SelectedStockMovement == null || SelectedStockMovement.Status != "DRAFT") return;
-            if (ThemedMessageBox.Show("Confirmar postear",
-                "¿Confirma postear este movimiento? Esta acción es irreversible (solo se podrá anular).",
+            if (ThemedMessageBox.Show("Confirmar publicación",
+                "¿Confirma que desea publicar este borrador?",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
             try
             {
