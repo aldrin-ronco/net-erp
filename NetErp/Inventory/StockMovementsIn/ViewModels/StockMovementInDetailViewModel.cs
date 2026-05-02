@@ -930,7 +930,6 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 IsBusy = true;
                 var (frag, query) = StockMovementInQueries.PostMovement.Value;
                 object vars = new GraphQLVariables().For(frag, "id", _model.Id).Build();
-                System.Diagnostics.Debug.WriteLine($"[POST MUTATION - Detail]\nQUERY:\n{query}\nVARIABLES:\n{Newtonsoft.Json.JsonConvert.SerializeObject(vars, Newtonsoft.Json.Formatting.Indented)}");
                 PostResponse? responseObj = await _service.MutationContextAsync<PostResponse>(query, vars);
                 StockMovementMutationPayload? payload = responseObj?.UpdateResponse;
                 if (payload == null || !payload.Success)
@@ -966,6 +965,18 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             await FlushNoteAsync();
             RaiseRequestClose();
         }
+
+        // Aliases AppCommands
+        public Task DeleteAsync() => RemoveLineAsync();
+        public bool CanDelete => CanRemoveLine;
+        public Task ConfirmAsync() => TryCommitLineAsync();
+        public bool CanConfirm => CanTryCommitLine;
+        public Task SaveAsync() => SaveNoteAsync();
+        public bool CanSave => CanSaveNote;
+        public bool CanClose => true;
+
+        public void Search() => Editor?.FocusSearch();
+        public bool CanSearch => IsDraft && Editor != null && !IsBusy;
 
         /// <summary>Disparado cuando el Detail termina (post o close). El conductor reacciona.</summary>
         public event EventHandler? RequestClose;

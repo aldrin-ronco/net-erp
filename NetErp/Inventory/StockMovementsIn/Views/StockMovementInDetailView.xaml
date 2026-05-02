@@ -8,16 +8,26 @@
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:currency="clr-namespace:CurrencyTextBoxControl;assembly=CurrencyTextbox"
              xmlns:editor="clr-namespace:NetErp.UserControls.ItemDimensionEditor.Views"
              xmlns:dto="clr-namespace:NetErp.Inventory.StockMovementsIn.DTO"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             s:Shortcuts.Enabled="{DynamicResource DetailShortcuts}"
+             Focusable="True"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
         <h:BindingProxy x:Key="DetailProxy" Data="{Binding}"/>
+        <s:CommandList x:Key="DetailShortcuts">
+            <x:Static Member="s:AppCommands.Post"/>
+            <x:Static Member="s:AppCommands.Close"/>
+            <x:Static Member="s:AppCommands.Delete"/>
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Search"/>
+        </s:CommandList>
     </UserControl.Resources>
 
     <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"

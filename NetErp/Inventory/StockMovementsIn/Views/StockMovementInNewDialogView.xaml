@@ -7,6 +7,7 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              Background="#EEF1F5">
@@ -18,6 +19,10 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <s:CommandList x:Key="DialogShortcuts">
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Close"/>
+        </s:CommandList>
     </UserControl.Resources>
     <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
@@ -26,13 +31,15 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="8,0,8,8"
             Width="{Binding DialogWidth}"
-            Height="{Binding DialogHeight}">
-        <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
+            Height="{Binding DialogHeight}"
+            s:Shortcuts.Enabled="{StaticResource DialogShortcuts}" Focusable="True">
+        <Grid Margin="15,15,15,8" h:EnterKeyTraversal.IsEnabled="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
@@ -98,7 +105,7 @@
                               BorderBrush="#C8CED6"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,5,0,0">
                 <Border Margin="4,0" CornerRadius="4" BorderThickness="2" Padding="0">
                     <Border.Style>
                         <Style TargetType="Border">
@@ -113,6 +120,7 @@
                         </Style>
                     </Border.Style>
                     <Button x:Name="BtnSave" TabIndex="5" Padding="13,3"
+                            ToolTip="Guardar (Ctrl+S)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             cal:Message.Attach="SaveAsync" IsEnabled="{Binding CanSave}">
@@ -144,6 +152,7 @@
                         </Style>
                     </Border.Style>
                     <Button x:Name="BtnCancel" TabIndex="6" Padding="13,3" IsCancel="True"
+                            ToolTip="Cancelar (Esc)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             cal:Message.Attach="CancelAsync">

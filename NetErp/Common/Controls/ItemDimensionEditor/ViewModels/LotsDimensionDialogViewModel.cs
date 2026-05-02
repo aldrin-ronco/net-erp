@@ -245,6 +245,12 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             }
             return TryCloseAsync(false);
         }
+
+        // Aliases AppCommands
+        public Task SaveAsync() => AcceptAsync();
+        public bool CanSave => CanAccept;
+        public Task CloseAsync() => CancelAsync();
+        public bool CanClose => true;
     }
 
     public class LotEntryRow : PropertyChangedBase, INotifyDataErrorInfo
