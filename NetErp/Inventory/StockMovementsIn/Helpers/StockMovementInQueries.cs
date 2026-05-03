@@ -53,6 +53,7 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                     .Field(s => s.Status)
                     .Field(s => s.CancelledWith)
                     .Field(s => s.Note)
+                    .Field(s => s.CancelNote)
                     .Field(s => s.PostedAt)
                     .Field(s => s.CancelledAt)
                     .Field(s => s.InsertedAt)
@@ -67,6 +68,9 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                         .Field(g => g.Id)
                         .Field(g => g.Name))
                     .Select(s => s.CreatedBy, cb => cb
+                        .Field(u => u.Id)
+                        .Field(u => u.FullName))
+                    .Select(s => s.CancelledBy, cb => cb
                         .Field(u => u.Id)
                         .Field(u => u.FullName)))
                 .Build();
@@ -122,6 +126,7 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                 .Field(s => s.Status)
                 .Field(s => s.CancelledWith)
                 .Field(s => s.Note)
+                .Field(s => s.CancelNote)
                 .Field(s => s.PostedAt)
                 .Field(s => s.CancelledAt)
                 .Field(s => s.InsertedAt)
@@ -136,6 +141,9 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
                 .Select(s => s.Storage, st => st
                     .Field(g => g.Id)
                     .Field(g => g.Name))
+                .Select(s => s.CancelledBy, cb => cb
+                    .Field(u => u.Id)
+                    .Field(u => u.FullName))
                 .SelectList(s => s.Lines, ln => ln
                     .Field(l => l.Id)
                     .Field(l => l.Quantity)

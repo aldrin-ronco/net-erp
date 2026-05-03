@@ -202,7 +202,18 @@
                                        EnableSelectedRowAppearance="True"
                                        ShowGroupPanel="False"
                                        AlternateRowBackground="Beige"
-                                       AllowColumnMoving="False"/>
+                                       AllowColumnMoving="False">
+                            <dxg:TableView.RowStyle>
+                                <Style TargetType="dxg:RowControl">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Row.IsCancelled}" Value="True">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                            <Setter Property="Opacity" Value="0.8"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </dxg:TableView.RowStyle>
+                        </dxg:TableView>
                     </dxg:GridControl.View>
                     <dxg:GridColumn Header="Documento" FieldName="DocumentDisplay" Width="108" HorizontalHeaderContentAlignment="Center">
                         <dxg:GridColumn.CellTemplate>
@@ -256,21 +267,71 @@
             </Border>
             </Grid>
 
-            <!-- Note documento seleccionado -->
-            <StackPanel Grid.Row="2" Margin="10,6,10,0">
-                <TextBlock Text="Observación" FontSize="13" Foreground="Gray" Margin="0,0,0,3"/>
-                <dxe:TextEdit Text="{Binding SelectedStockMovement.Note, Mode=OneWay}"
-                              IsReadOnly="True"
-                              TextWrapping="Wrap"
-                              AcceptsReturn="True"
-                              VerticalContentAlignment="Top"
-                              HorizontalContentAlignment="Left"
-                              VerticalScrollBarVisibility="Auto"
-                              MinHeight="42"
-                              MaxHeight="80"
-                              Padding="3"
-                              BorderBrush="#C8CED6"/>
-            </StackPanel>
+            <!-- Note documento seleccionado + bloque anulación condicional -->
+            <Grid Grid.Row="2" Margin="10,6,10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition>
+                        <ColumnDefinition.Style>
+                            <Style TargetType="ColumnDefinition">
+                                <Setter Property="Width" Value="*"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedStockMovement.CancelledAt}" Value="{x:Null}">
+                                        <Setter Property="Width" Value="0"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ColumnDefinition.Style>
+                    </ColumnDefinition>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                    <TextBlock Text="Observación" FontSize="13" Foreground="Gray" Margin="0,0,0,3"/>
+                    <dxe:TextEdit Text="{Binding SelectedStockMovement.Note, Mode=OneWay}"
+                                  IsReadOnly="True"
+                                  TextWrapping="Wrap"
+                                  AcceptsReturn="True"
+                                  VerticalContentAlignment="Top"
+                                  HorizontalContentAlignment="Left"
+                                  VerticalScrollBarVisibility="Visible"
+                                  MinHeight="42"
+                                  MaxHeight="80"
+                                  Padding="3"
+                                  BorderBrush="#C8CED6"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedStockMovement.CancelledAt}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock FontSize="13" Foreground="#B71C1C" Margin="0,0,0,3" TextWrapping="Wrap">
+                        <Run Text="Anulado el "/>
+                        <Run Text="{Binding SelectedStockMovement.CancelledAt, StringFormat='dd/MM/yyyy HH:mm', Mode=OneWay}"/>
+                        <Run Text=" por "/>
+                        <Run Text="{Binding SelectedStockMovement.CancelledBy.FullName, Mode=OneWay}"/>
+                    </TextBlock>
+                    <dxe:TextEdit Text="{Binding SelectedStockMovement.CancelNote, Mode=OneWay}"
+                                  IsReadOnly="True"
+                                  TextWrapping="Wrap"
+                                  AcceptsReturn="True"
+                                  VerticalContentAlignment="Top"
+                                  HorizontalContentAlignment="Left"
+                                  VerticalScrollBarVisibility="Visible"
+                                  MinHeight="42"
+                                  MaxHeight="80"
+                                  Padding="3"
+                                  BorderBrush="#E5B4B4"
+                                  Background="#FFF5F5"
+                                  Foreground="#B71C1C"/>
+                </StackPanel>
+            </Grid>
 
             <uc:GridPaging Grid.Row="3"
                            Margin="10,6,10,0"

@@ -31,7 +31,10 @@ namespace Models.Inventory
         /// <summary>A | X (null si no anulado).</summary>
         public string? CancelledWith { get; set; }
 
+        public bool IsCancelled => !string.IsNullOrEmpty(CancelledWith);
+
         public string Note { get; set; } = string.Empty;
+        public string? CancelNote { get; set; }
         public DateTime? PostedAt { get; set; }
         public DateTime? CancelledAt { get; set; }
 
