@@ -11,6 +11,7 @@ using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Services;
+using NetErp.Helpers.Shortcuts;
 using NetErp.Inventory.StockMovementsIn.DTO;
 using NetErp.Inventory.StockMovementsIn.Helpers;
 using System;
@@ -651,6 +652,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         {
             this.SetFocus(() => FilterDocumentNumber);
         }
+
+        public void FocusGrid() => this.FocusFirstRow("StockMovementsGrid");
+        public bool CanFocusGrid => StockMovements?.Count > 0;
 
         #endregion
 

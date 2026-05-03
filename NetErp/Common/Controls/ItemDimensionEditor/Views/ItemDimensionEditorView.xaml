@@ -7,6 +7,7 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:currency="clr-namespace:CurrencyTextBoxControl;assembly=CurrencyTextbox"
              mc:Ignorable="d"
@@ -22,33 +23,65 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
     </UserControl.Resources>
 
     <StackPanel KeyboardNavigation.TabNavigation="Local">
         <!-- Búsqueda: una sola línea -->
-        <dxe:ButtonEdit x:Name="SearchTermBox"
-                        TabIndex="1"
-                        Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        NullText="Buscar por código, referencia o EAN; ENTER abre lista..."
-                        ToolTip="ENTER busca por código/referencia/EAN exacto; sin match abre la lista"
-                        MinHeight="28"
-                        CharacterCasing="Upper"
-                        BorderBrush="#C8CED6"
-                        AllowDefaultButton="False"
-                        IsEnabled="{Binding IsStorageReady}"
-                        IsReadOnly="{Binding IsSearchReadOnly}"
-                        cal:Message.Attach="[Event KeyDown] = [Action OnSearchKeyDown($eventArgs)]">
-            <h:FocusBehavior.IsFocused>
-                <Binding Path="SearchFieldFocus" Mode="TwoWay"/>
-            </h:FocusBehavior.IsFocused>
-            <dxe:ButtonEdit.Buttons>
-                <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
-                <dxe:ButtonInfo IsLeft="False" GlyphKind="Cancel" Margin="2,0,4,0"
-                                ToolTip="Limpiar búsqueda"
-                                Visibility="{Binding HasSearchTerm, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                Command="{Binding ClearSearchCommand}"/>
-            </dxe:ButtonEdit.Buttons>
-        </dxe:ButtonEdit>
+        <Grid>
+            <dxe:ButtonEdit x:Name="SearchTermBox"
+                            TabIndex="1"
+                            Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            NullText="Buscar por código, referencia o EAN; ENTER abre lista..."
+                            ToolTip="ENTER busca por código/referencia/EAN exacto; sin match abre la lista"
+                            MinHeight="28"
+                            CharacterCasing="Upper"
+                            BorderBrush="#C8CED6"
+                            AllowDefaultButton="False"
+                            IsEnabled="{Binding IsStorageReady}"
+                            IsReadOnly="{Binding IsSearchReadOnly}"
+                            cal:Message.Attach="[Event KeyDown] = [Action OnSearchKeyDown($eventArgs)]">
+                <h:FocusBehavior.IsFocused>
+                    <Binding Path="SearchFieldFocus" Mode="TwoWay"/>
+                </h:FocusBehavior.IsFocused>
+                <dxe:ButtonEdit.Buttons>
+                    <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                    <dxe:ButtonInfo IsLeft="False" GlyphKind="Cancel" Margin="2,0,4,0"
+                                    ToolTip="Limpiar búsqueda"
+                                    Visibility="{Binding HasSearchTerm, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Command="{Binding ClearSearchCommand}"/>
+                </dxe:ButtonEdit.Buttons>
+            </dxe:ButtonEdit>
+            <Border IsHitTestVisible="False">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="Margin" Value="0,0,28,0"/>
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                    <Condition Binding="{Binding ShowSearchBadge, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="⌃F" FontSize="10" FontWeight="Bold" Foreground="White"/>
+            </Border>
+        </Grid>
 
         <!-- Panel info ítem (visible solo si hay match): code + reference + nombre + cantidad + UND + costo + dimensiones en una sola línea -->
         <Border Margin="0,8,0,0"

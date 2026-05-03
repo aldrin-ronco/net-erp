@@ -49,5 +49,13 @@ namespace NetErp.Helpers.Shortcuts
         public static readonly RoutedUICommand Annul = new(
             "Anular", nameof(Annul), typeof(AppCommands),
             [new KeyGesture(Key.X, ModifierKeys.Control | ModifierKeys.Shift)]);
+
+        public static readonly RoutedUICommand FocusGrid = new(
+            "Ir a la grilla", nameof(FocusGrid), typeof(AppCommands),
+            [new KeyGesture(Key.G, ModifierKeys.Control)]);
+
+        public static readonly RoutedUICommand FocusNote = new(
+            "Ir a la nota", nameof(FocusNote), typeof(AppCommands),
+            [new KeyGesture(Key.M, ModifierKeys.Control)]);
     }
 }

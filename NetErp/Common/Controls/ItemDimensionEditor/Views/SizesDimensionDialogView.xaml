@@ -36,6 +36,15 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
     </UserControl.Resources>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
@@ -135,10 +144,29 @@
                             ToolTip="Aceptar (Ctrl+S)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False"/>
-                            <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                                <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="⌃S" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
                 <Border Style="{StaticResource ActionButtonBorder}">
@@ -146,10 +174,29 @@
                             ToolTip="Cancelar (Esc)"
                             FocusVisualStyle="{x:Null}"
                             Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center" Focusable="False">
-                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
-                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
-                        </StackPanel>
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                                <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="Esc" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
                     </Button>
                 </Border>
             </StackPanel>

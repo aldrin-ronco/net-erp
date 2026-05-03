@@ -10,6 +10,7 @@ using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Messages;
 using NetErp.Helpers.Services;
+using NetErp.Helpers.Shortcuts;
 using NetErp.Inventory.StockMovementsIn.DTO;
 using NetErp.Inventory.StockMovementsIn.Helpers;
 using NetErp.UserControls.ItemDimensionEditor.DTO;
@@ -977,6 +978,12 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         public void Search() => Editor?.FocusSearch();
         public bool CanSearch => IsDraft && Editor != null && !IsBusy;
+
+        public void FocusGrid() => this.FocusFirstRow("LinesGrid");
+        public bool CanFocusGrid => Lines.Count > 0;
+
+        public void FocusNote() => this.SetFocus("NoteEditor");
+        public bool CanFocusNote => IsDraft;
 
         /// <summary>Disparado cuando el Detail termina (post o close). El conductor reacciona.</summary>
         public event EventHandler? RequestClose;
