@@ -144,7 +144,7 @@
                             Margin="5,0"
                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                             Background="#F8F9FA" BorderBrush="#E5E7EB" BorderThickness="1"
-                            CornerRadius="6" Padding="18,16">
+                            CornerRadius="6" Padding="18,10">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -167,14 +167,14 @@
                                            Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
                                 <dxe:TextEdit Grid.Row="0" Grid.Column="1"
                                               Text="{Binding Code, Mode=OneWay}"
-                                              IsReadOnly="True" Margin="0,0,0,5" CharacterCasing="Upper"
+                                              IsReadOnly="True" Margin="0,0,0,3" CharacterCasing="Upper"
                                               Padding="3"
                                               BorderBrush="#C8CED6"
                                               Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
 
                                 <TextBlock Text="Nombre" FontSize="13" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <dxe:TextEdit x:Name="NameEdit" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
+                                <dxe:TextEdit x:Name="NameEdit" Grid.Row="1" Grid.Column="1" Margin="0,0,0,3" CharacterCasing="Upper"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               Padding="3"
                                               BorderBrush="#C8CED6"
@@ -183,7 +183,7 @@
 
                                 <TextBlock Text="Referencia" FontSize="13" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <dxe:TextEdit Grid.Row="2" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
+                                <dxe:TextEdit Grid.Row="2" Grid.Column="1" Margin="0,0,0,3" CharacterCasing="Upper"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               Padding="3"
                                               BorderBrush="#C8CED6"
@@ -192,7 +192,7 @@
 
                                 <TextBlock Text="Unidad de medida" FontSize="13" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <dxe:ComboBoxEdit Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                <dxe:ComboBoxEdit Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,3"
                                                   ItemsSource="{Binding MeasurementUnits}"
                                                   DisplayMember="Name"
                                                   SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
@@ -202,7 +202,7 @@
 
                                 <TextBlock Text="Dimensión" FontSize="13" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,3">
+                                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,2">
                                     <RadioButton Content="Genérico" GroupName="Dimension" Margin="0,0,12,0" VerticalAlignment="Center"
                                                  Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                                  IsChecked="{Binding SelectedDimensionMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Generic}"/>
@@ -217,7 +217,7 @@
                                                  IsChecked="{Binding SelectedDimensionMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Size}"/>
                                 </StackPanel>
 
-                                <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,0,0,8"
+                                <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,0,0,4"
                                            Text="{Binding DimensionDescription}"
                                            FontSize="11" Foreground="#5F6B7A" TextWrapping="Wrap"/>
 
@@ -234,7 +234,7 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <dxe:ComboBoxEdit Grid.Row="6" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                <dxe:ComboBoxEdit Grid.Row="6" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,3"
                                                   ItemsSource="{Binding Sizes}"
                                                   DisplayMember="Name"
                                                   SelectedItem="{Binding SelectedSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
@@ -247,7 +247,7 @@
 
                                 <TextBlock Text="Grupo contable" FontSize="13" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right"
                                            Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <dxe:ComboBoxEdit Grid.Row="7" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                <dxe:ComboBoxEdit Grid.Row="7" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,3"
                                                   ItemsSource="{Binding AccountingGroups}"
                                                   DisplayMember="Name"
                                                   SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"

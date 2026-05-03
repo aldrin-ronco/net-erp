@@ -35,6 +35,21 @@ namespace NetErp.UserControls.ItemDimensionEditor.Views
             set => SetValue(TrailingContentProperty, value);
         }
 
+        public static readonly DependencyProperty ShowSearchBadgeProperty =
+            DependencyProperty.Register(nameof(ShowSearchBadge), typeof(bool), typeof(ItemDimensionEditorView),
+                new PropertyMetadata(false));
+
+        /// <summary>
+        /// Cuando true, muestra badge ⌃F overlay sobre el campo de búsqueda al
+        /// mantener Ctrl. Consumer activa esto sólo si declara `s:AppCommands.Search`
+        /// en su CommandList. Default false.
+        /// </summary>
+        public bool ShowSearchBadge
+        {
+            get => (bool)GetValue(ShowSearchBadgeProperty);
+            set => SetValue(ShowSearchBadgeProperty, value);
+        }
+
         public ItemDimensionEditorView()
         {
             InitializeComponent();
