@@ -52,6 +52,27 @@ namespace NetErp.Helpers.Shortcuts
         private static readonly DependencyProperty HandlerProperty =
             DependencyProperty.RegisterAttached("Handler", typeof(KeyEventHandler), typeof(Shortcuts));
 
+        /// <summary>
+        /// Lista de teclas (separadas por coma) que un descendant declara
+        /// reclamadas por su lógica local. El handler global de
+        /// <see cref="Shortcuts"/> NO interceptará esa tecla cuando el foco
+        /// (e.OriginalSource) esté dentro del subtree marcado.
+        ///
+        /// <para>Uso: <c>s:Shortcuts.ReservedKeys="Escape,Delete"</c> en un
+        /// child UC con handlers locales (PreviewKeyDown / IsCancel button /
+        /// editor edit-mode). Permite que el comportamiento local corra primero
+        /// sin que el opt-in del parent lo pise.</para>
+        ///
+        /// <para>Aplica solo al primer ancestor (más cercano al foco) que tenga
+        /// la propiedad seteada. No bubble — opt-in explícito por nodo.</para>
+        /// </summary>
+        public static readonly DependencyProperty ReservedKeysProperty =
+            DependencyProperty.RegisterAttached("ReservedKeys", typeof(string), typeof(Shortcuts),
+                new PropertyMetadata(null));
+
+        public static string? GetReservedKeys(DependencyObject obj) => (string?)obj.GetValue(ReservedKeysProperty);
+        public static void SetReservedKeys(DependencyObject obj, string? value) => obj.SetValue(ReservedKeysProperty, value);
+
         private static void OnEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not UIElement element) return;
@@ -76,6 +97,11 @@ namespace NetErp.Helpers.Shortcuts
                     {
                         if (gesture is KeyGesture kg && kg.Matches(sender, args))
                         {
+                            // Defensa: si el foco está dentro de un descendant que
+                            // reclama esta tecla vía s:Shortcuts.ReservedKeys, no
+                            // interceptar — dejar que el handler local corra.
+                            if (IsKeyReservedByDescendant(args.OriginalSource as DependencyObject, sender as DependencyObject, args.Key))
+                                return;
                             object? dc = GetDataContext(sender);
                             if (dc == null) return;
                             if (!CanExecuteOn(dc, cmd)) return;
@@ -137,6 +163,34 @@ namespace NetErp.Helpers.Shortcuts
                 FrameworkElement fe => fe.DataContext,
                 _ => null
             };
+        }
+
+        /// <summary>
+        /// Sube desde <paramref name="from"/> hasta justo antes de
+        /// <paramref name="optInRoot"/>. Si encuentra un nodo con
+        /// <see cref="ReservedKeysProperty"/> conteniendo <paramref name="key"/>,
+        /// retorna true → el parent debe bypassear el shortcut.
+        /// </summary>
+        private static bool IsKeyReservedByDescendant(DependencyObject? from, DependencyObject? optInRoot, Key key)
+        {
+            if (from == null || optInRoot == null) return false;
+            string keyName = key.ToString();
+            DependencyObject? node = from;
+            while (node != null && !ReferenceEquals(node, optInRoot))
+            {
+                string? reserved = node.GetValue(ReservedKeysProperty) as string;
+                if (!string.IsNullOrWhiteSpace(reserved))
+                {
+                    foreach (string token in reserved.Split(','))
+                    {
+                        if (string.Equals(token.Trim(), keyName, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                }
+                node = System.Windows.Media.VisualTreeHelper.GetParent(node)
+                       ?? (node is FrameworkElement fe ? fe.Parent : null);
+            }
+            return false;
         }
     }
 

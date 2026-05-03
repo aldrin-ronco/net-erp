@@ -963,6 +963,14 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         public async Task CloseAsync()
         {
+            // Composición con estado del Editor: si hay item seleccionado, ESC
+            // limpia primero (UX original — primero deselecciona, segundo cierra).
+            // Sin esto, opt-in del verbo Close pisa el handler local del Editor.
+            if (Editor?.HasSelectedItem == true)
+            {
+                Editor.ClearSearch();
+                return;
+            }
             await FlushNoteAsync();
             RaiseRequestClose();
         }

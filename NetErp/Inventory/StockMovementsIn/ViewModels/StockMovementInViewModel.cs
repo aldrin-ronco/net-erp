@@ -384,7 +384,6 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                     filters.costCenterId = FilterCostCenter.Id;
                 if (FilterStatus is "DRAFT" or "POSTED")
                     filters.status = FilterStatus;
-                filters.onlyVigentes = true;
 
                 (DateTime? from, DateTime? to) = ResolveDateRange();
                 if (from.HasValue) filters.insertedAtFrom = from.Value.ToIsoDatetime();
