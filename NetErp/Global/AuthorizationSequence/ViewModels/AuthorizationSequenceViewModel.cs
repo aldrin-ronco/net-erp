@@ -36,6 +36,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
         private readonly IRepository<DianSoftwareConfigGraphQLModel> _dianConfigService;
         private readonly IRepository<DianCertificateGraphQLModel> _dianCertService;
+        private readonly Helpers.Dian.IDianSoapClient _dianSoapClient;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly CostCenterCache _costCenterCache;
@@ -329,7 +330,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             AuthorizationSequenceTypeCache authorizationSequenceTypeCache,
             PermissionCache permissionCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            Helpers.Dian.IDianSoapClient dianSoapClient)
         {
             _eventAggregator = eventAggregator;
             _authorizationSequenceService = authorizationSequenceService;
@@ -342,6 +344,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             _permissionCache = permissionCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _dianSoapClient = dianSoapClient;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -433,7 +436,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _costCenterCache,
                     _authorizationSequenceTypeCache,
                     _stringLengthCache,
-                    _joinableTaskFactory);
+                    _joinableTaskFactory,
+                    _dianSoapClient);
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
                     detail.DialogWidth = parentView.ActualWidth * 0.65;
                 IsBusy = false;
@@ -465,7 +469,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _costCenterCache,
                     _authorizationSequenceTypeCache,
                     _stringLengthCache,
-                    _joinableTaskFactory);
+                    _joinableTaskFactory,
+                    _dianSoapClient);
 
                 await detail.LoadDataForEditAsync(SelectedAuthorizationSequence.Id);
                 if (this.GetView() is System.Windows.FrameworkElement parentView)

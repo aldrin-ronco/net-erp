@@ -58,7 +58,7 @@
                         <TextBlock Grid.Column="0" Text="Régimen" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <dxe:ComboBoxEdit Grid.Column="1"
                                           Padding="2"
-                                          IsEnabled="{Binding IsNewRecord, Mode=OneWay}"
+                                          IsEnabled="{Binding AreAccountingEntityFieldsLocked, Converter={StaticResource SimpleBooleanConverter}}"
                                           ItemsSource="{Binding RegimeDictionary}"
                                           DisplayMember="Value"
                                           ValueMember="Key"
@@ -80,7 +80,7 @@
                                           ItemsSource="{Binding IdentificationTypes}"
                                           DisplayMember="Name"
                                           ValueMember="Id"
-                                          IsEnabled="{Binding IsNewRecord, Mode=OneWay}"
+                                          IsEnabled="{Binding AreAccountingEntityFieldsLocked, Converter={StaticResource SimpleBooleanConverter}}"
                                           SelectedItem="{Binding Path=SelectedIdentificationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           BorderBrush="#C8CED6"/>
                     </Grid>
@@ -100,8 +100,13 @@
                                       MinWidth="180" Padding="3"
                                       MaskType="RegEx"
                                       Mask="{Binding IdentificationNumberMask}"
-                                      IsReadOnly="{Binding IsNewRecord, Converter={StaticResource SimpleBooleanConverter}}"
-                                      BorderBrush="#C8CED6"/>
+                                      IsReadOnly="{Binding AreAccountingEntityFieldsLocked}"
+                                      BorderBrush="#C8CED6">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding LookupAccountingEntityCommand}"
+                                                       EventName="LostFocus"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxe:TextEdit>
                         <TextBox Grid.Column="2" Width="30" Margin="8,0,0,0"
                                  Text="{Binding Path=VerificationDigit, Mode=OneWay}"
                                  IsReadOnly="True" IsTabStop="False"

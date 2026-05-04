@@ -37,6 +37,7 @@ using NetErp.Global.Parameter.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.Dian;
 using NetErp.Helpers.Services;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.ItemSizes.DTO;
@@ -460,6 +461,8 @@ namespace NetErp
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();
+            _ = kernel.Bind<IDianSoapClient>().To<DianSoapClient>().InSingletonScope();
+            _ = kernel.Bind<IAccountingEntityLookupService>().To<AccountingEntityLookupService>().InSingletonScope();
             _ = kernel.Bind<ICreditLimitValidator>().To<CreditLimitValidator>().InSingletonScope();
             _ = kernel.Bind<IServiceProvider>().ToMethod(ctx => ctx.Kernel).InSingletonScope();
 

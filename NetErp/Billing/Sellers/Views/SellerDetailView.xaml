@@ -56,8 +56,13 @@
                                       MinWidth="180" Padding="3"
                                       MaskType="RegEx"
                                       Mask="{Binding IdentificationNumberMask}"
-                                      IsReadOnly="{Binding IsNewRecord, Converter={StaticResource SimpleBooleanConverter}}"
-                                      BorderBrush="#C8CED6"/>
+                                      IsReadOnly="{Binding AreAccountingEntityFieldsLocked}"
+                                      BorderBrush="#C8CED6">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding LookupAccountingEntityCommand}"
+                                                       EventName="LostFocus"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxe:TextEdit>
                     </Grid>
 
                     <!-- Tabs -->

@@ -39,6 +39,8 @@ namespace NetErp.Billing.Customers.ViewModels
         public IMapper AutoMapper { get; private set; }
         private readonly IEventAggregator _eventAggregator;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly Helpers.Dian.IDianSoapClient _dianSoapClient;
+        private readonly Helpers.Services.IAccountingEntityLookupService _accountingEntityLookupService;
         private readonly IRepository<CustomerGraphQLModel> _customerService;
         private readonly Helpers.IDialogService _dialogService;
 
@@ -271,6 +273,8 @@ namespace NetErp.Billing.Customers.ViewModels
         public CustomerViewModel(IMapper mapper,
                                  IEventAggregator eventAggregator,
                                  Helpers.Services.INotificationService notificationService,
+                                 Helpers.Dian.IDianSoapClient dianSoapClient,
+                                 Helpers.Services.IAccountingEntityLookupService accountingEntityLookupService,
                                  IRepository<CustomerGraphQLModel> customerService,
                                  Helpers.IDialogService dialogService,
                                  IdentificationTypeCache identificationTypeCache,
@@ -287,6 +291,8 @@ namespace NetErp.Billing.Customers.ViewModels
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _dianSoapClient = dianSoapClient ?? throw new ArgumentNullException(nameof(dianSoapClient));
+            _accountingEntityLookupService = accountingEntityLookupService ?? throw new ArgumentNullException(nameof(accountingEntityLookupService));
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
@@ -356,7 +362,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator, _dianSoapClient, _notificationService, _accountingEntityLookupService);
                 await detail.LoadCachesAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -390,7 +396,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator, _dianSoapClient, _notificationService, _accountingEntityLookupService);
                 await detail.LoadCachesAsync();
                 await detail.LoadDataForEditAsync(SelectedCustomer.Id);
                 IsBusy = false;

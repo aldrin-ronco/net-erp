@@ -97,6 +97,7 @@ public class SellerViewModelTests
             _eventAggregator,
             _service,
             _notificationService,
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>(),
             _costCenterCache,
             _identificationTypeCache,
             _countryCache,
@@ -239,6 +240,7 @@ public class SellerViewModelTests
     {
         System.Action act = () => new SellerViewModel(
             _mapper, _eventAggregator, _service, _notificationService,
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>(),
             _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache,
             _stringLengthCache, _dialogService, _joinableTaskFactory, _graphQLClient,
             _validator, _permissionCache, null!);

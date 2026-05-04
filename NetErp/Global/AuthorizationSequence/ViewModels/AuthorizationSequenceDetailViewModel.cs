@@ -32,6 +32,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
         private readonly IRepository<DianSoftwareConfigGraphQLModel> _dianConfigService;
         private readonly IRepository<DianCertificateGraphQLModel> _dianCertService;
+        private readonly Helpers.Dian.IDianSoapClient _dianSoapClient;
         private readonly IEventAggregator _eventAggregator;
         private readonly CostCenterCache _costCenterCache;
         private readonly AuthorizationSequenceTypeCache _authorizationSequenceTypeCache;
@@ -664,7 +665,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             CostCenterCache costCenterCache,
             AuthorizationSequenceTypeCache authorizationSequenceTypeCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            Helpers.Dian.IDianSoapClient dianSoapClient)
         {
             _authorizationSequenceService = authorizationSequenceService;
             _dianConfigService = dianConfigService;
@@ -674,6 +676,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             _authorizationSequenceTypeCache = authorizationSequenceTypeCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _dianSoapClient = dianSoapClient;
         }
 
         #endregion
@@ -761,7 +764,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = true;
 
-                var numberingRangeResponse = await Task.Run(() => GetAuthorizationSequences.GetNumberingRange(_dianConfig!, _dianCertificate!));
+                var numberingRangeResponse = await _dianSoapClient.ExecuteAsync(new Helpers.Dian.Operations.GetNumberingRangeOperation());
                 if (numberingRangeResponse.Status)
                 {
                     AuthorizationSequences = [.. numberingRangeResponse.AuthorizationSequences];

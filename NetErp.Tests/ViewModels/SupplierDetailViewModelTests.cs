@@ -76,7 +76,9 @@ public class SupplierDetailViewModelTests
             _mapper,
             _graphQLClient,
             _joinableTaskFactory,
-            _validator);
+            _validator,
+            Substitute.For<NetErp.Helpers.Services.INotificationService>(),
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>());
     }
 
     private void PrepareForNew()
@@ -155,7 +157,9 @@ public class SupplierDetailViewModelTests
         System.Action act = () => new SupplierDetailViewModel(
             _service, _eventAggregator, _accountingAccounts,
             _identificationTypeCache, _countryCache, _withholdingTypeCache,
-            _stringLengthCache, _mapper, _graphQLClient, _joinableTaskFactory, null!);
+            _stringLengthCache, _mapper, _graphQLClient, _joinableTaskFactory, null!,
+            Substitute.For<NetErp.Helpers.Services.INotificationService>(),
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>());
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("validator");
     }

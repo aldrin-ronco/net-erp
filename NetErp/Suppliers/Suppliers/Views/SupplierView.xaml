@@ -77,6 +77,8 @@
                                     Binding="{Binding AccountingEntity.IdentificationNumberWithVerificationDigit, Mode=OneWay}"/>
                     <dxg:GridColumn Header="Nombre del tercero" HorizontalHeaderContentAlignment="Left" Width="*"
                                     Binding="{Binding AccountingEntity.SearchName, Mode=OneWay}"/>
+                    <dxg:GridColumn Header="Régimen" HorizontalHeaderContentAlignment="Center" Width="Auto"
+                                    Binding="{Binding AccountingEntity.RegimeResolve, Mode=OneWay}"/>
                     <dxg:GridColumn Header="Dirección" HorizontalHeaderContentAlignment="Left" Width="*"
                                     Binding="{Binding AccountingEntity.Address, Mode=OneWay}"/>
                     <dxg:GridColumn Header="Información telefónica" HorizontalHeaderContentAlignment="Center" Width="Auto"
