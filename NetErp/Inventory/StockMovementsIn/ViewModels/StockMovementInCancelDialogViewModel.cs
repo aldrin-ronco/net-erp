@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
@@ -40,13 +39,39 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             DialogWidth = 520;
         }
 
-        public double DialogWidth { get; set; }
+        public double DialogWidth { get; }
         public string DocumentNumber { get; }
 
         public int NoteMaxLength => _stringLengthCache.GetMaxLength<StockMovementGraphQLModel>(nameof(StockMovementGraphQLModel.Note));
 
-        public string Note { get; set { if (field != value) { field = value ?? string.Empty; NotifyOfPropertyChange(nameof(Note)); NotifyOfPropertyChange(nameof(CanConfirm)); } } } = string.Empty;
-        public bool IsBusy { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsBusy)); NotifyOfPropertyChange(nameof(CanConfirm)); } } }
+        public string Note
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value ?? string.Empty;
+                    NotifyOfPropertyChange(nameof(Note));
+                    NotifyOfPropertyChange(nameof(CanConfirm));
+                }
+            }
+        } = string.Empty;
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanConfirm));
+                }
+            }
+        }
+
         public bool CanConfirm => !IsBusy && !string.IsNullOrWhiteSpace(Note);
 
         public StockMovementMutationPayload? Result { get; private set; }

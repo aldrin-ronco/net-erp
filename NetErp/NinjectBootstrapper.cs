@@ -178,6 +178,9 @@ namespace NetErp
             _ = kernel.Bind<NotAnnulledAccountingSourceCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<NotAnnulledAccountingSourceCache>());
 
+            _ = kernel.Bind<InboundAccountingSourceCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<InboundAccountingSourceCache>());
+
             _ = kernel.Bind<ProcessTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ProcessTypeCache>());
 

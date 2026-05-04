@@ -1,10 +1,10 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Inventory;
+using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -24,6 +24,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.StockMovementsIn.ViewModels
@@ -135,7 +136,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         private async Task FlushNoteAsync()
         {
-            _noteDebounceCts?.Cancel();
+            if (_noteDebounceCts is not null) await _noteDebounceCts!.CancelAsync();
             _noteDebounceCts?.Dispose();
             _noteDebounceCts = null;
             if (IsDraft && NoteHasChanges) await AutoSaveNoteAsync();
@@ -157,12 +158,12 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             }
         } = OperationStatus.Unchanged;
 
-        public System.Windows.Media.Brush NoteStatusBrush => NoteStatus switch
+        public Brush NoteStatusBrush => NoteStatus switch
         {
-            OperationStatus.Pending => System.Windows.Media.Brushes.Orange,
-            OperationStatus.Saved => System.Windows.Media.Brushes.Green,
-            OperationStatus.Failed => System.Windows.Media.Brushes.Red,
-            _ => System.Windows.Media.Brushes.Transparent
+            OperationStatus.Pending => Brushes.Orange,
+            OperationStatus.Saved => Brushes.Green,
+            OperationStatus.Failed => Brushes.Red,
+            _ => Brushes.Transparent
         };
 
         private async Task ResetNoteStatusAsync()
@@ -211,14 +212,39 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public StockMovementLineDTO? SelectedLine
         {
             get;
-            set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(SelectedLine)); NotifyOfPropertyChange(nameof(CanRemoveLine)); } }
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedLine));
+                    NotifyOfPropertyChange(nameof(CanRemoveLine));
+                }
+            }
         }
 
         public bool IsDraft => Status == "DRAFT";
         public bool CanPost => IsDraft && Lines.Count > 0 && !IsBusy;
         public bool CanRemoveLine => IsDraft && SelectedLine != null && !IsBusy;
         public bool CanSaveNote => IsDraft && NoteHasChanges && !IsBusy;
-        public bool IsBusy { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsBusy)); NotifyOfPropertyChange(nameof(CanPost)); NotifyOfPropertyChange(nameof(CanRemoveLine)); NotifyOfPropertyChange(nameof(CanSaveNote)); NotifyOfPropertyChange(nameof(CanCommitLine)); NotifyOfPropertyChange(nameof(CanTryCommitLine)); } } }
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanPost));
+                    NotifyOfPropertyChange(nameof(CanRemoveLine));
+                    NotifyOfPropertyChange(nameof(CanSaveNote));
+                    NotifyOfPropertyChange(nameof(CanCommitLine));
+                    NotifyOfPropertyChange(nameof(CanTryCommitLine));
+                }
+            }
+        }
 
         #endregion
 
@@ -227,7 +253,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public ItemDimensionEditorViewModel? Editor
         {
             get;
-            private set { field = value; NotifyOfPropertyChange(nameof(Editor)); }
+            private set
+            {
+                field = value;
+                NotifyOfPropertyChange(nameof(Editor));
+            }
         }
 
         private void BuildEditor()
@@ -270,20 +300,21 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 ItemGraphQLModel? picked = null;
-                var (_, query) = StockMovementInQueries.ItemsPage.Value;
+                (GraphQLQueryFragment fragment, string query) = StockMovementInQueries.ItemsPage.Value;
 
                 dynamic baseFilters = new ExpandoObject();
                 baseFilters.isActive = true;
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = baseFilters;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "filters", baseFilters)
+                    .Build();
 
                 Func<ItemGraphQLModel?, Task> onSelected = item => { picked = item; return Task.CompletedTask; };
-                NetErp.Global.Modals.ViewModels.SearchWithThreeColumnsGridViewModel<ItemGraphQLModel> modal =
+                SearchWithThreeColumnsGridViewModel<ItemGraphQLModel> modal =
                     new(
                         query: query,
                         fieldHeader1: "Código", fieldHeader2: "Producto", fieldHeader3: "Referencia",
                         fieldData1: "Code", fieldData2: "Name", fieldData3: "Reference",
-                        variables: (object)variables,
+                        variables: variables,
                         dialogService: _dialogService,
                         onSelectedAsync: onSelected);
 
@@ -340,9 +371,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         private void FocusSearchDeferred()
         {
-            System.Windows.Application.Current?.Dispatcher.BeginInvoke(
+            #pragma warning disable VSTHRD001
+            _ = (Application.Current?.Dispatcher.BeginInvoke(
                 new System.Action(() => Editor?.FocusSearch()),
-                System.Windows.Threading.DispatcherPriority.ContextIdle);
+                System.Windows.Threading.DispatcherPriority.ContextIdle));
+            #pragma warning restore
         }
 
         /// <summary>Costo unitario para la próxima línea — capturado fuera del UC.</summary>
@@ -366,7 +399,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public bool LineUnitCostFocus
         {
             get;
-            set { field = value; NotifyOfPropertyChange(); }
+            set
+            {
+                field = value;
+                NotifyOfPropertyChange();
+            }
         }
 
         public bool CanCommitLine => !IsBusy && IsDraft && Editor != null && Editor.CanComplete && LineUnitCost > 0;
@@ -431,7 +468,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         /// Pre-valida lista de seriales propuestos contra master + drafts ajenos vía
         /// <c>validateInboundSerials</c>. Convierte payload GraphQL al DTO genérico del UC.
         /// </summary>
-        private async Task<IReadOnlyList<NetErp.UserControls.ItemDimensionEditor.DTO.SerialInboundConflict>> ValidateInboundSerialsAsync(
+        private async Task<IReadOnlyList<SerialInboundConflict>> ValidateInboundSerialsAsync(
             int itemId,
             IReadOnlyList<string> serialNumbers,
             int? excludeStockMovementId,
@@ -448,10 +485,10 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             ValidateInboundSerialsPayload? payload = response?.ValidateResponse;
             if (payload == null || !payload.Success)
             {
-                throw new Exception(StockMovementErrorFormatter.Format(
+                throw new InvalidOperationException(StockMovementErrorFormatter.Format(
                     payload?.Message, payload?.Errors, "No se pudo validar la lista de seriales."));
             }
-            return [.. payload.SerialsInConflict.Select(c => new NetErp.UserControls.ItemDimensionEditor.DTO.SerialInboundConflict(
+            return [.. payload.SerialsInConflict.Select(c => new SerialInboundConflict(
                 SerialNumber: c.SerialNumber,
                 Status: MapConflictReason(c.Reason),
                 StorageName: c.Storage?.Name,
@@ -459,11 +496,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 DraftDocumentNumber: c.Draft?.DocumentDisplay))];
         }
 
-        private static NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus MapConflictReason(string reason) => reason switch
+        private static SerialValidationStatus MapConflictReason(string reason) => reason switch
         {
-            "ALREADY_ACTIVE" => NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus.AlreadyActive,
-            "PRESELECTED_IN_DRAFT" => NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus.PreselectedInDraft,
-            _ => NetErp.UserControls.ItemDimensionEditor.DTO.SerialValidationStatus.AlreadyActive
+            "ALREADY_ACTIVE" => SerialValidationStatus.AlreadyActive,
+            "PRESELECTED_IN_DRAFT" => SerialValidationStatus.PreselectedInDraft,
+            _ => SerialValidationStatus.AlreadyActive
         };
 
         #endregion
@@ -703,6 +740,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             return true;
         }
 
+        // Rollback de línea creada cuando SetDimensions falla. Errores aquí se ignoran
+        // intencionalmente: el error original ya se mostró al usuario, y un fallo
+        // del rollback dejaría una línea huérfana en el server pero no es UX-blocking.
         private async Task DeleteLineSilentAsync(int lineId)
         {
             try
@@ -711,7 +751,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 object vars = new GraphQLVariables().For(frag, "id", lineId).Build();
                 await _service.MutationContextAsync<DeleteLineResponse>(query, vars);
             }
-            catch { /* swallow */ }
+            catch { /* swallow — best-effort rollback */ }
         }
 
         #endregion

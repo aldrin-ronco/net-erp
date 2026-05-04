@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
@@ -30,46 +29,109 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
     public class StockMovementInNewDialogViewModel : Screen
     {
         private readonly IRepository<StockMovementGraphQLModel> _service;
-        private readonly IRepository<StorageGraphQLModel> _storageService;
         private readonly CostCenterCache _costCenterCache;
+        private readonly InboundAccountingSourceCache _inboundAccountingSourceCache;
+        private readonly StorageCache _storageCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         public StockMovementInNewDialogViewModel(
             IRepository<StockMovementGraphQLModel> service,
-            IRepository<StorageGraphQLModel> storageService,
             CostCenterCache costCenterCache,
+            InboundAccountingSourceCache inboundAccountingSourceCache,
+            StorageCache storageCache,
             StringLengthCache stringLengthCache,
-            ObservableCollection<AccountingSourceGraphQLModel> inboundAccountingSources,
             IEventAggregator eventAggregator,
             JoinableTaskFactory joinableTaskFactory)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
-            _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
             _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _inboundAccountingSourceCache = inboundAccountingSourceCache ?? throw new ArgumentNullException(nameof(inboundAccountingSourceCache));
+            _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
-            AccountingSources = inboundAccountingSources ?? [];
             DialogWidth = 600;
         }
 
         public double DialogWidth { get; set; }
-        public double DialogHeight { get; set; } = 380;
+        public double DialogHeight { get; } = 380;
 
         public int NoteMaxLength => _stringLengthCache.GetMaxLength<StockMovementGraphQLModel>(nameof(StockMovementGraphQLModel.Note));
 
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; } = [];
-        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; }
+        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; } = [];
         public ObservableCollection<StorageGraphQLModel> Storages { get; } = [];
 
-        public CostCenterGraphQLModel? SelectedCostCenter { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(SelectedCostCenter)); NotifyOfPropertyChange(nameof(CanSave)); } } }
-        public AccountingSourceGraphQLModel? SelectedAccountingSource { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(SelectedAccountingSource)); NotifyOfPropertyChange(nameof(CanSave)); } } }
-        public StorageGraphQLModel? SelectedStorage { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(SelectedStorage)); NotifyOfPropertyChange(nameof(CanSave)); } } }
-        public string Note { get; set { if (field != value) { field = value ?? string.Empty; NotifyOfPropertyChange(nameof(Note)); } } } = string.Empty;
+        public CostCenterGraphQLModel? SelectedCostCenter
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedCostCenter));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
 
-        public bool IsBusy { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsBusy)); NotifyOfPropertyChange(nameof(CanSave)); } } }
+        public AccountingSourceGraphQLModel? SelectedAccountingSource
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountingSource));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public StorageGraphQLModel? SelectedStorage
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedStorage));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public string Note
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value ?? string.Empty;
+                    NotifyOfPropertyChange(nameof(Note));
+                }
+            }
+        } = string.Empty;
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
 
         public bool CanSave =>
             !IsBusy &&
@@ -85,11 +147,24 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             base.OnViewReady(view);
             try
             {
-                await _costCenterCache.EnsureLoadedAsync();
+                // Defensivo: si el master ya cargó los caches (caso normal), EnsureLoadedAsync
+                // hace no-op. Si el modal se abre sin master previo, esto los inicializa.
+                await Task.WhenAll(
+                    _costCenterCache.EnsureLoadedAsync(),
+                    _inboundAccountingSourceCache.EnsureLoadedAsync(),
+                    _storageCache.EnsureLoadedAsync());
+
                 CostCenters.Clear();
                 foreach (CostCenterGraphQLModel cc in _costCenterCache.Items) CostCenters.Add(cc);
 
-                await LoadStoragesAsync();
+                AccountingSources.Clear();
+                foreach (AccountingSourceGraphQLModel s in _inboundAccountingSourceCache.Items) AccountingSources.Add(s);
+
+                Storages.Clear();
+                foreach (StorageGraphQLModel s in _storageCache.Items
+                    .Where(x => string.Equals(x.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(x => x.Name))
+                    Storages.Add(s);
             }
             catch (Exception ex)
             {
@@ -99,18 +174,6 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 await TryCloseAsync(false);
             }
-        }
-
-        private async Task LoadStoragesAsync()
-        {
-            var (fragment, query) = StockMovementInQueries.Storages.Value;
-            object variables = new GraphQLVariables()
-                .For(fragment, "pagination", new { Page = 1, PageSize = -1 })
-                .For(fragment, "filters", new { Status = "ACTIVE" })
-                .Build();
-            PageType<StorageGraphQLModel> page = await _storageService.GetPageAsync(query, variables);
-            Storages.Clear();
-            foreach (StorageGraphQLModel s in page.Entries.OrderBy(x => x.Name)) Storages.Add(s);
         }
 
         public async Task SaveAsync()
