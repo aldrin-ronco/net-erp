@@ -25,15 +25,14 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public decimal Quantity { get; set; }
         public decimal UnitCost { get; set; }
 
+        // Variables expone solo el item (forma intermedia). El runtime de
+        // BackgroundQueueService siempre pasa por ExtractBatchItem → BuildBatchVariables
+        // antes de llamar al API — Variables nunca se envía tal cual.
         public object Variables => new
         {
-            item = new
-            {
-                id = LineId.ToString(),
-                quantity = Quantity,
-                unitCost = UnitCost
-            },
-            stockMovementId = StockMovementId
+            id = LineId.ToString(),
+            quantity = Quantity,
+            unitCost = UnitCost
         };
 
         public static Type OperationResponseType => typeof(StockMovementLineGraphQLModel);
@@ -44,18 +43,18 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         public BatchOperationInfo GetBatchInfo()
         {
+            GraphQLQueryFragment fragment = _batchUpdateMutation.Value.Fragment;
             return new BatchOperationInfo
             {
                 BatchQuery = _batchUpdateMutation.Value.Query,
-                ExtractBatchItem = variables => ((dynamic)variables).item,
-                BuildBatchVariables = batchItems => new
-                {
-                    singleItemResponseInput = new
+                ExtractBatchItem = variables => variables,
+                BuildBatchVariables = batchItems => new GraphQLVariables()
+                    .For(fragment, "input", new
                     {
                         stockMovementId = StockMovementId,
                         items = batchItems
-                    }
-                },
+                    })
+                    .Build(),
                 ExecuteBatchAsync = async (query, variables, cancellationToken) =>
                     await _repository.BatchAsync<BatchResultGraphQLModel>(query, variables, cancellationToken)
             };

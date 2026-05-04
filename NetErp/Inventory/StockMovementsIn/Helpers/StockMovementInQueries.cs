@@ -81,41 +81,6 @@ namespace NetErp.Inventory.StockMovementsIn.Helpers
             return (fragment, new QueryBuilder([fragment]).GetQuery());
         });
 
-        // -------- AccountingSource (filtro kardexFlow=I + annulment=false) --------
-        public static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> InboundAccountingSources = new(() =>
-        {
-            var fields = FieldSpec<PageType<AccountingSourceGraphQLModel>>
-                .Create()
-                .SelectList(p => p.Entries, e => e
-                    .Field(a => a.Id)
-                    .Field(a => a.Code)
-                    .Field(a => a.Name)
-                    .Field(a => a.KardexFlow))
-                .Build();
-
-            var fragment = new GraphQLQueryFragment("accountingSourcesPage",
-                [new("pagination", "Pagination"), new("filters", "AccountingSourceFilters")],
-                fields, "PageResponse");
-            return (fragment, new QueryBuilder([fragment]).GetQuery());
-        });
-
-        // -------- Storages --------
-        public static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> Storages = new(() =>
-        {
-            var fields = FieldSpec<PageType<StorageGraphQLModel>>
-                .Create()
-                .SelectList(p => p.Entries, e => e
-                    .Field(s => s.Id)
-                    .Field(s => s.Name)
-                    .Field(s => s.Status))
-                .Build();
-
-            var fragment = new GraphQLQueryFragment("storagesPage",
-                [new("pagination", "Pagination"), new("filters", "StorageFilters")],
-                fields, "PageResponse");
-            return (fragment, new QueryBuilder([fragment]).GetQuery());
-        });
-
         // -------- Detail by id --------
         public static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> StockMovementById = new(() =>
         {

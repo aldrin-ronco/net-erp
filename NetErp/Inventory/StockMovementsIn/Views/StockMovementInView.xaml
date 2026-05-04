@@ -223,20 +223,40 @@
                             </DataTemplate>
                         </dxg:GridColumn.CellTemplate>
                     </dxg:GridColumn>
-                    <dxg:GridColumn Header="Estado" FieldName="Status" Width="80" HorizontalHeaderContentAlignment="Center"/>
-                    <dxg:GridColumn Header="Anulado" FieldName="CancelledWith" Width="80" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Estado" FieldName="Status" Width="Auto" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Anulado" FieldName="CancelledWith" Width="105" HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value=""/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RowData.Row.CancelledWith}" Value="A">
+                                                    <Setter Property="Text" Value="Con documento"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding RowData.Row.CancelledWith}" Value="X">
+                                                    <Setter Property="Text" Value="Sin documento"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
                     <dxg:GridColumn Header="Fuente" FieldName="AccountingSource.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
-                    <dxg:GridColumn Header="Centro de costo" FieldName="CostCenter.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
-                    <dxg:GridColumn Header="Bodega" FieldName="Storage.Name" Width="*" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Centro de costo" FieldName="CostCenter.Name" Width="Auto" HorizontalHeaderContentAlignment="Center"/>
+                    <dxg:GridColumn Header="Bodega" FieldName="Storage.Name" Width="Auto" HorizontalHeaderContentAlignment="Center"/>
                     <dxg:GridColumn Header="Creado por" FieldName="CreatedBy.FullName" Width="*" HorizontalHeaderContentAlignment="Center"/>
-                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="144"
+                    <dxg:GridColumn Header="Posteado" FieldName="PostedAt" Width="Auto"
                                     HorizontalHeaderContentAlignment="Center">
                         <dxg:GridColumn.EditSettings>
                             <dxe:TextEditSettings DisplayFormat="yyyy-MM-dd HH:mm:ss"
                                                   HorizontalContentAlignment="Center"/>
                         </dxg:GridColumn.EditSettings>
                     </dxg:GridColumn>
-                    <dxg:GridColumn Header="Creado" FieldName="InsertedAt" Width="144"
+                    <dxg:GridColumn Header="Creado" FieldName="InsertedAt" Width="Auto"
                                     HorizontalHeaderContentAlignment="Center">
                         <dxg:GridColumn.EditSettings>
                             <dxe:TextEditSettings DisplayFormat="yyyy-MM-dd HH:mm:ss"
