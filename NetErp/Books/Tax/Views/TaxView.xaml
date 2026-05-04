@@ -89,7 +89,11 @@
                     <dxg:GridColumn Header="Nombre" Width="*" HorizontalHeaderContentAlignment="Left"
                                     Binding="{Binding Name}"/>
                     <dxg:GridColumn Header="Porcentaje" Width="Auto" MinWidth="80" HorizontalHeaderContentAlignment="Center"
-                                    Binding="{Binding Rate}"/>
+                                    Binding="{Binding Rate}">
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:TextEditSettings DisplayFormat="N2"/>
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
                     <dxg:GridColumn Header="Tipo" Width="Auto" MinWidth="120" HorizontalHeaderContentAlignment="Center"
                                     Binding="{Binding TaxCategory.Name}"/>
                     <dxg:GridColumn Header="Estado" Width="Auto" MinWidth="80" HorizontalHeaderContentAlignment="Center"

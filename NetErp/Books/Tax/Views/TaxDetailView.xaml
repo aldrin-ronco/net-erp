@@ -65,8 +65,10 @@
                         <dxe:SpinEdit MinValue="0" Increment="1"
                                       Padding="2"
                                       Text="{Binding Path=Rate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                      IsFloatValue="False"
+                                      IsFloatValue="True"
                                       MaskType="Numeric"
+                                      Mask="F2"
+                                      MaskUseAsDisplayFormat="True"
                                       x:Name="Rate"
                                       BorderBrush="#C8CED6"/>
                     </StackPanel>
