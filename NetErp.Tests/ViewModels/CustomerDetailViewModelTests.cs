@@ -15,6 +15,8 @@ using Models.Global;
 using NetErp.Billing.Customers.Validators;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.Dian;
+using NetErp.Helpers.Services;
 using NSubstitute;
 using Xunit;
 using static Dictionaries.BooksDictionaries;
@@ -71,7 +73,10 @@ public class CustomerDetailViewModelTests
         _vm = new CustomerDetailViewModel(
             _service, _eventAggregator,
             _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache,
-            _stringLengthCache, _mapper, _joinableTaskFactory, _graphQLClient, _validator);
+            _stringLengthCache, _mapper, _joinableTaskFactory, _graphQLClient, _validator,
+            Substitute.For<IDianSoapClient>(),
+            Substitute.For<INotificationService>(),
+            Substitute.For<IAccountingEntityLookupService>());
     }
 
     /// <summary>

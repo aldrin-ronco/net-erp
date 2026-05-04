@@ -92,6 +92,7 @@ public class SupplierViewModelTests
             _eventAggregator,
             _service,
             _notificationService,
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>(),
             _identificationTypeCache,
             _countryCache,
             _withholdingTypeCache,
@@ -233,6 +234,7 @@ public class SupplierViewModelTests
     {
         System.Action act = () => new SupplierViewModel(
             _mapper, _eventAggregator, _service, _notificationService,
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>(),
             _identificationTypeCache, _countryCache, _withholdingTypeCache,
             _stringLengthCache, _dialogService, _graphQLClient, _joinableTaskFactory,
             _validator, _permissionCache, null!);

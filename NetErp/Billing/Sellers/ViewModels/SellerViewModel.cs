@@ -36,6 +36,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly IRepository<SellerGraphQLModel> _sellerService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly Helpers.Services.IAccountingEntityLookupService _accountingEntityLookupService;
         private readonly Helpers.IDialogService _dialogService;
 
         // Caches
@@ -296,6 +297,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             IEventAggregator eventAggregator,
             IRepository<SellerGraphQLModel> sellerService,
             Helpers.Services.INotificationService notificationService,
+            Helpers.Services.IAccountingEntityLookupService accountingEntityLookupService,
             CostCenterCache costCenterCache,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
@@ -312,6 +314,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _sellerService = sellerService ?? throw new ArgumentNullException(nameof(sellerService));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _accountingEntityLookupService = accountingEntityLookupService ?? throw new ArgumentNullException(nameof(accountingEntityLookupService));
             _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
             _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
             _countryCache = countryCache ?? throw new ArgumentNullException(nameof(countryCache));
@@ -384,7 +387,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
+                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator, _notificationService, _accountingEntityLookupService);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -416,7 +419,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
+                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator, _notificationService, _accountingEntityLookupService);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedSeller.Id);
                 IsBusy = false;

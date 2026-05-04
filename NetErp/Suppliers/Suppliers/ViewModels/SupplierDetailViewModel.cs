@@ -46,6 +46,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly SupplierValidator _validator;
+        private readonly NetErp.Helpers.Services.INotificationService _notificationService;
+        private readonly NetErp.Helpers.Services.IAccountingEntityLookupService _accountingEntityLookupService;
 
         private readonly Dictionary<string, List<string>> _errors = [];
 
@@ -82,6 +84,39 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 return _saveCommand;
             }
         }
+
+        private ICommand? _lookupAccountingEntityCommand;
+        public ICommand LookupAccountingEntityCommand
+        {
+            get
+            {
+                _lookupAccountingEntityCommand ??= new AsyncCommand(OnIdentificationNumberLostFocusAsync, () => CanLookupAccountingEntity);
+                return _lookupAccountingEntityCommand;
+            }
+        }
+
+        public bool CanLookupAccountingEntity =>
+            IsNewRecord
+            && SelectedIdentificationType != null
+            && !string.IsNullOrWhiteSpace(IdentificationNumber)
+            && IdentificationNumber.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength
+            && !IsBusy;
+
+        public bool IsAccountingEntityLocked
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsAccountingEntityLocked));
+                    NotifyOfPropertyChange(nameof(AreAccountingEntityFieldsLocked));
+                }
+            }
+        }
+
+        public bool AreAccountingEntityFieldsLocked => !IsNewRecord || IsAccountingEntityLocked;
 
         #endregion
 
@@ -157,6 +192,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                 }
             }
         }
@@ -473,6 +509,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     this.TrackChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(IdentificationNumberMask));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                     ValidateProperty(nameof(IdentificationNumber), IdentificationNumber);
                     if (IsNewRecord)
                     {
@@ -570,6 +607,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     this.TrackChange(nameof(IdentificationNumber));
                     this.TrackChange(nameof(VerificationDigit));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                 }
             }
         } = string.Empty;
@@ -725,6 +763,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
+                    NotifyOfPropertyChange(nameof(AreAccountingEntityFieldsLocked));
                 }
             }
         }
@@ -898,6 +937,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             {
                 List<WithholdingTypeDTO> retentionList = [];
                 Id = 0;
+                IsAccountingEntityLocked = false;
                 SelectedRegime = 'R';
                 IdentificationNumber = string.Empty;
                 VerificationDigit = string.Empty;
@@ -1067,7 +1107,9 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             IMapper mapper,
             IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory,
-            SupplierValidator validator)
+            SupplierValidator validator,
+            NetErp.Helpers.Services.INotificationService notificationService,
+            NetErp.Helpers.Services.IAccountingEntityLookupService accountingEntityLookupService)
         {
             _eventAggregator = eventAggregator;
             _mapper = mapper;
@@ -1080,6 +1122,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             _graphQLClient = graphQLClient;
             _joinableTaskFactory = joinableTaskFactory;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _accountingEntityLookupService = accountingEntityLookupService ?? throw new ArgumentNullException(nameof(accountingEntityLookupService));
             Emails = [];
         }
 
@@ -1131,6 +1175,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             Id = supplier.Id;
             VerificationDigit = supplier.AccountingEntity.VerificationDigit;
             SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.AccountingEntity.CaptureType);
+            SelectedRegime = supplier.AccountingEntity.Regime;
             BusinessName = supplier.AccountingEntity.BusinessName ?? string.Empty;
             SelectedIdentificationType = IdentificationTypes?.FirstOrDefault(x => x.Code == supplier.AccountingEntity.IdentificationType.Code);
             IdentificationNumber = supplier.AccountingEntity.IdentificationNumber ?? string.Empty;
@@ -1268,6 +1313,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     .Field(c => c!.SecondaryCellPhone)
                     .Field(c => c!.Address)
                     .Field(c => c!.CaptureType)
+                    .Field(c => c!.Regime)
                     .Field(c => c!.TelephonicInformation)
                     .Select(e => e!.IdentificationType, co => co
                         .Field(x => x.Id)
@@ -1431,6 +1477,79 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
 
             return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        private async Task OnIdentificationNumberLostFocusAsync()
+        {
+            if (!CanLookupAccountingEntity) return;
+
+            try
+            {
+                IsBusy = true;
+
+                Models.Books.AccountingEntityLookupResult result =
+                    await _accountingEntityLookupService.LookupForSupplierAsync(IdentificationNumber.Trim());
+
+                if (result.AccountingEntity == null) return;
+
+                if (result.AlreadyExistsAsCurrentType)
+                {
+                    _notificationService.ShowWarning(
+                        "Ya existe un proveedor con este documento. Edite el registro existente.",
+                        "Tercero duplicado");
+                    IdentificationNumber = string.Empty;
+                    return;
+                }
+
+                ApplyAccountingEntity(result.AccountingEntity);
+                IsAccountingEntityLocked = true;
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(OnIdentificationNumberLostFocusAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void ApplyAccountingEntity(AccountingEntityGraphQLModel ae)
+        {
+            if (!string.IsNullOrEmpty(ae.CaptureType))
+                SelectedCaptureType = Enum.Parse<CaptureTypeEnum>(ae.CaptureType);
+            if (ae.Regime != default)
+                SelectedRegime = ae.Regime;
+
+            BusinessName = ae.BusinessName ?? string.Empty;
+            FirstName = ae.FirstName ?? string.Empty;
+            MiddleName = ae.MiddleName ?? string.Empty;
+            FirstLastName = ae.FirstLastName ?? string.Empty;
+            MiddleLastName = ae.MiddleLastName ?? string.Empty;
+            TradeName = ae.TradeName ?? string.Empty;
+            CommercialCode = ae.CommercialCode ?? string.Empty;
+
+            PrimaryPhone = ae.PrimaryPhone ?? string.Empty;
+            SecondaryPhone = ae.SecondaryPhone ?? string.Empty;
+            PrimaryCellPhone = ae.PrimaryCellPhone ?? string.Empty;
+            SecondaryCellPhone = ae.SecondaryCellPhone ?? string.Empty;
+            Address = ae.Address ?? string.Empty;
+
+            if (ae.IdentificationType != null && ae.IdentificationType.Id > 0)
+                SelectedIdentificationType = IdentificationTypes?.FirstOrDefault(t => t.Id == ae.IdentificationType.Id) ?? SelectedIdentificationType;
+
+            SelectedCountry = Countries?.FirstOrDefault(c => c.Id == ae.Country?.Id);
+            SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == ae.Department?.Id);
+            SelectedCityId = ae.City?.Id ?? 0;
+
+            Emails = ae.Emails != null
+                ? _mapper.Map<ObservableCollection<EmailDTO>>(ae.Emails)
+                : [];
         }
     }
 }

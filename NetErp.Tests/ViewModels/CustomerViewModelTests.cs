@@ -13,6 +13,7 @@ using NetErp.Billing.Customers.Validators;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.Dian;
 using NetErp.Helpers.Services;
 using NSubstitute;
 using Xunit;
@@ -35,6 +36,8 @@ public class CustomerViewModelTests
     private readonly IMapper _mapper;
     private readonly IEventAggregator _eventAggregator;
     private readonly INotificationService _notificationService;
+    private readonly IDianSoapClient _dianSoapClient;
+    private readonly IAccountingEntityLookupService _accountingEntityLookupService;
     private readonly IRepository<CustomerGraphQLModel> _service;
     private readonly IDialogService _dialogService;
     private readonly IdentificationTypeCache _identificationTypeCache;
@@ -54,6 +57,8 @@ public class CustomerViewModelTests
         _mapper = Substitute.For<IMapper>();
         _eventAggregator = Substitute.For<IEventAggregator>();
         _notificationService = Substitute.For<INotificationService>();
+        _dianSoapClient = Substitute.For<IDianSoapClient>();
+        _accountingEntityLookupService = Substitute.For<IAccountingEntityLookupService>();
         _service = Substitute.For<IRepository<CustomerGraphQLModel>>();
         _dialogService = Substitute.For<IDialogService>();
 
@@ -94,6 +99,8 @@ public class CustomerViewModelTests
             _mapper,
             _eventAggregator,
             _notificationService,
+            _dianSoapClient,
+            _accountingEntityLookupService,
             _service,
             _dialogService,
             _identificationTypeCache,
@@ -240,7 +247,7 @@ public class CustomerViewModelTests
     public void Constructor_NullSearchDebounce_Throws()
     {
         System.Action act = () => new CustomerViewModel(
-            _mapper, _eventAggregator, _notificationService, _service, _dialogService,
+            _mapper, _eventAggregator, _notificationService, _dianSoapClient, _accountingEntityLookupService, _service, _dialogService,
             _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache,
             _stringLengthCache, _permissionCache, _joinableTaskFactory, _graphQLClient,
             _validator, null!);

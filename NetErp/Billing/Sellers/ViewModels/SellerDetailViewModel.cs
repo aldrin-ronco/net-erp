@@ -47,6 +47,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IGraphQLClient _graphQLClient;
         private readonly SellerValidator _validator;
+        private readonly NetErp.Helpers.Services.INotificationService _notificationService;
+        private readonly NetErp.Helpers.Services.IAccountingEntityLookupService _accountingEntityLookupService;
 
         #region Commands
 
@@ -78,6 +80,39 @@ namespace NetErp.Billing.Sellers.ViewModels
                 return _saveCommand;
             }
         }
+
+        private ICommand? _lookupAccountingEntityCommand;
+        public ICommand LookupAccountingEntityCommand
+        {
+            get
+            {
+                _lookupAccountingEntityCommand ??= new AsyncCommand(OnIdentificationNumberLostFocusAsync, () => CanLookupAccountingEntity);
+                return _lookupAccountingEntityCommand;
+            }
+        }
+
+        public bool CanLookupAccountingEntity =>
+            IsNewRecord
+            && SelectedIdentificationType != null
+            && !string.IsNullOrWhiteSpace(IdentificationNumber)
+            && IdentificationNumber.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength
+            && !IsBusy;
+
+        public bool IsAccountingEntityLocked
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsAccountingEntityLocked));
+                    NotifyOfPropertyChange(nameof(AreAccountingEntityFieldsLocked));
+                }
+            }
+        }
+
+        public bool AreAccountingEntityFieldsLocked => !IsNewRecord || IsAccountingEntityLocked;
 
         #endregion
 
@@ -300,6 +335,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 field = value;
                 NotifyOfPropertyChange(nameof(Id));
                 NotifyOfPropertyChange(nameof(IsNewRecord));
+                NotifyOfPropertyChange(nameof(AreAccountingEntityFieldsLocked));
             }
         }
 
@@ -346,6 +382,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                 }
             }
         }
@@ -412,6 +449,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     NotifyOfPropertyChange(nameof(IdentificationNumberMask));
                     this.TrackChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
 
                     ValidateProperty(nameof(IdentificationNumber), IdentificationNumber);
                     if (IsNewRecord)
@@ -630,6 +668,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     NotifyOfPropertyChange(nameof(IdentificationNumber));
                     this.TrackChange(nameof(IdentificationNumber));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                 }
             }
         } = string.Empty;
@@ -693,6 +732,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 List<CostCenterDTO> costCenters = [];
 
                 Id = 0;
+                IsAccountingEntityLocked = false;
                 IsActive = true;
                 IdentificationNumber = string.Empty;
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
@@ -1009,7 +1049,9 @@ namespace NetErp.Billing.Sellers.ViewModels
             IMapper mapper,
             JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient,
-            SellerValidator validator)
+            SellerValidator validator,
+            NetErp.Helpers.Services.INotificationService notificationService,
+            NetErp.Helpers.Services.IAccountingEntityLookupService accountingEntityLookupService)
         {
             _sellerService = sellerService;
             _eventAggregator = eventAggregator;
@@ -1022,6 +1064,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _accountingEntityLookupService = accountingEntityLookupService ?? throw new ArgumentNullException(nameof(accountingEntityLookupService));
             Emails = [];
         }
 
@@ -1260,6 +1304,76 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
 
             return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        private async Task OnIdentificationNumberLostFocusAsync()
+        {
+            if (!CanLookupAccountingEntity) return;
+
+            try
+            {
+                IsBusy = true;
+
+                Models.Books.AccountingEntityLookupResult result =
+                    await _accountingEntityLookupService.LookupForSellerAsync(IdentificationNumber.Trim());
+
+                if (result.AccountingEntity == null) return;
+
+                if (result.AlreadyExistsAsCurrentType)
+                {
+                    _notificationService.ShowWarning(
+                        "Ya existe un vendedor con este documento. Edite el registro existente.",
+                        "Tercero duplicado");
+                    IdentificationNumber = string.Empty;
+                    return;
+                }
+
+                ApplyAccountingEntity(result.AccountingEntity);
+                IsAccountingEntityLocked = true;
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(OnIdentificationNumberLostFocusAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void ApplyAccountingEntity(AccountingEntityGraphQLModel ae)
+        {
+            if (!string.IsNullOrEmpty(ae.CaptureType))
+                SelectedCaptureType = Enum.Parse<BooksDictionaries.CaptureTypeEnum>(ae.CaptureType);
+            if (ae.Regime != default)
+                Regime = ae.Regime;
+
+            FirstName = ae.FirstName ?? string.Empty;
+            MiddleName = ae.MiddleName ?? string.Empty;
+            FirstLastName = ae.FirstLastName ?? string.Empty;
+            MiddleLastName = ae.MiddleLastName ?? string.Empty;
+
+            PrimaryPhone = ae.PrimaryPhone ?? string.Empty;
+            SecondaryPhone = ae.SecondaryPhone ?? string.Empty;
+            PrimaryCellPhone = ae.PrimaryCellPhone ?? string.Empty;
+            SecondaryCellPhone = ae.SecondaryCellPhone ?? string.Empty;
+            Address = ae.Address ?? string.Empty;
+
+            if (ae.IdentificationType != null && ae.IdentificationType.Id > 0)
+                SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(t => t.Id == ae.IdentificationType.Id) ?? SelectedIdentificationType;
+
+            SelectedCountry = Countries?.FirstOrDefault(c => c.Id == ae.Country?.Id);
+            SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == ae.Department?.Id);
+            SelectedCityId = ae.City?.Id;
+
+            Emails = ae.Emails != null
+                ? _mapper.Map<ObservableCollection<EmailDTO>>(ae.Emails)
+                : [];
         }
     }
 }

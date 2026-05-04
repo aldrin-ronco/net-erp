@@ -15,7 +15,10 @@ using Models.Global;
 using NetErp.Billing.Customers.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.Dian;
+using NetErp.Helpers.Dian.Operations;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using NetErp.Helpers.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -46,6 +49,9 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IGraphQLClient _graphQLClient;
         private readonly CustomerValidator _validator;
+        private readonly IDianSoapClient _dianSoapClient;
+        private readonly NetErp.Helpers.Services.INotificationService _notificationService;
+        private readonly IAccountingEntityLookupService _accountingEntityLookupService;
 
         #endregion
 
@@ -78,6 +84,26 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 _cancelCommand ??= new AsyncCommand(CancelAsync);
                 return _cancelCommand;
+            }
+        }
+
+        private ICommand? _queryDianCommand;
+        public ICommand QueryDianCommand
+        {
+            get
+            {
+                _queryDianCommand ??= new AsyncCommand(QueryDianAsync, () => CanQueryDian);
+                return _queryDianCommand;
+            }
+        }
+
+        private ICommand? _lookupAccountingEntityCommand;
+        public ICommand LookupAccountingEntityCommand
+        {
+            get
+            {
+                _lookupAccountingEntityCommand ??= new AsyncCommand(OnIdentificationNumberLostFocusAsync, () => CanLookupAccountingEntity);
+                return _lookupAccountingEntityCommand;
             }
         }
 
@@ -127,9 +153,46 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanQueryDian));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                 }
             }
         }
+
+        public bool CanQueryDian =>
+            SelectedIdentificationType != null
+            && !string.IsNullOrWhiteSpace(IdentificationNumber)
+            && IdentificationNumber.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength
+            && !IsBusy;
+
+        public bool CanLookupAccountingEntity =>
+            IsNewRecord
+            && SelectedIdentificationType != null
+            && !string.IsNullOrWhiteSpace(IdentificationNumber)
+            && IdentificationNumber.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength
+            && !IsBusy;
+
+        /// <summary>
+        /// True cuando se encontró un tercero existente al hacer LostFocus sobre el
+        /// IdentificationNumber. Bloquea Régimen, IdentificationType e IdentificationNumber
+        /// para mantener congruencia visual con el comportamiento de edición — el backend
+        /// resolverá como upsert al guardar pero esos campos no son editables sobre un tercero ya creado.
+        /// </summary>
+        public bool IsAccountingEntityLocked
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsAccountingEntityLocked));
+                    NotifyOfPropertyChange(nameof(AreAccountingEntityFieldsLocked));
+                }
+            }
+        }
+
+        public bool AreAccountingEntityFieldsLocked => !IsNewRecord || IsAccountingEntityLocked;
 
         public ReadOnlyObservableCollection<ZoneGraphQLModel> Zones
         {
@@ -414,6 +477,8 @@ namespace NetErp.Billing.Customers.ViewModels
                     NotifyOfPropertyChange(nameof(IdentificationNumberMask));
                     this.TrackChange(nameof(SelectedIdentificationType), value);
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanQueryDian));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                     ValidateProperty(nameof(IdentificationNumber), field);
                 }
             }
@@ -511,6 +576,8 @@ namespace NetErp.Billing.Customers.ViewModels
                     NotifyOfPropertyChange(nameof(VerificationDigit));
                     this.TrackChange(nameof(VerificationDigit), VerificationDigit);
                     NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(CanQueryDian));
+                    NotifyOfPropertyChange(nameof(CanLookupAccountingEntity));
                 }
             }
         } = string.Empty;
@@ -617,6 +684,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 field = value;
                 NotifyOfPropertyChange(nameof(Id));
                 NotifyOfPropertyChange(nameof(IsNewRecord));
+                NotifyOfPropertyChange(nameof(AreAccountingEntityFieldsLocked));
             }
         }
 
@@ -835,7 +903,10 @@ namespace NetErp.Billing.Customers.ViewModels
             IMapper autoMapper,
             JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient,
-            CustomerValidator validator)
+            CustomerValidator validator,
+            IDianSoapClient dianSoapClient,
+            NetErp.Helpers.Services.INotificationService notificationService,
+            IAccountingEntityLookupService accountingEntityLookupService)
         {
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -848,6 +919,9 @@ namespace NetErp.Billing.Customers.ViewModels
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _dianSoapClient = dianSoapClient ?? throw new ArgumentNullException(nameof(dianSoapClient));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _accountingEntityLookupService = accountingEntityLookupService ?? throw new ArgumentNullException(nameof(accountingEntityLookupService));
 
             Emails = [];
         }
@@ -898,6 +972,7 @@ namespace NetErp.Billing.Customers.ViewModels
         public void SetForNew()
         {
             Id = 0;
+            IsAccountingEntityLocked = false;
             SelectedRegime = 'R';
             IdentificationNumber = string.Empty;
             VerificationDigit = string.Empty;
@@ -1046,6 +1121,169 @@ namespace NetErp.Billing.Customers.ViewModels
             Email = string.Empty;
             EmailDescription = string.Empty;
             Emails.Add(email);
+        }
+
+        private async Task QueryDianAsync()
+        {
+            try
+            {
+                IsBusy = true;
+
+                DianAcquirerResponse response = await _dianSoapClient.ExecuteAsync(
+                    new GetAcquirerOperation(SelectedIdentificationType!.Code, IdentificationNumber.Trim()));
+
+                if (!response.Status)
+                {
+                    string text = string.IsNullOrWhiteSpace(response.Message)
+                        ? "La DIAN no devolvió información para el documento consultado."
+                        : response.Message;
+                    _notificationService.ShowWarning(text, "Consulta DIAN");
+                    return;
+                }
+
+                ApplyAcquirerResponse(response);
+                _notificationService.ShowSuccess("Información obtenida desde la DIAN.", "Consulta DIAN");
+            }
+            catch (DianConfigurationException ex)
+            {
+                _notificationService.ShowWarning(ex.Message, "Consulta DIAN");
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(QueryDianAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task OnIdentificationNumberLostFocusAsync()
+        {
+            if (!CanLookupAccountingEntity) return;
+
+            try
+            {
+                IsBusy = true;
+
+                AccountingEntityLookupResult result =
+                    await _accountingEntityLookupService.LookupForCustomerAsync(IdentificationNumber.Trim());
+
+                if (result.AccountingEntity == null) return;
+
+                if (result.AlreadyExistsAsCurrentType)
+                {
+                    _notificationService.ShowWarning(
+                        "Ya existe un cliente con este documento. Edite el registro existente.",
+                        "Tercero duplicado");
+                    IdentificationNumber = string.Empty;
+                    return;
+                }
+
+                ApplyAccountingEntity(result.AccountingEntity);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(OnIdentificationNumberLostFocusAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void ApplyAccountingEntity(AccountingEntityGraphQLModel ae)
+        {
+            if (!string.IsNullOrEmpty(ae.CaptureType))
+                SelectedCaptureType = Enum.Parse<CaptureTypeEnum>(ae.CaptureType);
+            if (ae.Regime != default)
+                SelectedRegime = ae.Regime;
+
+            BusinessName = ae.BusinessName ?? string.Empty;
+            FirstName = ae.FirstName ?? string.Empty;
+            MiddleName = ae.MiddleName ?? string.Empty;
+            FirstLastName = ae.FirstLastName ?? string.Empty;
+            MiddleLastName = ae.MiddleLastName ?? string.Empty;
+            TradeName = ae.TradeName ?? string.Empty;
+
+            PrimaryPhone = ae.PrimaryPhone ?? string.Empty;
+            SecondaryPhone = ae.SecondaryPhone ?? string.Empty;
+            PrimaryCellPhone = ae.PrimaryCellPhone ?? string.Empty;
+            SecondaryCellPhone = ae.SecondaryCellPhone ?? string.Empty;
+            Address = ae.Address ?? string.Empty;
+
+            if (ae.IdentificationType != null && ae.IdentificationType.Id > 0)
+                SelectedIdentificationType = IdentificationTypes?.FirstOrDefault(t => t.Id == ae.IdentificationType.Id) ?? SelectedIdentificationType;
+
+            SelectedCountry = Countries?.FirstOrDefault(c => c.Id == ae.Country?.Id);
+            SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == ae.Department?.Id);
+            SelectedCityId = ae.City?.Id;
+
+            Emails = ae.Emails != null
+                ? new ObservableCollection<EmailGraphQLModel>(ae.Emails)
+                : [];
+
+            IsAccountingEntityLocked = true;
+        }
+
+        private void ApplyAcquirerResponse(DianAcquirerResponse response)
+        {
+            string nombre = (response.ReceiverName ?? string.Empty).Trim();
+
+            if (CaptureInfoAsPJ)
+            {
+                BusinessName = nombre.ToUpperInvariant();
+            }
+            else if (CaptureInfoAsPN && nombre.Length > 0)
+            {
+                // La DIAN devuelve los tokens en orden:
+                // PrimerApellido [SegundoApellido] PrimerNombre [SegundoNombre]
+                string[] tokens = nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                switch (tokens.Length)
+                {
+                    case 1:
+                        FirstName = tokens[0].ToUpperInvariant();
+                        break;
+                    case 2:
+                        FirstLastName = tokens[0].ToUpperInvariant();
+                        FirstName = tokens[1].ToUpperInvariant();
+                        break;
+                    case 3:
+                        FirstLastName = tokens[0].ToUpperInvariant();
+                        MiddleLastName = tokens[1].ToUpperInvariant();
+                        FirstName = tokens[2].ToUpperInvariant();
+                        break;
+                    default:
+                        FirstLastName = tokens[0].ToUpperInvariant();
+                        MiddleLastName = tokens[1].ToUpperInvariant();
+                        FirstName = tokens[2].ToUpperInvariant();
+                        MiddleName = string.Join(' ', tokens.Skip(3)).ToUpperInvariant();
+                        break;
+                }
+            }
+
+            string email = (response.ReceiverEmail ?? string.Empty).Trim();
+            if (!string.IsNullOrEmpty(email)
+                && email.IsValidEmail()
+                && !Emails.Any(e => string.Equals(e.Email, email, StringComparison.OrdinalIgnoreCase)))
+            {
+                Emails.Add(new EmailGraphQLModel
+                {
+                    Email = email,
+                    Description = "DIAN",
+                    IsElectronicInvoiceRecipient = true
+                });
+            }
         }
 
         public void RemoveEmail(object p)

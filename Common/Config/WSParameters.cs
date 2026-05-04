@@ -28,6 +28,7 @@ namespace Common.Config
     {
 
         public const string GetNumberingRange = "GetNumberingRange";
+        public const string GetAcquirer = "GetAcquirer";
         public const string GetStatus = "GetStatus";
         public const string GetStatusZip = "GetStatusZip";
         public const string GetXmlByDocumentKey = "GetXmlByDocumentKey";

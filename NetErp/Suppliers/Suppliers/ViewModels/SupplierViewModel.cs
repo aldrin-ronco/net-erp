@@ -37,6 +37,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly IRepository<SupplierGraphQLModel> _supplierService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly Helpers.Services.IAccountingEntityLookupService _accountingEntityLookupService;
         private readonly Helpers.IDialogService _dialogService;
 
         private readonly IGraphQLClient _graphQLClient;
@@ -272,6 +273,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             IEventAggregator eventAggregator,
             IRepository<SupplierGraphQLModel> supplierService,
             Helpers.Services.INotificationService notificationService,
+            Helpers.Services.IAccountingEntityLookupService accountingEntityLookupService,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
             WithholdingTypeCache withholdingTypeCache,
@@ -287,6 +289,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _accountingEntityLookupService = accountingEntityLookupService ?? throw new ArgumentNullException(nameof(accountingEntityLookupService));
             _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
             _countryCache = countryCache ?? throw new ArgumentNullException(nameof(countryCache));
             _withholdingTypeCache = withholdingTypeCache ?? throw new ArgumentNullException(nameof(withholdingTypeCache));
@@ -359,7 +362,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                SupplierDetailViewModel detail = new(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient, _joinableTaskFactory, _validator);
+                SupplierDetailViewModel detail = new(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient, _joinableTaskFactory, _validator, _notificationService, _accountingEntityLookupService);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -391,7 +394,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                SupplierDetailViewModel detail = new(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient, _joinableTaskFactory, _validator);
+                SupplierDetailViewModel detail = new(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient, _joinableTaskFactory, _validator, _notificationService, _accountingEntityLookupService);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedSupplier.Id);
                 IsBusy = false;
@@ -562,6 +565,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                         .Field(c => c!.IdentificationNumber)
                         .Field(c => c!.VerificationDigit)
                         .Field(c => c!.CaptureType)
+                        .Field(c => c!.Regime)
                         .Field(c => c!.SearchName)
                         .Field(c => c!.FirstLastName)
                         .Field(c => c!.MiddleLastName)

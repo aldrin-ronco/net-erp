@@ -79,7 +79,9 @@ public class SellerDetailViewModelTests
         _vm = new SellerDetailViewModel(
             _service, _eventAggregator,
             _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache,
-            _stringLengthCache, _mapper, _joinableTaskFactory, _graphQLClient, _validator);
+            _stringLengthCache, _mapper, _joinableTaskFactory, _graphQLClient, _validator,
+            Substitute.For<NetErp.Helpers.Services.INotificationService>(),
+            Substitute.For<NetErp.Helpers.Services.IAccountingEntityLookupService>());
     }
 
     private void PrepareForNew()
