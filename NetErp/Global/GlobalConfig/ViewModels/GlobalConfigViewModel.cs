@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -28,7 +27,6 @@ namespace NetErp.Global.GlobalConfig.ViewModels
         private readonly IRepository<GlobalConfigGraphQLModel> _globalConfigService;
         private readonly AwsS3ConfigCache _awsS3ConfigCache;
         private readonly DianCertificateCache _dianCertificateCache;
-        private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly INotificationService _notificationService;
         private GlobalConfigGraphQLModel? _loadedConfig;
@@ -37,28 +35,25 @@ namespace NetErp.Global.GlobalConfig.ViewModels
             IRepository<GlobalConfigGraphQLModel> globalConfigService,
             AwsS3ConfigCache awsS3ConfigCache,
             DianCertificateCache dianCertificateCache,
-            IEventAggregator eventAggregator,
             JoinableTaskFactory joinableTaskFactory,
             INotificationService notificationService)
         {
             _globalConfigService = globalConfigService;
             _awsS3ConfigCache = awsS3ConfigCache;
             _dianCertificateCache = dianCertificateCache;
-            _eventAggregator = eventAggregator;
             _joinableTaskFactory = joinableTaskFactory;
             _notificationService = notificationService;
         }
 
         #region Properties
 
-        private int _id;
         public int Id
         {
-            get => _id;
+            get;
             set
             {
-                if (_id == value) return;
-                _id = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(Id));
                 NotifyOfPropertyChange(nameof(IsNewRecord));
             }
@@ -66,28 +61,26 @@ namespace NetErp.Global.GlobalConfig.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy == value) return;
-                _isBusy = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(IsBusy));
                 NotifyOfPropertyChange(nameof(CanEdit));
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private bool _isEditing;
         public bool IsEditing
         {
-            get => _isEditing;
+            get;
             set
             {
-                if (_isEditing == value) return;
-                _isEditing = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(IsEditing));
                 NotifyOfPropertyChange(nameof(CanEdit));
                 NotifyOfPropertyChange(nameof(CanSave));
@@ -96,32 +89,28 @@ namespace NetErp.Global.GlobalConfig.ViewModels
 
         public bool CanEdit => !IsEditing && !IsBusy;
 
-        private AwsS3ConfigGraphQLModel? _selectedDefaultAwsS3Config;
-
         [ExpandoPath("defaultAwsS3ConfigId", SerializeAsId = true)]
         public AwsS3ConfigGraphQLModel? SelectedDefaultAwsS3Config
         {
-            get => _selectedDefaultAwsS3Config;
+            get;
             set
             {
-                if (_selectedDefaultAwsS3Config == value) return;
-                _selectedDefaultAwsS3Config = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedDefaultAwsS3Config));
                 this.TrackChange(nameof(SelectedDefaultAwsS3Config), value);
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private DianCertificateGraphQLModel? _selectedDefaultDianCertificate;
-
         [ExpandoPath("defaultDianCertificateId", SerializeAsId = true)]
         public DianCertificateGraphQLModel? SelectedDefaultDianCertificate
         {
-            get => _selectedDefaultDianCertificate;
+            get;
             set
             {
-                if (_selectedDefaultDianCertificate == value) return;
-                _selectedDefaultDianCertificate = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedDefaultDianCertificate));
                 this.TrackChange(nameof(SelectedDefaultDianCertificate), value);
                 NotifyOfPropertyChange(nameof(CanSave));
@@ -200,6 +189,21 @@ namespace NetErp.Global.GlobalConfig.ViewModels
             await base.OnInitializedAsync(cancellationToken);
         }
 
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            this.SetFocus(() => SelectedDefaultAwsS3Config);
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                this.AcceptChanges();
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
         #endregion
 
         #region Load
@@ -207,21 +211,29 @@ namespace NetErp.Global.GlobalConfig.ViewModels
         private async Task LoadGlobalConfigAsync()
         {
             var (_, query) = _loadQuery.Value;
-            var config = await _globalConfigService.GetSingleItemAsync(query, new { });
+            GlobalConfigGraphQLModel? config = await _globalConfigService.GetSingleItemAsync(query, new { });
 
             if (config is not null)
             {
                 _loadedConfig = config;
                 Id = config.Id;
 
-                _selectedDefaultAwsS3Config = AwsS3Configs.FirstOrDefault(x => x.Id == config.DefaultAwsS3Config?.Id);
-                NotifyOfPropertyChange(nameof(SelectedDefaultAwsS3Config));
-
-                _selectedDefaultDianCertificate = DianCertificates.FirstOrDefault(x => x.Id == config.DefaultDianCertificate?.Id);
-                NotifyOfPropertyChange(nameof(SelectedDefaultDianCertificate));
+                SelectedDefaultAwsS3Config = AwsS3Configs.FirstOrDefault(x => x.Id == config.DefaultAwsS3Config?.Id);
+                SelectedDefaultDianCertificate = DianCertificates.FirstOrDefault(x => x.Id == config.DefaultDianCertificate?.Id);
 
                 SeedCurrentValues();
             }
+            else
+            {
+                SeedDefaultValues();
+            }
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         private void SeedCurrentValues()
@@ -238,11 +250,10 @@ namespace NetErp.Global.GlobalConfig.ViewModels
 
         private void Undo()
         {
-            _selectedDefaultAwsS3Config = AwsS3Configs.FirstOrDefault(x => x.Id == _loadedConfig?.DefaultAwsS3Config?.Id);
-            NotifyOfPropertyChange(nameof(SelectedDefaultAwsS3Config));
+            this.ClearSeeds();
 
-            _selectedDefaultDianCertificate = DianCertificates.FirstOrDefault(x => x.Id == _loadedConfig?.DefaultDianCertificate?.Id);
-            NotifyOfPropertyChange(nameof(SelectedDefaultDianCertificate));
+            SelectedDefaultAwsS3Config = AwsS3Configs.FirstOrDefault(x => x.Id == _loadedConfig?.DefaultAwsS3Config?.Id);
+            SelectedDefaultDianCertificate = DianCertificates.FirstOrDefault(x => x.Id == _loadedConfig?.DefaultDianCertificate?.Id);
 
             SeedCurrentValues();
             IsEditing = false;
