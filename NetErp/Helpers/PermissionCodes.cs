@@ -102,6 +102,17 @@ namespace NetErp.Helpers
             public const string Annul = $"{Prefix}.annul";
         }
 
+        public static class StockMovementOut
+        {
+            private const string Prefix = "stock_movement_out";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+            public const string Post = $"{Prefix}.post";
+            public const string Annul = $"{Prefix}.annul";
+        }
+
         public static class Company
         {
             private const string Prefix = "company";

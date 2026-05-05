@@ -10,8 +10,16 @@ namespace NetErp.UserControls
 {
     public partial class EmptyStateView : UserControl
     {
-        private static readonly ImageSource DefaultImage = new BitmapImage(
-            new Uri("pack://application:,,,/NetErp;component/Resources/Images/vecteezy_desert-landscape-404-error-page-concept-illustration-flat_9007135.jpg"));
+        // Pack scheme requires Application initialized — eager init at type load
+        // can throw if EmptyStateView static ctor runs before App. Lazy defers until
+        // first access (post-startup). Force pack scheme registration as safety.
+        private static readonly Lazy<ImageSource> DefaultImageLazy = new(() =>
+        {
+            _ = System.IO.Packaging.PackUriHelper.UriSchemePack;
+            return new BitmapImage(
+                new Uri("pack://application:,,,/NetErp;component/Resources/Images/vecteezy_desert-landscape-404-error-page-concept-illustration-flat_9007135.jpg"));
+        });
+        private static ImageSource DefaultImage => DefaultImageLazy.Value;
 
         private bool _isExecuting;
 
@@ -19,7 +27,7 @@ namespace NetErp.UserControls
 
         public static readonly DependencyProperty ImageSourceProperty =
             DependencyProperty.Register(nameof(ImageSource), typeof(ImageSource), typeof(EmptyStateView),
-                new PropertyMetadata(DefaultImage));
+                new PropertyMetadata(default(ImageSource)));
 
         public static readonly DependencyProperty ImageWidthProperty =
             DependencyProperty.Register(nameof(ImageWidth), typeof(double), typeof(EmptyStateView),
@@ -126,6 +134,13 @@ namespace NetErp.UserControls
         public EmptyStateView()
         {
             InitializeComponent();
+            // Asignar default después de InitializeComponent — si caller no provee
+            // ImageSource, usar imagen embebida. Lazy garantiza pack scheme listo.
+            if (ImageSource == null)
+            {
+                try { ImageSource = DefaultImage; }
+                catch { /* recurso ausente — permite que el control funcione sin imagen */ }
+            }
         }
 
         private static void OnCommandChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

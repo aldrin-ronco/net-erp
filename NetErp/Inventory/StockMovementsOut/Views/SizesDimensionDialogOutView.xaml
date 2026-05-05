@@ -1,0 +1,261 @@
+<UserControl x:Class="NetErp.Inventory.StockMovementsOut.Views.SizesDimensionDialogOutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             s:Shortcuts.Enabled="{DynamicResource DialogShortcuts}"
+             Focusable="True"
+             mc:Ignorable="d"
+             Width="{Binding DialogWidth}"
+             Height="{Binding DialogHeight}"
+             Background="#EEF1F5"
+             PreviewKeyDown="OnPreviewKeyDown">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <s:CommandList x:Key="DialogShortcuts">
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Close"/>
+            <x:Static Member="s:AppCommands.FocusGrid"/>
+        </s:CommandList>
+        <Style x:Key="ActionButtonBorder" TargetType="Border">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                    <Setter Property="Background" Value="#EBF5FB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="8,0,8,8">
+        <Grid Margin="15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{Binding ItemHeader}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+            <Grid Grid.Row="1">
+            <DataGrid x:Name="SizesGrid"
+                      Loaded="OnGridLoaded"
+                      PreviewKeyDown="OnGridPreviewKeyDown"
+                      ItemsSource="{Binding Rows}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserResizeRows="False"
+                      CanUserSortColumns="False"
+                      CanUserReorderColumns="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#EAECEF"
+                      RowHeaderWidth="0"
+                      SelectionMode="Single"
+                      SelectionUnit="CellOrRowHeader"
+                      EnableRowVirtualization="False"
+                      KeyboardNavigation.TabNavigation="Continue"
+                      BorderBrush="#D9DDE3"
+                      BorderThickness="1">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Available}" Value="0">
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                                <Setter Property="Foreground" Value="#9E9E9E"/>
+                            </DataTrigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="Focusable" Value="False"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter Property="Background" Value="#D6E9F8"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Talla" Width="*" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SizeName}" Padding="6,4" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Disponible" Width="120" IsReadOnly="True">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="DataGridColumnHeader" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Available, StringFormat={}{0:N2}}"
+                                           Padding="6,4"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Right"
+                                           Foreground="#1565C0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Cantidad" Width="140">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="DataGridColumnHeader" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:TextEdit MaskType="Numeric"
+                                              Mask="{Binding DataContext.QuantityMask, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              MaskUseAsDisplayFormat="True"
+                                              EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"
+                                              Padding="3"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Right">
+                                    <dxe:TextEdit.Style>
+                                        <Style TargetType="dxe:TextEdit">
+                                            <Setter Property="ShowBorder" Value="False"/>
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                    <Setter Property="Background" Value="#FDECEC"/>
+                                                    <Setter Property="ToolTip" Value="{Binding QuantityErrorTooltip}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </dxe:TextEdit.Style>
+                                </dxe:TextEdit>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+                <Border IsHitTestVisible="False">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="VerticalAlignment" Value="Top"/>
+                            <Setter Property="Margin" Value="0,4,4,0"/>
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                        <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="⌃G" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                </Border>
+            </Grid>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="AcceptAsync"
+                            IsEnabled="{Binding CanAccept}"
+                            ToolTip="Aceptar (Ctrl+S)"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                                <TextBlock Text="Aceptar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="⌃S" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+                </Border>
+                <Border Style="{StaticResource ActionButtonBorder}">
+                    <Button cal:Message.Attach="CancelAsync"
+                            ToolTip="Cancelar (Esc)"
+                            FocusVisualStyle="{x:Null}"
+                            Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                                <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                            </StackPanel>
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="Esc" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

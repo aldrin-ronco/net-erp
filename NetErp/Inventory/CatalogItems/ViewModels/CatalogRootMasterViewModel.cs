@@ -1742,14 +1742,17 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public async Task HandleAsync(ItemCreateMessage message, CancellationToken cancellationToken)
         {
             ItemGraphQLModel entity = message.CreatedItem.Entity;
-            ItemSubCategoryDTO? parent = null;
-            foreach (CatalogDTO c in Catalogs)
-                foreach (ItemTypeDTO t in c.ItemTypes)
-                    foreach (ItemCategoryDTO cat in t.ItemCategories)
-                    {
-                        parent = cat.SubCategories.FirstOrDefault(x => x.Id == entity.SubCategory?.Id);
-                        if (parent != null) break;
-                    }
+            // LINQ flat search — el foreach anidado anterior sobrescribía 'parent'
+            // en iteraciones posteriores cuando el match estaba en una rama temprana,
+            // resultando en 'parent = null' al final aunque la subcategoría existiera.
+            int? subCatId = entity.SubCategory?.Id;
+            ItemSubCategoryDTO? parent = subCatId.HasValue
+                ? Catalogs
+                    .SelectMany(c => c.ItemTypes)
+                    .SelectMany(t => t.ItemCategories)
+                    .SelectMany(cat => cat.SubCategories)
+                    .FirstOrDefault(x => x.Id == subCatId.Value)
+                : null;
             if (parent is null) return;
 
             if (!parent.IsExpanded && parent.Items.Count > 0 && parent.Items[0].IsDummyChild)
@@ -1773,14 +1776,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
             MirrorCreateToSnapshot(snapshot =>
             {
-                ItemSubCategoryDTO? snapParent = null;
-                foreach (CatalogDTO c in snapshot)
-                    foreach (ItemTypeDTO t in c.ItemTypes)
-                        foreach (ItemCategoryDTO cat in t.ItemCategories)
-                        {
-                            snapParent = cat.SubCategories.FirstOrDefault(x => x.Id == entity.SubCategory?.Id);
-                            if (snapParent != null) break;
-                        }
+                // Mismo patrón flat search para snapshot.
+                ItemSubCategoryDTO? snapParent = subCatId.HasValue
+                    ? snapshot
+                        .SelectMany(c => c.ItemTypes)
+                        .SelectMany(t => t.ItemCategories)
+                        .SelectMany(cat => cat.SubCategories)
+                        .FirstOrDefault(x => x.Id == subCatId.Value)
+                    : null;
                 if (snapParent is null) return;
                 bool isDummy = snapParent.Items.Count > 0 && snapParent.Items[0].IsDummyChild;
                 if (isDummy) return;

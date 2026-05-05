@@ -1,0 +1,552 @@
+<UserControl x:Class="NetErp.Inventory.StockMovementsOut.Views.StockMovementOutDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:s="clr-namespace:NetErp.Helpers.Shortcuts"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:currency="clr-namespace:CurrencyTextBoxControl;assembly=CurrencyTextbox"
+             xmlns:editor="clr-namespace:NetErp.UserControls.ItemDimensionEditor.Views"
+             xmlns:dto="clr-namespace:NetErp.Inventory.StockMovementsOut.DTO"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             s:Shortcuts.Enabled="{DynamicResource DetailShortcuts}"
+             Focusable="True"
+             FocusVisualStyle="{x:Null}"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
+        <h:BindingProxy x:Key="DetailProxy" Data="{Binding}"/>
+        <Style x:Key="ShortcutBadge" TargetType="Border">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="0,0,-2,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <s:CommandList x:Key="DetailShortcuts">
+            <x:Static Member="s:AppCommands.Post"/>
+            <x:Static Member="s:AppCommands.Close"/>
+            <x:Static Member="s:AppCommands.FocusGrid"/>
+            <x:Static Member="s:AppCommands.FocusNote"/>
+            <x:Static Member="s:AppCommands.Delete"/>
+            <x:Static Member="s:AppCommands.Save"/>
+            <x:Static Member="s:AppCommands.Search"/>
+        </s:CommandList>
+    </UserControl.Resources>
+
+    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="5"
+                Focusable="False"
+                FocusVisualStyle="{x:Null}"
+                KeyboardNavigation.IsTabStop="False"
+                KeyboardNavigation.DirectionalNavigation="Continue"
+                KeyboardNavigation.TabNavigation="Continue">
+            <Grid Margin="15,15,15,5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header readonly -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                        <TextBlock Text="Centro de costo" FontSize="13" Foreground="Gray"/>
+                        <TextBlock Text="{Binding CostCenterName}" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,20,0">
+                        <TextBlock Text="Bodega" FontSize="13" Foreground="Gray"/>
+                        <TextBlock Text="{Binding StorageName}" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,20,0">
+                        <TextBlock Text="Fuente contable" FontSize="13" Foreground="Gray"/>
+                        <TextBlock Text="{Binding AccountingSourceName}" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Margin="0,0,20,0">
+                        <TextBlock Text="Fecha y hora" FontSize="13" Foreground="Gray"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding DocumentDate}" FontSize="13"/>
+                            <TextBlock Text="  "/>
+                            <TextBlock Text="{Binding DocumentTime}" FontSize="13" Foreground="Gray"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Margin="0,0,20,0">
+                        <TextBlock Text="Documento" FontSize="13" Foreground="Gray"/>
+                        <TextBlock Text="{Binding DocumentDisplay}" FontSize="13" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Grid>
+
+
+                <!-- UC ItemDimensionEditor: búsqueda + panel info + qty + dimensiones.
+                     Salidas: el costo unitario es read-only — el sistema lo asigna a partir de la
+                     misma búsqueda (stockTotalsPage). Visibilidad sujeta a permiso del usuario
+                     (CanViewCost) — futura integración con permisos. -->
+                <ContentControl Grid.Row="1" Margin="0,0,0,8"
+                                Visibility="{Binding IsDraft, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <editor:ItemDimensionEditorView DataContext="{Binding Editor}"
+                                                    ShowSearchBadge="True">
+                        <editor:ItemDimensionEditorView.AdditionalContent>
+                            <StackPanel MinWidth="140" Margin="0,0,8,0"
+                                        DataContext="{Binding Data, Source={StaticResource DetailProxy}}"
+                                        Visibility="{Binding CanViewCost, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="Costo unitario" FontSize="13" Foreground="Gray"/>
+                                <dxe:TextEdit Height="28"
+                                              IsReadOnly="True"
+                                              MaskType="Numeric"
+                                              Mask="C2"
+                                              MaskUseAsDisplayFormat="True"
+                                              Padding="3"
+                                              BorderBrush="#C8CED6"
+                                              Background="#F5F5F5"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Right"
+                                              EditValue="{Binding LineUnitCost, Mode=OneWay}"
+                                              TabIndex="-1"
+                                              Focusable="False"/>
+                            </StackPanel>
+                        </editor:ItemDimensionEditorView.AdditionalContent>
+                        <editor:ItemDimensionEditorView.TrailingContent>
+                            <StackPanel DataContext="{Binding Data, Source={StaticResource DetailProxy}}">
+                                <TextBlock Text=" " FontSize="11"/>
+                                <Border CornerRadius="4" BorderThickness="2" Padding="0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="#C8CED6"/>
+                                            <Setter Property="Background" Value="White"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                                                    <Setter Property="Background" Value="#EBF5FB"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Button TabIndex="5" Height="28" Padding="10,0"
+                                            ToolTip="Agregar línea al documento"
+                                            FocusVisualStyle="{x:Null}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                            IsEnabled="{Binding CanTryCommitLine}"
+                                            h:FocusBehavior.IsFocused="{Binding BtnAddFocus}"
+                                            cal:Message.Attach="TryCommitLineAsync">
+                                        <StackPanel Orientation="Horizontal" Focusable="False">
+                                            <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Width="16" Height="16" Margin="0,0,6,0" Focusable="False">
+                                                <Image.Style>
+                                                    <Style TargetType="Image">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+                                            <TextBlock Text="Agregar" VerticalAlignment="Center" Focusable="False"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                            </StackPanel>
+                        </editor:ItemDimensionEditorView.TrailingContent>
+                    </editor:ItemDimensionEditorView>
+                </ContentControl>
+
+                <!-- Grid líneas WPF DataGrid — modelo edit nativo, sin pencil persistente -->
+                <Grid Grid.Row="2">
+                <DataGrid x:Name="LinesGrid"
+                          ItemsSource="{Binding Lines}"
+                          SelectedItem="{Binding SelectedLine, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeRows="False"
+                          CanUserSortColumns="False"
+                          CanUserReorderColumns="False"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#EAECEF"
+                          AlternatingRowBackground="#FAF9F2"
+                          RowHeaderWidth="0"
+                          SelectionMode="Single"
+                          SelectionUnit="CellOrRowHeader"
+                          BorderBrush="#D9DDE3"
+                          BorderThickness="1"
+                          ScrollViewer.CanContentScroll="False"
+                          PreviewKeyDown="LinesGrid_PreviewKeyDown"
+                          PreparingCellForEdit="LinesGrid_PreparingCellForEdit"
+                          BeginningEdit="LinesGrid_BeginningEdit"
+                          MouseDoubleClick="LinesGrid_MouseDoubleClick">
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Pending}">
+                                    <Setter Property="Background" Value="#FFEED0"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Retrying}">
+                                    <Setter Property="Background" Value="#FFE4B5"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Saved}">
+                                    <Setter Property="Background" Value="#E0FFE0"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Failed}">
+                                    <Setter Property="Background" Value="#FFE0E0"/>
+                                </DataTrigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#D6E9F8"/>
+                                    <Setter Property="Foreground" Value="Black"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Pending}">
+                                    <Setter Property="Background" Value="#FFEED0"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Retrying}">
+                                    <Setter Property="Background" Value="#FFE4B5"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Saved}">
+                                    <Setter Property="Background" Value="#E0FFE0"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static dto:OperationStatus.Failed}">
+                                    <Setter Property="Background" Value="#FFE0E0"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.Resources>
+                        <Style x:Key="ReadOnlyTextStyle" TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Top"/>
+                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                            <Setter Property="Padding" Value="6,4"/>
+                        </Style>
+                        <Style x:Key="HeaderLeftStyle" TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            <Setter Property="Padding" Value="6,4"/>
+                        </Style>
+                    </DataGrid.Resources>
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="6,4"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Código" Width="90" Binding="{Binding Item.Code}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
+                        <DataGridTextColumn Header="Referencia" Width="120" Binding="{Binding Item.Reference}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
+                        <DataGridTemplateColumn Header="Nombre del ítem" Width="*" IsReadOnly="True" HeaderStyle="{StaticResource HeaderLeftStyle}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="6,4" VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding Item.Name}" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+
+                                        <!-- Tallas: tabla bullet | nombre | qty | UND -->
+                                        <!-- Grid.IsSharedSizeScope=True + SharedSizeGroup en columna 1 → todas
+                                             las filas adoptan el ancho del nombre más largo. -->
+                                        <ItemsControl ItemsSource="{Binding SizeRows}" Margin="12,2,0,0"
+                                                      Grid.IsSharedSizeScope="True"
+                                                      Visibility="{Binding IsSize, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="SizeNameCol"/>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="SizeQtyCol"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding SizeName}" Margin="0,0,6,0" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding QuantityText}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="3" Margin="6,0,0,0" FontSize="11" Foreground="#5F6B7A"
+                                                                   Text="{Binding DataContext.Item.MeasurementUnit.Abbreviation, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Lotes: tabla bullet | lote | qty | UND | vence -->
+                                        <!-- SharedSizeGroup en columna lote → mismo ancho en todas las filas. -->
+                                        <ItemsControl ItemsSource="{Binding LotRows}" Margin="12,2,0,0"
+                                                      Grid.IsSharedSizeScope="True"
+                                                      Visibility="{Binding IsLot, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="LotNumberCol"/>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="LotQtyCol"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding LotNumber}" Margin="0,0,6,0" FontSize="11" Foreground="#5F6B7A" FontFamily="Consolas"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding QuantityText}" TextAlignment="Right" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="3" Margin="6,0,0,0" FontSize="11" Foreground="#5F6B7A"
+                                                                   Text="{Binding DataContext.Item.MeasurementUnit.Abbreviation, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                                                        <TextBlock Grid.Column="4" Margin="12,0,0,0" FontSize="11" Foreground="#5F6B7A"
+                                                                   Text="{Binding ExpirationDate, StringFormat='vence yyyy-MM-dd', TargetNullValue='sin vencimiento'}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Seriales: tabla 4 columnas -->
+                                        <ItemsControl ItemsSource="{Binding SerialRows}" Margin="12,2,0,0"
+                                                      Visibility="{Binding IsSerial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="5"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,0,8,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="•" FontSize="11" Foreground="#5F6B7A"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding SerialNumber}" FontFamily="Consolas" FontSize="11" Foreground="#5F6B7A" TextTrimming="CharacterEllipsis" ToolTip="{Binding SerialNumber}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn x:Name="QuantityColumn" Header="Cantidad" Width="108">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding QuantityDisplay}" TextAlignment="Right" Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <dxe:TextEdit MaskType="Numeric"
+                                                  Mask="{Binding QuantityMask}"
+                                                  MaskUseAsDisplayFormat="True"
+                                                  EditValue="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                  VerticalContentAlignment="Center"
+                                                  HorizontalContentAlignment="Right"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="UND" Width="60" Binding="{Binding Item.MeasurementUnit.Abbreviation}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
+                        <DataGridTemplateColumn Header="Costo unitario" Width="126">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding UnitCost, StringFormat=C, TargetNullValue=0}" TextAlignment="Right" Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <dxe:TextEdit MaskType="Numeric"
+                                                  Mask="C2"
+                                                  MaskUseAsDisplayFormat="True"
+                                                  EditValue="{Binding UnitCost, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue=0, FallbackValue=0}"
+                                                  VerticalContentAlignment="Center"
+                                                  HorizontalContentAlignment="Right"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Subtotal" Width="136" Binding="{Binding Subtotal, StringFormat=N2}" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="Padding" Value="3"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Border IsHitTestVisible="False">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="VerticalAlignment" Value="Top"/>
+                            <Setter Property="Margin" Value="0,4,4,0"/>
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                        <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="⌃G" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                </Border>
+                </Grid>
+
+                <!-- Nota: multi-line con scroll, auto-save al perder foco. Indicador status. -->
+                <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Observación" FontSize="13" Foreground="Gray"/>
+                        <Ellipse Width="8" Height="8" Margin="6,0,0,0"
+                                 VerticalAlignment="Center"
+                                 Fill="{Binding NoteStatusBrush}"/>
+                    </StackPanel>
+                    <Grid>
+                        <dxe:TextEdit x:Name="NoteEditor"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Text="{Binding Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsReadOnly="{Binding IsDraft, Converter={StaticResource SimpleBooleanConverter}}"
+                                      MaxLength="{Binding NoteMaxLength}"
+                                      TextWrapping="Wrap"
+                                      AcceptsReturn="True"
+                                      VerticalContentAlignment="Top"
+                                      HorizontalContentAlignment="Left"
+                                      VerticalScrollBarVisibility="Visible"
+                                      MinHeight="42"
+                                      Padding="3" BorderBrush="#C8CED6"/>
+                        <Border IsHitTestVisible="False">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Top"/>
+                                    <Setter Property="Margin" Value="0,4,4,0"/>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="⌃M" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Botones -->
+                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                    <Border Margin="4,0" CornerRadius="4" BorderThickness="2" Padding="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter Property="BorderBrush" Value="#1565C0"/>
+                                        <Setter Property="Background" Value="#EBF5FB"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button x:Name="BtnPost" cal:Message.Attach="PostAsync" IsEnabled="{Binding CanPost}"
+                                ToolTip="Postear (F9)"
+                                FocusVisualStyle="{x:Null}"
+                                Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                            <Grid>
+                                <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                    <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" Focusable="False">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.7"/></Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Postear" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                                </StackPanel>
+                                <Border>
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                        <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="F9" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                </Border>
+                            </Grid>
+                        </Button>
+                    </Border>
+                    <Border Margin="4,0" CornerRadius="4" BorderThickness="2" Padding="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter Property="BorderBrush" Value="#1565C0"/>
+                                        <Setter Property="Background" Value="#EBF5FB"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button x:Name="BtnClose" cal:Message.Attach="CloseAsync" IsCancel="True"
+                                ToolTip="Cerrar (Esc)"
+                                FocusVisualStyle="{x:Null}"
+                                Background="Transparent" BorderThickness="0" Padding="13,3" Cursor="Hand">
+                            <Grid>
+                                <StackPanel HorizontalAlignment="Center" Focusable="False">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" Focusable="False"/>
+                                    <TextBlock Text="Cerrar" HorizontalAlignment="Center" Margin="0,4,0,0" Focusable="False"/>
+                                </StackPanel>
+                                <Border>
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource ShortcutBadge}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsCtrlHeld, Source={x:Static s:ShortcutHintState.Instance}}" Value="True"/>
+                                                        <Condition Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="Esc" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                </Border>
+                            </Grid>
+                        </Button>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>

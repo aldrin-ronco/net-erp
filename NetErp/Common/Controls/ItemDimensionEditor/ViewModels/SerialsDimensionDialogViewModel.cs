@@ -339,7 +339,9 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             }
             else
             {
-                Result = [.. SelectedRows.Select(r => new SerialDraft(r.SerialId, null))];
+                // Salidas: incluir SerialNumber para que el optimistic add muestre
+                // el número real en la grilla sin esperar reload del server.
+                Result = [.. SelectedRows.Select(r => new SerialDraft(r.SerialId, r.SerialNumber))];
             }
             await TryCloseAsync(true);
         }
