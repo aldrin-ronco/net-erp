@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -28,7 +27,6 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
     {
         private readonly IRepository<TreasuryConfigGraphQLModel> _treasuryConfigService;
         private readonly SubAccountingAccountCache _subAccountingAccountCache;
-        private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly INotificationService _notificationService;
         private TreasuryConfigGraphQLModel? _loadedConfig;
@@ -36,27 +34,24 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
         public TreasuryConfigViewModel(
             IRepository<TreasuryConfigGraphQLModel> treasuryConfigService,
             SubAccountingAccountCache subAccountingAccountCache,
-            IEventAggregator eventAggregator,
             JoinableTaskFactory joinableTaskFactory,
             INotificationService notificationService)
         {
             _treasuryConfigService = treasuryConfigService;
             _subAccountingAccountCache = subAccountingAccountCache;
-            _eventAggregator = eventAggregator;
             _joinableTaskFactory = joinableTaskFactory;
             _notificationService = notificationService;
         }
 
         #region Properties
 
-        private int _id;
         public int Id
         {
-            get => _id;
+            get;
             set
             {
-                if (_id == value) return;
-                _id = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(Id));
                 NotifyOfPropertyChange(nameof(IsNewRecord));
             }
@@ -64,28 +59,26 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy == value) return;
-                _isBusy = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(IsBusy));
                 NotifyOfPropertyChange(nameof(CanEdit));
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private bool _isEditing;
         public bool IsEditing
         {
-            get => _isEditing;
+            get;
             set
             {
-                if (_isEditing == value) return;
-                _isEditing = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(IsEditing));
                 NotifyOfPropertyChange(nameof(CanEdit));
                 NotifyOfPropertyChange(nameof(CanSave));
@@ -94,80 +87,70 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
 
         public bool CanEdit => !IsEditing && !IsBusy;
 
-        private AccountingAccountGraphQLModel? _selectedCardGroupAccountingAccount;
-
         [ExpandoPath("cardGroupAccountingAccountId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedCardGroupAccountingAccount
         {
-            get => _selectedCardGroupAccountingAccount;
+            get;
             set
             {
-                if (_selectedCardGroupAccountingAccount == value) return;
-                _selectedCardGroupAccountingAccount = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedCardGroupAccountingAccount));
                 this.TrackChange(nameof(SelectedCardGroupAccountingAccount), value);
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedCashGroupAccountingAccount;
-
         [ExpandoPath("cashGroupAccountingAccountId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedCashGroupAccountingAccount
         {
-            get => _selectedCashGroupAccountingAccount;
+            get;
             set
             {
-                if (_selectedCashGroupAccountingAccount == value) return;
-                _selectedCashGroupAccountingAccount = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedCashGroupAccountingAccount));
                 this.TrackChange(nameof(SelectedCashGroupAccountingAccount), value);
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedCheckGroupAccountingAccount;
-
         [ExpandoPath("checkGroupAccountingAccountId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedCheckGroupAccountingAccount
         {
-            get => _selectedCheckGroupAccountingAccount;
+            get;
             set
             {
-                if (_selectedCheckGroupAccountingAccount == value) return;
-                _selectedCheckGroupAccountingAccount = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedCheckGroupAccountingAccount));
                 this.TrackChange(nameof(SelectedCheckGroupAccountingAccount), value);
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedCheckingGroupAccountingAccount;
-
         [ExpandoPath("checkingGroupAccountingAccountId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedCheckingGroupAccountingAccount
         {
-            get => _selectedCheckingGroupAccountingAccount;
+            get;
             set
             {
-                if (_selectedCheckingGroupAccountingAccount == value) return;
-                _selectedCheckingGroupAccountingAccount = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedCheckingGroupAccountingAccount));
                 this.TrackChange(nameof(SelectedCheckingGroupAccountingAccount), value);
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedSavingsGroupAccountingAccount;
-
         [ExpandoPath("savingsGroupAccountingAccountId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedSavingsGroupAccountingAccount
         {
-            get => _selectedSavingsGroupAccountingAccount;
+            get;
             set
             {
-                if (_selectedSavingsGroupAccountingAccount == value) return;
-                _selectedSavingsGroupAccountingAccount = value;
+                if (field == value) return;
+                field = value;
                 NotifyOfPropertyChange(nameof(SelectedSavingsGroupAccountingAccount));
                 this.TrackChange(nameof(SelectedSavingsGroupAccountingAccount), value);
                 NotifyOfPropertyChange(nameof(CanSave));
@@ -243,6 +226,12 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
             await base.OnInitializedAsync(cancellationToken);
         }
 
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            this.SetFocus("CardGroupLookup");
+        }
+
         #endregion
 
         #region Load
@@ -250,27 +239,20 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
         private async Task LoadTreasuryConfigAsync()
         {
             var (_, query) = _loadQuery.Value;
-            var config = await _treasuryConfigService.GetSingleItemAsync(query, new { });
+            TreasuryConfigGraphQLModel? config = await _treasuryConfigService.GetSingleItemAsync(query, new { });
 
             if (config is not null)
             {
                 _loadedConfig = config;
                 Id = config.Id;
 
-                _selectedCardGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CardGroupAccountingAccount?.Id);
-                NotifyOfPropertyChange(nameof(SelectedCardGroupAccountingAccount));
-
-                _selectedCashGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CashGroupAccountingAccount?.Id);
-                NotifyOfPropertyChange(nameof(SelectedCashGroupAccountingAccount));
-
-                _selectedCheckGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CheckGroupAccountingAccount?.Id);
-                NotifyOfPropertyChange(nameof(SelectedCheckGroupAccountingAccount));
-
-                _selectedCheckingGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CheckingGroupAccountingAccount?.Id);
-                NotifyOfPropertyChange(nameof(SelectedCheckingGroupAccountingAccount));
-
-                _selectedSavingsGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.SavingsGroupAccountingAccount?.Id);
-                NotifyOfPropertyChange(nameof(SelectedSavingsGroupAccountingAccount));
+                // Setters disparan TrackChange — SeedCurrentValues llama AcceptChanges
+                // y limpia el tracker, dejando seed=valor cargado.
+                SelectedCardGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CardGroupAccountingAccount?.Id);
+                SelectedCashGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CashGroupAccountingAccount?.Id);
+                SelectedCheckGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CheckGroupAccountingAccount?.Id);
+                SelectedCheckingGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.CheckingGroupAccountingAccount?.Id);
+                SelectedSavingsGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == config.SavingsGroupAccountingAccount?.Id);
 
                 SeedCurrentValues();
             }
@@ -293,20 +275,11 @@ namespace NetErp.Treasury.TreasuryConfig.ViewModels
 
         private void Undo()
         {
-            _selectedCardGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CardGroupAccountingAccount?.Id);
-            NotifyOfPropertyChange(nameof(SelectedCardGroupAccountingAccount));
-
-            _selectedCashGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CashGroupAccountingAccount?.Id);
-            NotifyOfPropertyChange(nameof(SelectedCashGroupAccountingAccount));
-
-            _selectedCheckGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CheckGroupAccountingAccount?.Id);
-            NotifyOfPropertyChange(nameof(SelectedCheckGroupAccountingAccount));
-
-            _selectedCheckingGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CheckingGroupAccountingAccount?.Id);
-            NotifyOfPropertyChange(nameof(SelectedCheckingGroupAccountingAccount));
-
-            _selectedSavingsGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.SavingsGroupAccountingAccount?.Id);
-            NotifyOfPropertyChange(nameof(SelectedSavingsGroupAccountingAccount));
+            SelectedCardGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CardGroupAccountingAccount?.Id);
+            SelectedCashGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CashGroupAccountingAccount?.Id);
+            SelectedCheckGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CheckGroupAccountingAccount?.Id);
+            SelectedCheckingGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.CheckingGroupAccountingAccount?.Id);
+            SelectedSavingsGroupAccountingAccount = AccountingAccounts.FirstOrDefault(x => x.Id == _loadedConfig?.SavingsGroupAccountingAccount?.Id);
 
             SeedCurrentValues();
             IsEditing = false;

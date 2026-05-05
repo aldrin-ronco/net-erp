@@ -62,11 +62,13 @@
                     <!-- Cuenta grupo tarjetas -->
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Cuenta grupo tarjetas"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
-                        <dxg:LookUpEdit Padding="3"
+                        <dxg:LookUpEdit x:Name="CardGroupLookup"
+                                        Padding="3"
+                                        BorderBrush="#C8CED6"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -98,11 +100,12 @@
                     <!-- Cuenta grupo efectivo -->
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Cuenta grupo efectivo"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
                         <dxg:LookUpEdit Padding="3"
+                                        BorderBrush="#C8CED6"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -134,11 +137,12 @@
                     <!-- Cuenta grupo cheques -->
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Cuenta grupo cheques"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
                         <dxg:LookUpEdit Padding="3"
+                                        BorderBrush="#C8CED6"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -170,11 +174,12 @@
                     <!-- Cuenta grupo corriente -->
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Cuenta grupo corriente"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
                         <dxg:LookUpEdit Padding="3"
+                                        BorderBrush="#C8CED6"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -206,11 +211,12 @@
                     <!-- Cuenta grupo ahorros -->
                     <StackPanel Margin="0,0,0,30">
                         <TextBlock Text="Cuenta grupo ahorros"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
                         <dxg:LookUpEdit Padding="3"
+                                        BorderBrush="#C8CED6"
                                         AutoPopulateColumns="False"
                                         IsCaseSensitiveSearch="False"
                                         FilterCondition="Contains"
@@ -251,7 +257,7 @@
                                         <Style TargetType="Image">
                                             <Style.Triggers>
                                                 <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                    <Setter Property="Opacity" Value="0.4"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -271,7 +277,7 @@
                                         <Style TargetType="Image">
                                             <Style.Triggers>
                                                 <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                    <Setter Property="Opacity" Value="0.4"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -291,7 +297,7 @@
                                         <Style TargetType="Image">
                                             <Style.Triggers>
                                                 <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                    <Setter Property="Opacity" Value="0.4"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
