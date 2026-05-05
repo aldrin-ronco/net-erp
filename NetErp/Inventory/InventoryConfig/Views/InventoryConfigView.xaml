@@ -7,15 +7,62 @@
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="900"
+             d:DesignHeight="700" d:DesignWidth="1200"
              Background="#EEF1F5"
              FontFamily="Century Gothic">
 
+    <UserControl.Resources>
+        <Style x:Key="ActionButtonBorder" TargetType="Border">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                    <Setter Property="Background" Value="#EBF5FB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ActionButtonImage" TargetType="Image">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+            <Setter Property="Foreground" Value="#2c3e50"/>
+        </Style>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#1565C0"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="SectionDivider" TargetType="Border">
+            <Setter Property="Background" Value="#E5E9EE"/>
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="ConfigCombo" TargetType="dxe:ComboBoxEdit">
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="BorderBrush" Value="#C8CED6"/>
+            <Setter Property="IsTextEditable" Value="False"/>
+            <Setter Property="ShowNullTextForEmptyValue" Value="True"/>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.8*"/>
+            <ColumnDefinition Width="0.15*"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="0.8*"/>
+            <ColumnDefinition Width="0.15*"/>
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
@@ -28,8 +75,11 @@
         <Border Grid.Column="1"
                 Grid.Row="1"
                 Background="White"
+                BorderBrush="#D9DDE3"
+                BorderThickness="1"
                 CornerRadius="12"
-                Padding="40">
+                Padding="32,24"
+                MaxWidth="1100">
             <Border.Effect>
                 <DropShadowEffect Color="#000000"
                                   Opacity="0.1"
@@ -43,230 +93,168 @@
                                     BusyContent="Por favor espere..."
                                     BusyContentMargin="0,20,0,0">
 
-                <ScrollViewer dx:ScrollBarExtensions.ScrollBarMode="TouchOverlap"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              MaxHeight="600">
-                    <StackPanel Margin="0,0,16,0">
-                        <!-- Título -->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Encabezado -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,18">
                         <TextBlock Text="CONFIGURACIÓN DE INVENTARIO"
-                                   FontSize="22"
+                                   FontSize="20"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,8"
+                                   Margin="0,0,0,4"
                                    Foreground="#2c3e50"/>
-
-                        <!-- Subtítulo -->
                         <TextBlock Text="Parámetros predeterminados de inventario y traslados"
-                                   FontSize="13"
+                                   FontSize="12"
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,35"
                                    Foreground="#6c757d"/>
+                    </StackPanel>
 
-                        <!-- Configuración AWS S3 por defecto -->
-                        <StackPanel Margin="0,0,0,20">
-                            <TextBlock Text="Configuración AWS S3 por defecto"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding AwsS3Configs}"
-                                              EditValue="{Binding SelectedDefaultAwsS3Config, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMember="Description"
-                                              IsTextEditable="False"
-                                              IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione una configuración (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
-                        </StackPanel>
+                    <!-- Sección: Generales -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,16">
+                        <TextBlock Text="GENERALES" Style="{StaticResource SectionHeader}"/>
+                        <Border Style="{StaticResource SectionDivider}"/>
 
-                        <!-- Bodega de tránsito -->
-                        <StackPanel Margin="0,0,0,20">
-                            <TextBlock Text="Bodega de tránsito"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding Storages}"
+                        <StackPanel>
+                            <TextBlock Text="Bodega de tránsito" Style="{StaticResource FieldLabel}"/>
+                            <dxe:ComboBoxEdit Style="{StaticResource ConfigCombo}"
+                                              ItemsSource="{Binding Storages}"
                                               EditValue="{Binding SelectedTransitStorage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               DisplayMember="Name"
-                                              IsTextEditable="False"
                                               IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione una bodega (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
+                                              NullText="Seleccione una bodega (opcional)"/>
                         </StackPanel>
+                    </StackPanel>
 
-                        <!-- Origen contable del documento de traslado -->
-                        <StackPanel Margin="0,0,0,20">
-                            <TextBlock Text="Origen contable del documento de traslado"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
+                    <!-- Sección: Orígenes contables del documento -->
+                    <StackPanel Grid.Row="2" Margin="0,0,0,16">
+                        <TextBlock Text="ORÍGENES CONTABLES DEL DOCUMENTO DE TRASLADO" Style="{StaticResource SectionHeader}"/>
+                        <Border Style="{StaticResource SectionDivider}"/>
+
+                        <StackPanel>
+                            <TextBlock Text="Origen contable del documento de traslado" Style="{StaticResource FieldLabel}"/>
+                            <dxe:ComboBoxEdit Style="{StaticResource ConfigCombo}"
+                                              ItemsSource="{Binding AccountingSources}"
                                               EditValue="{Binding SelectedTransferDocAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               DisplayMember="Name"
-                                              IsTextEditable="False"
                                               IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione un origen contable (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
+                                              NullText="Seleccione un origen contable (opcional)"/>
                         </StackPanel>
+                    </StackPanel>
 
-                        <!-- Origen contable de salida (bodega origen) -->
-                        <StackPanel Margin="0,0,0,20">
-                            <TextBlock Text="Origen contable de salida (bodega origen)"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
-                                              EditValue="{Binding SelectedTransferSourceOutAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMember="Name"
-                                              IsTextEditable="False"
-                                              IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione un origen contable (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
-                        </StackPanel>
+                    <!-- Sección: Movimientos de bodega -->
+                    <StackPanel Grid.Row="3" Margin="0,0,0,16">
+                        <TextBlock Text="MOVIMIENTOS DE BODEGA Y TRÁNSITO" Style="{StaticResource SectionHeader}"/>
+                        <Border Style="{StaticResource SectionDivider}"/>
 
-                        <!-- Origen contable de entrada (bodega destino) -->
-                        <StackPanel Margin="0,0,0,20">
-                            <TextBlock Text="Origen contable de entrada (bodega destino)"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
-                                              EditValue="{Binding SelectedTransferDestinationInAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMember="Name"
-                                              IsTextEditable="False"
-                                              IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione un origen contable (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- Origen contable de salida en tránsito -->
-                        <StackPanel Margin="0,0,0,20">
-                            <TextBlock Text="Origen contable de salida en tránsito"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
-                                              EditValue="{Binding SelectedTransferTransitOutAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMember="Name"
-                                              IsTextEditable="False"
-                                              IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione un origen contable (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
-                        </StackPanel>
+                            <!-- Fila 1 -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,10">
+                                <TextBlock Text="Salida (bodega origen)" Style="{StaticResource FieldLabel}"/>
+                                <dxe:ComboBoxEdit Style="{StaticResource ConfigCombo}"
+                                                  ItemsSource="{Binding AccountingSources}"
+                                                  EditValue="{Binding SelectedTransferSourceOutAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Name"
+                                                  IsEnabled="{Binding IsEditing}"
+                                                  NullText="Seleccione un origen contable (opcional)"/>
+                            </StackPanel>
 
-                        <!-- Origen contable de entrada en tránsito -->
-                        <StackPanel Margin="0,0,0,30">
-                            <TextBlock Text="Origen contable de entrada en tránsito"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"
-                                       Foreground="#2c3e50"/>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding AccountingSources}"
-                                              EditValue="{Binding SelectedTransferTransitInAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMember="Name"
-                                              IsTextEditable="False"
-                                              IsEnabled="{Binding IsEditing}"
-                                              FontSize="14"
-                                              Padding="10"
-                                              Height="40"
-                                              BorderThickness="2"
-                                              NullText="Seleccione un origen contable (opcional)"
-                                              ShowNullTextForEmptyValue="True"/>
-                        </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,10">
+                                <TextBlock Text="Entrada (bodega destino)" Style="{StaticResource FieldLabel}"/>
+                                <dxe:ComboBoxEdit Style="{StaticResource ConfigCombo}"
+                                                  ItemsSource="{Binding AccountingSources}"
+                                                  EditValue="{Binding SelectedTransferDestinationInAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Name"
+                                                  IsEnabled="{Binding IsEditing}"
+                                                  NullText="Seleccione un origen contable (opcional)"/>
+                            </StackPanel>
 
-                        <!-- Botones -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <!-- Editar -->
+                            <!-- Fila 2 -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="Salida en tránsito" Style="{StaticResource FieldLabel}"/>
+                                <dxe:ComboBoxEdit Style="{StaticResource ConfigCombo}"
+                                                  ItemsSource="{Binding AccountingSources}"
+                                                  EditValue="{Binding SelectedTransferTransitOutAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Name"
+                                                  IsEnabled="{Binding IsEditing}"
+                                                  NullText="Seleccione un origen contable (opcional)"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="Entrada en tránsito" Style="{StaticResource FieldLabel}"/>
+                                <dxe:ComboBoxEdit Style="{StaticResource ConfigCombo}"
+                                                  ItemsSource="{Binding AccountingSources}"
+                                                  EditValue="{Binding SelectedTransferTransitInAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Name"
+                                                  IsEnabled="{Binding IsEditing}"
+                                                  NullText="Seleccione un origen contable (opcional)"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Botones -->
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <!-- Editar -->
+                        <Border Style="{StaticResource ActionButtonBorder}">
                             <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    FocusVisualStyle="{x:Null}"
+                                    ToolTip="Editar la configuración"
                                     IsEnabled="{Binding CanEdit}"
                                     Command="{Binding EditCommand}">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsEnabled" Value="False">
-                                                        <Setter Property="Opacity" Value="0.7"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
+                                    <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32"
+                                           HorizontalAlignment="Center" Style="{StaticResource ActionButtonImage}"/>
                                     <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Button>
+                        </Border>
 
-                            <!-- Deshacer -->
+                        <!-- Deshacer -->
+                        <Border Style="{StaticResource ActionButtonBorder}">
                             <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    FocusVisualStyle="{x:Null}"
+                                    ToolTip="Deshacer cambios y salir del modo edición"
                                     IsEnabled="{Binding IsEditing}"
                                     Command="{Binding UndoCommand}">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsEnabled" Value="False">
-                                                        <Setter Property="Opacity" Value="0.7"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
+                                    <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32"
+                                           HorizontalAlignment="Center" Style="{StaticResource ActionButtonImage}"/>
                                     <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Button>
+                        </Border>
 
-                            <!-- Guardar -->
+                        <!-- Guardar -->
+                        <Border Style="{StaticResource ActionButtonBorder}">
                             <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    FocusVisualStyle="{x:Null}"
+                                    ToolTip="Guardar cambios"
                                     IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
                                     Command="{Binding SaveCommand}">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsEnabled" Value="False">
-                                                        <Setter Property="Opacity" Value="0.7"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
+                                    <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32"
+                                           HorizontalAlignment="Center" Style="{StaticResource ActionButtonImage}"/>
                                     <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Button>
-                        </StackPanel>
+                        </Border>
                     </StackPanel>
-                </ScrollViewer>
+                </Grid>
             </busyIndicator:BusyMask>
         </Border>
     </Grid>
