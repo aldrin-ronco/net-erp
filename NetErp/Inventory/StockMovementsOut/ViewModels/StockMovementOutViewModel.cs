@@ -11,8 +11,8 @@ using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Services;
 using NetErp.Helpers.Shortcuts;
-using NetErp.Inventory.StockMovementsIn.DTO;
-using NetErp.Inventory.StockMovementsIn.Helpers;
+using NetErp.Inventory.StockMovementsOut.DTO;
+using NetErp.Inventory.StockMovementsOut.Helpers;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -23,14 +23,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using static Models.Global.GraphQLResponseTypes;
 
-namespace NetErp.Inventory.StockMovementsIn.ViewModels
+namespace NetErp.Inventory.StockMovementsOut.ViewModels
 {
     /// <summary>
-    /// Conductor + Master del módulo Stock Movements In. Lista paginada de movimientos
-    /// (entradas por concepto: kardex_flow=I), filtros, y disparo de modales
+    /// Conductor + Master del módulo Stock Movements Out. Lista paginada de movimientos
+    /// (salidas por concepto: kardex_flow=O), filtros, y disparo de modales
     /// Nuevo / Editar / Anular.
     /// </summary>
-    public class StockMovementInViewModel : Screen,
+    public class StockMovementOutViewModel : Screen,
         IHandle<StockMovementCreateMessage>,
         IHandle<StockMovementUpdateMessage>,
         IHandle<StockMovementDeleteMessage>,
@@ -47,7 +47,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         private readonly IRepository<StockMovementLineGraphQLModel> _lineService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly CostCenterCache _costCenterCache;
-        private readonly InboundAccountingSourceCache _inboundAccountingSourceCache;
+        private readonly OutboundAccountingSourceCache _outboundAccountingSourceCache;
         private readonly StorageCache _storageCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly IGraphQLClient _graphQLClient;
@@ -59,7 +59,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         #endregion
 
-        public StockMovementInViewModel(
+        public StockMovementOutViewModel(
             IEventAggregator eventAggregator,
             INotificationService notificationService,
             IDialogService dialogService,
@@ -67,7 +67,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             IRepository<StockMovementLineGraphQLModel> lineService,
             IRepository<ItemGraphQLModel> itemService,
             CostCenterCache costCenterCache,
-            InboundAccountingSourceCache inboundAccountingSourceCache,
+            OutboundAccountingSourceCache outboundAccountingSourceCache,
             StorageCache storageCache,
             StringLengthCache stringLengthCache,
             IGraphQLClient graphQLClient,
@@ -84,7 +84,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             _lineService = lineService ?? throw new ArgumentNullException(nameof(lineService));
             _itemService = itemService ?? throw new ArgumentNullException(nameof(itemService));
             _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
-            _inboundAccountingSourceCache = inboundAccountingSourceCache ?? throw new ArgumentNullException(nameof(inboundAccountingSourceCache));
+            _outboundAccountingSourceCache = outboundAccountingSourceCache ?? throw new ArgumentNullException(nameof(outboundAccountingSourceCache));
             _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
@@ -95,7 +95,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
 
             _eventAggregator.SubscribeOnUIThread(this);
-            DisplayName = "Entradas de inventario por concepto";
+            DisplayName = "Salidas de inventario por concepto";
         }
 
         #region Grid Properties
@@ -338,7 +338,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         } = string.Empty;
 
         /// <summary>Detail activo (no modal). null = master visible.</summary>
-        public StockMovementInDetailViewModel? CurrentDetail
+        public StockMovementOutDetailViewModel? CurrentDetail
         {
             get;
             private set
@@ -365,11 +365,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
 
         #region Permissions
 
-        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Create);
-        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Edit);
-        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Delete);
-        public bool HasPostPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Post);
-        public bool HasAnnulPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementIn.Annul);
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementOut.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementOut.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementOut.Delete);
+        public bool HasPostPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementOut.Post);
+        public bool HasAnnulPermission => _permissionCache.IsAllowed(PermissionCodes.StockMovementOut.Annul);
 
         public bool CanNew => HasCreatePermission && !IsBusy;
 
@@ -385,11 +385,11 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 await Task.WhenAll(
                     _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.StockMovement),
                     CacheBatchLoader.LoadAsync(_graphQLClient, default,
-                        _costCenterCache, _inboundAccountingSourceCache, _storageCache));
+                        _costCenterCache, _outboundAccountingSourceCache, _storageCache));
                 CostCenters.Clear();
                 foreach (CostCenterGraphQLModel cc in _costCenterCache.Items) CostCenters.Add(cc);
                 AccountingSources.Clear();
-                foreach (AccountingSourceGraphQLModel s in _inboundAccountingSourceCache.Items) AccountingSources.Add(s);
+                foreach (AccountingSourceGraphQLModel s in _outboundAccountingSourceCache.Items) AccountingSources.Add(s);
                 SelectedPeriod = PeriodOptions.First(p => p.Value == PeriodOption.ThisMonth);
                 _suppressPeriodReload = false;
                 await LoadAsync();
@@ -430,10 +430,10 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             {
                 IsBusy = true;
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                var (fragment, query) = StockMovementInQueries.StockMovementsPage.Value;
+                var (fragment, query) = StockMovementOutQueries.StockMovementsPage.Value;
 
                 dynamic filters = new ExpandoObject();
-                filters.kardexFlow = "I";
+                filters.kardexFlow = "O";
                 if (!string.IsNullOrWhiteSpace(FilterDocumentNumber))
                     filters.documentNumber = FilterDocumentNumber.Trim();
                 if (FilterAccountingSource != null && FilterAccountingSource.Id > 0)
@@ -520,9 +520,9 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                StockMovementInNewDialogViewModel modal = new(
+                StockMovementOutNewDialogViewModel modal = new(
                     _service,
-                    _costCenterCache, _inboundAccountingSourceCache, _storageCache,
+                    _costCenterCache, _outboundAccountingSourceCache, _storageCache,
                     _stringLengthCache, _eventAggregator, _joinableTaskFactory);
 
                 if (this.GetView() is FrameworkElement parentView)
@@ -531,7 +531,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
                 }
 
                 IsBusy = false;
-                bool? result = await _dialogService.ShowDialogAsync(modal, "Nueva entrada de inventario");
+                bool? result = await _dialogService.ShowDialogAsync(modal, "Nueva salida de inventario");
 
                 if (result == true && modal.CreatedId > 0)
                 {
@@ -560,7 +560,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                StockMovementInDetailViewModel detail = new(
+                StockMovementOutDetailViewModel detail = new(
                     _eventAggregator, _notificationService, _dialogService,
                     _service, _lineService, _itemService, _stringLengthCache,
                     _joinableTaskFactory, _backgroundQueueService,
@@ -608,7 +608,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                var (fragment, query) = StockMovementInQueries.PostMovement.Value;
+                var (fragment, query) = StockMovementOutQueries.PostMovement.Value;
                 object variables = new GraphQLVariables().For(fragment, "id", SelectedStockMovement.Id).Build();
                 StockMovementPostResponse? payload = await _service.MutationContextAsync<StockMovementPostResponse>(query, variables);
                 StockMovementMutationPayload? result = payload?.UpdateResponse;
@@ -641,7 +641,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                StockMovementInCancelDialogViewModel dlg = new(_service, _stringLengthCache, _joinableTaskFactory, SelectedStockMovement.Id, SelectedStockMovement.DocumentNumber ?? string.Empty);
+                StockMovementOutCancelDialogViewModel dlg = new(_service, _stringLengthCache, _joinableTaskFactory, SelectedStockMovement.Id, SelectedStockMovement.DocumentNumber ?? string.Empty);
                 IsBusy = false;
                 bool? ok = await _dialogService.ShowDialogAsync(dlg, "Anular movimiento");
                 if (ok == true && dlg.Result?.Success == true)
@@ -671,7 +671,7 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
             try
             {
                 IsBusy = true;
-                var (fragment, query) = StockMovementInQueries.DeleteDraft.Value;
+                var (fragment, query) = StockMovementOutQueries.DeleteDraft.Value;
                 object variables = new GraphQLVariables().For(fragment, "id", SelectedStockMovement.Id).Build();
                 StockMovementDeleteResponse? payload = await _service.MutationContextAsync<StockMovementDeleteResponse>(query, variables);
                 StockMovementMutationPayload? result = payload?.DeleteResponse;

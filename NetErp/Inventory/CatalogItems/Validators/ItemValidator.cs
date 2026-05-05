@@ -13,8 +13,6 @@ namespace NetErp.Inventory.CatalogItems.Validators
             {
                 "Name" when string.IsNullOrWhiteSpace(value as string)
                     => ["El nombre del item no puede estar vacío"],
-                "Reference" when string.IsNullOrWhiteSpace(value as string)
-                    => ["La referencia del item no puede estar vacía"],
                 "SelectedMeasurementUnit" when value is null
                     => ["Debe seleccionar una unidad de medida"],
                 "SelectedAccountingGroup" when value is null
@@ -29,7 +27,6 @@ namespace NetErp.Inventory.CatalogItems.Validators
         {
             Dictionary<string, IReadOnlyList<string>> result = [];
             AddIfErrors(result, "Name", Validate("Name", context.Name, context));
-            AddIfErrors(result, "Reference", Validate("Reference", context.Reference, context));
             AddIfErrors(result, "SelectedMeasurementUnit", Validate("SelectedMeasurementUnit", context.HasMeasurementUnit ? new object() : null, context));
             AddIfErrors(result, "SelectedAccountingGroup", Validate("SelectedAccountingGroup", context.HasAccountingGroup ? new object() : null, context));
             AddIfErrors(result, "SelectedSize", Validate("SelectedSize", context.HasSizeCategory ? new object() : null, context));
@@ -40,7 +37,6 @@ namespace NetErp.Inventory.CatalogItems.Validators
         {
             if (context.IsBusy) return false;
             if (string.IsNullOrWhiteSpace(context.Name)) return false;
-            if (string.IsNullOrWhiteSpace(context.Reference)) return false;
             if (!context.HasMeasurementUnit) return false;
             if (!context.HasAccountingGroup) return false;
             if (context.RequiresSizeCategory && !context.HasSizeCategory) return false;
