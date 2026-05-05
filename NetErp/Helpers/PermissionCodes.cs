@@ -173,7 +173,15 @@ namespace NetErp.Helpers
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
         }
+        public static class ItemBrand
+        {
+            private const string Prefix = "item_brand";
 
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+        
         public static class ItemSubCategory
         {
             private const string Prefix = "item_sub_category";
