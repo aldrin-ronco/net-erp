@@ -12,6 +12,30 @@
              Background="#EEF1F5"
              FontFamily="Century Gothic">
 
+    <UserControl.Resources>
+        <Style x:Key="ActionButtonBorder" TargetType="Border">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                    <Setter Property="Background" Value="#EBF5FB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ActionButtonImage" TargetType="Image">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0.8*"/>
@@ -29,6 +53,8 @@
         <Border Grid.Column="1"
                 Grid.Row="1"
                 Background="White"
+                BorderBrush="#D9DDE3"
+                BorderThickness="1"
                 CornerRadius="12"
                 Padding="40">
             <Border.Effect>
@@ -63,7 +89,7 @@
                     <!-- Configuración AWS S3 predeterminada -->
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Configuración AWS S3 predeterminada"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
@@ -72,10 +98,8 @@
                                           DisplayMember="Description"
                                           IsTextEditable="False"
                                           IsEnabled="{Binding IsEditing}"
-                                          FontSize="14"
-                                          Padding="10"
-                                          Height="40"
-                                          BorderThickness="2"
+                                          Padding="2"
+                                          BorderBrush="#C8CED6"
                                           NullText="Seleccione una configuración (opcional)"
                                           ShowNullTextForEmptyValue="True"/>
                     </StackPanel>
@@ -83,7 +107,7 @@
                     <!-- Certificado DIAN predeterminado -->
                     <StackPanel Margin="0,0,0,30">
                         <TextBlock Text="Certificado DIAN predeterminado"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
@@ -92,75 +116,58 @@
                                           DisplayMember="SerialNumber"
                                           IsTextEditable="False"
                                           IsEnabled="{Binding IsEditing}"
-                                          FontSize="14"
-                                          Padding="10"
-                                          Height="40"
-                                          BorderThickness="2"
+                                          Padding="2"
+                                          BorderBrush="#C8CED6"
                                           NullText="Seleccione un certificado (opcional)"
                                           ShowNullTextForEmptyValue="True"/>
                     </StackPanel>
 
                     <!-- Botones -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                         <!-- Editar -->
-                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                                IsEnabled="{Binding CanEdit}"
-                                Command="{Binding EditCommand}">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.7"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
-                                <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Button>
+                        <Border Style="{StaticResource ActionButtonBorder}">
+                            <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    FocusVisualStyle="{x:Null}"
+                                    ToolTip="Editar la configuración"
+                                    IsEnabled="{Binding CanEdit}"
+                                    Command="{Binding EditCommand}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32"
+                                           HorizontalAlignment="Center" Style="{StaticResource ActionButtonImage}"/>
+                                    <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </Border>
 
                         <!-- Deshacer -->
-                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                                IsEnabled="{Binding IsEditing}"
-                                Command="{Binding UndoCommand}">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.7"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
-                                <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Button>
+                        <Border Style="{StaticResource ActionButtonBorder}">
+                            <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    FocusVisualStyle="{x:Null}"
+                                    ToolTip="Deshacer cambios y salir del modo edición"
+                                    IsEnabled="{Binding IsEditing}"
+                                    Command="{Binding UndoCommand}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32"
+                                           HorizontalAlignment="Center" Style="{StaticResource ActionButtonImage}"/>
+                                    <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </Border>
 
                         <!-- Guardar -->
-                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                                IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
-                                Command="{Binding SaveCommand}">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.7"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
-                                <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Button>
+                        <Border Style="{StaticResource ActionButtonBorder}">
+                            <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                    FocusVisualStyle="{x:Null}"
+                                    ToolTip="Guardar cambios"
+                                    IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                                    Command="{Binding SaveCommand}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32"
+                                           HorizontalAlignment="Center" Style="{StaticResource ActionButtonImage}"/>
+                                    <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </Border>
                     </StackPanel>
                 </StackPanel>
             </busyIndicator:BusyMask>
