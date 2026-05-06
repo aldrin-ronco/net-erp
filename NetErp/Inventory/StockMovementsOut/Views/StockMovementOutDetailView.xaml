@@ -12,6 +12,7 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:currency="clr-namespace:CurrencyTextBoxControl;assembly=CurrencyTextbox"
              xmlns:editor="clr-namespace:NetErp.UserControls.ItemDimensionEditor.Views"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
              xmlns:dto="clr-namespace:NetErp.Inventory.StockMovementsOut.DTO"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              s:Shortcuts.Enabled="{DynamicResource DetailShortcuts}"
@@ -103,8 +104,8 @@
                      Salidas: el costo unitario es read-only — el sistema lo asigna a partir de la
                      misma búsqueda (stockTotalsPage). Visibilidad sujeta a permiso del usuario
                      (CanViewCost) — futura integración con permisos. -->
-                <ContentControl Grid.Row="1" Margin="0,0,0,8"
-                                Visibility="{Binding IsDraft, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Grid.Row="1" Margin="0,0,0,8"
+                            Visibility="{Binding IsDraft, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <editor:ItemDimensionEditorView DataContext="{Binding Editor}"
                                                     ShowSearchBadge="True">
                         <editor:ItemDimensionEditorView.AdditionalContent>
@@ -167,10 +168,33 @@
                             </StackPanel>
                         </editor:ItemDimensionEditorView.TrailingContent>
                     </editor:ItemDimensionEditorView>
-                </ContentControl>
 
-                <!-- Grid líneas WPF DataGrid — modelo edit nativo, sin pencil persistente -->
+                    <!-- Existencias por bodega del item seleccionado.
+                         Modo pull: el UC consulta stockTotalsPage con itemId y muestra
+                         tarjetas (storage, cantidad, dimensión). Solo se renderiza si hay
+                         item elegido en el editor. -->
+                    <uc:ItemStockByStorageView
+                        ItemId="{Binding Editor.SelectedItemId}"
+                        MeasurementUnitAbbreviation="{Binding Editor.SelectedItemMeasurementUnit}"
+                        AllowFraction="{Binding Editor.SelectedItem.AllowFraction, FallbackValue=True}"
+                        HighlightedStorageIds="{Binding HighlightedStorageIds}"
+                        Visibility="{Binding Editor.HasSelectedItem, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+
+                <!-- Grid líneas WPF DataGrid — modelo edit nativo, sin pencil persistente.
+                     Oculto mientras el usuario tiene un item seleccionado en el editor: control
+                     de flujo — debe completar/cancelar la línea antes de manipular la grilla. -->
                 <Grid Grid.Row="2">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Editor.HasSelectedItem}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
                 <DataGrid x:Name="LinesGrid"
                           ItemsSource="{Binding Lines}"
                           SelectedItem="{Binding SelectedLine, Mode=TwoWay}"
@@ -241,6 +265,18 @@
                         <Style x:Key="ReadOnlyTextStyle" TargetType="TextBlock">
                             <Setter Property="VerticalAlignment" Value="Top"/>
                             <Setter Property="HorizontalAlignment" Value="Left"/>
+                            <Setter Property="Padding" Value="6,4"/>
+                        </Style>
+                        <Style x:Key="RightCenterTextStyle" TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="TextAlignment" Value="Right"/>
+                            <Setter Property="Padding" Value="6,4"/>
+                        </Style>
+                        <Style x:Key="LeftCenterTextStyle" TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                            <Setter Property="TextAlignment" Value="Left"/>
                             <Setter Property="Padding" Value="6,4"/>
                         </Style>
                         <Style x:Key="HeaderLeftStyle" TargetType="DataGridColumnHeader">
@@ -340,10 +376,22 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Existencias"
+                                            Width="110"
+                                            Binding="{Binding AvailableStockDisplay}"
+                                            IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                    <Setter Property="Padding" Value="6,4"/>
+                                    <Setter Property="Foreground" Value="#6c757d"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTemplateColumn x:Name="QuantityColumn" Header="Cantidad" Width="108">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding QuantityDisplay}" TextAlignment="Right" Padding="3"/>
+                                    <TextBlock Text="{Binding QuantityDisplay}" Style="{StaticResource RightCenterTextStyle}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
@@ -357,11 +405,11 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="UND" Width="60" Binding="{Binding Item.MeasurementUnit.Abbreviation}" IsReadOnly="True" ElementStyle="{StaticResource ReadOnlyTextStyle}"/>
+                        <DataGridTextColumn Header="UND" Width="60" Binding="{Binding Item.MeasurementUnit.Abbreviation}" IsReadOnly="True" ElementStyle="{StaticResource LeftCenterTextStyle}"/>
                         <DataGridTemplateColumn Header="Costo unitario" Width="126">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding UnitCost, StringFormat=C, TargetNullValue=0}" TextAlignment="Right" Padding="3"/>
+                                    <TextBlock Text="{Binding UnitCost, StringFormat=C, TargetNullValue=0}" Style="{StaticResource RightCenterTextStyle}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
@@ -375,14 +423,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Subtotal" Width="136" Binding="{Binding Subtotal, StringFormat=N2}" IsReadOnly="True">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="TextAlignment" Value="Right"/>
-                                    <Setter Property="Padding" Value="3"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Subtotal" Width="136" Binding="{Binding Subtotal, StringFormat=N2}" IsReadOnly="True" ElementStyle="{StaticResource RightCenterTextStyle}"/>
                     </DataGrid.Columns>
                 </DataGrid>
                 <Border IsHitTestVisible="False">
@@ -407,8 +448,19 @@
                 </Border>
                 </Grid>
 
-                <!-- Nota: multi-line con scroll, auto-save al perder foco. Indicador status. -->
+                <!-- Nota: multi-line con scroll, auto-save al perder foco. Indicador status.
+                     Oculto cuando hay item seleccionado en editor (control de flujo). -->
                 <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Editor.HasSelectedItem}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Observación" FontSize="13" Foreground="Gray"/>
                         <Ellipse Width="8" Height="8" Margin="6,0,0,0"
@@ -451,8 +503,18 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- Botones -->
+                <!-- Botones — ocultos cuando hay item seleccionado en editor (control de flujo). -->
                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Editor.HasSelectedItem}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
                     <Border Margin="4,0" CornerRadius="4" BorderThickness="2" Padding="0">
                         <Border.Style>
                             <Style TargetType="Border">

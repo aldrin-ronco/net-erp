@@ -42,9 +42,45 @@ namespace NetErp.Inventory.StockMovementsOut.DTO
                     NotifyOfPropertyChange(nameof(QuantityMask));
                     NotifyOfPropertyChange(nameof(QuantityFormat));
                     NotifyOfPropertyChange(nameof(QuantityDisplay));
+                    NotifyOfPropertyChange(nameof(AvailableStockDisplay));
                 }
             }
         } = new();
+
+        /// <summary>
+        /// Snapshot informativo de stock disponible al momento de cargar el draft o
+        /// agregar la línea. NO se actualiza en vivo. Solo aplica a items BASE
+        /// (sin dimensiones); para dimensionados se mantiene null y la celda queda vacía.
+        /// </summary>
+        public decimal? AvailableStockSnapshot
+        {
+            get;
+            private set
+            {
+                if (field == value) return;
+                field = value;
+                NotifyOfPropertyChange();
+                NotifyOfPropertyChange(nameof(AvailableStockDisplay));
+            }
+        }
+
+        public void SetAvailableStockSnapshot(decimal? value) => AvailableStockSnapshot = value;
+
+        /// <summary>
+        /// Texto formateado del snapshot. Vacío para items dimensionados o sin snapshot.
+        /// </summary>
+        public string AvailableStockDisplay
+        {
+            get
+            {
+                if (HasDimensions) return string.Empty;
+                if (AvailableStockSnapshot is not decimal v) return string.Empty;
+                string unit = Item?.MeasurementUnit?.Abbreviation ?? string.Empty;
+                return string.IsNullOrEmpty(unit)
+                    ? v.ToString(QuantityFormat)
+                    : $"{v.ToString(QuantityFormat)} {unit}";
+            }
+        }
 
         /// <summary>Máscara numérica (N0 entero / N2 decimal) según <c>Item.AllowFraction</c>.</summary>
         public string QuantityMask => Item?.AllowFraction == true ? "N2" : "N0";
@@ -228,6 +264,7 @@ namespace NetErp.Inventory.StockMovementsOut.DTO
             NotifyOfPropertyChange(nameof(LotRows));
             NotifyOfPropertyChange(nameof(SerialRows));
             NotifyOfPropertyChange(nameof(SizeRows));
+            NotifyOfPropertyChange(nameof(AvailableStockDisplay));
         }
 
         public static StockMovementLineDTO FromModel(StockMovementLineGraphQLModel m)

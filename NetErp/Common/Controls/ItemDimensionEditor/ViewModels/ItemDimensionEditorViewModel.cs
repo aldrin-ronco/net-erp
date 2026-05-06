@@ -5,8 +5,10 @@ using NetErp.Helpers.Services;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.UserControls.ItemDimensionEditor.DTO;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,8 +22,10 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
     /// Si match → panel de info se llena, foco va a Cantidad.
     /// Si no match → abre modal de búsqueda pasando el término escrito.
     /// </summary>
-    public class ItemDimensionEditorViewModel : PropertyChangedBase
+    public class ItemDimensionEditorViewModel : PropertyChangedBase, INotifyDataErrorInfo
     {
+        private readonly Dictionary<string, List<string>> _errors = [];
+
         private readonly Func<ItemSearchFilters, CancellationToken, Task<IReadOnlyList<ItemGraphQLModel>>> _searchProvider;
         private readonly Func<int, int, CancellationToken, Task<IReadOnlyList<LotAvailability>>>? _lotProvider;
         private readonly Func<int, int, CancellationToken, Task<IReadOnlyList<SerialAvailability>>>? _serialProvider;
@@ -128,6 +132,18 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             set { _searchFieldFocus = value; NotifyOfPropertyChange(); }
         }
 
+        /// <summary>
+        /// Hook GotFocus del campo de búsqueda. Captura cualquier vía de focus
+        /// (click, Ctrl+F, Tab, programático). Si la búsqueda NO está bloqueada
+        /// (selección hecha por modal con término vacío) y hay item seleccionado,
+        /// limpia la selección — el panel de info quedaba mostrando un resultado
+        /// anterior confuso al iniciar nueva búsqueda.
+        /// </summary>
+        public void OnSearchGotFocus()
+        {
+            if (HasSelectedItem && !HasSearchTerm) ClearSelection();
+        }
+
         private bool _quantityFieldFocus;
         public bool QuantityFieldFocus
         {
@@ -227,10 +243,16 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             {
                 if (ReferenceEquals(_selectedItem, value)) return;
                 _selectedItem = value;
+                _maxBaseQuantity = null;
+                _maxBaseQuantityUnit = string.Empty;
+                ClearErrors(nameof(BaseQuantity));
+                NotifyOfPropertyChange(nameof(MaxBaseQuantity));
+                NotifyOfPropertyChange(nameof(MaxBaseQuantityUnit));
                 NotifyOfPropertyChange();
                 NotifyOfPropertyChange(nameof(HasSelectedItem));
                 NotifyOfPropertyChange(nameof(IsSearchReadOnly));
                 NotifyOfPropertyChange(nameof(QuantityMask));
+                NotifyOfPropertyChange(nameof(SelectedItemId));
                 NotifyOfPropertyChange(nameof(SelectedItemCode));
                 NotifyOfPropertyChange(nameof(SelectedItemName));
                 NotifyOfPropertyChange(nameof(SelectedItemReference));
@@ -282,6 +304,7 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         /// <summary>Máscara numérica según <c>Item.AllowFraction</c> (N0 entero / N2 decimal).</summary>
         public string QuantityMask => _selectedItem?.AllowFraction == true ? "N2" : "N0";
 
+        public int SelectedItemId => _selectedItem?.Id ?? 0;
         public string SelectedItemCode => _selectedItem?.Code ?? string.Empty;
         public string SelectedItemName => _selectedItem?.Name ?? string.Empty;
         public string SelectedItemReference => _selectedItem?.Reference ?? string.Empty;
@@ -343,6 +366,9 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             _sizes.Clear();
             _baseQuantity = 0m;
             _searchTerm = string.Empty;
+            _maxBaseQuantity = null;
+            _maxBaseQuantityUnit = string.Empty;
+            ClearErrors(nameof(BaseQuantity));
             NotifyOfPropertyChange(nameof(SearchTerm));
             NotifyOfPropertyChange(nameof(HasSearchTerm));
             NotifyOfPropertyChange(nameof(IsSearchReadOnly));
@@ -350,6 +376,8 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
             NotifyOfPropertyChange(nameof(TotalQuantity));
             NotifyOfPropertyChange(nameof(DimensionSummary));
             NotifyOfPropertyChange(nameof(IsLineComplete));
+            NotifyOfPropertyChange(nameof(MaxBaseQuantity));
+            NotifyOfPropertyChange(nameof(MaxBaseQuantityUnit));
             SearchFieldFocus = false;
             SearchFieldFocus = true;
         }
@@ -370,7 +398,37 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
                 NotifyOfPropertyChange(nameof(TotalQuantity));
                 NotifyOfPropertyChange(nameof(IsLineComplete));
                 NotifyOfPropertyChange(nameof(CanComplete));
+                ValidateBaseQuantity();
             }
+        }
+
+        /// <summary>
+        /// Tope opcional para validación de <see cref="BaseQuantity"/> en items BASE.
+        /// null = sin límite (Entradas / consumidores que no validen tope).
+        /// Setea el caller (ej. detail VM Salidas con stock disponible).
+        /// </summary>
+        private decimal? _maxBaseQuantity;
+        public decimal? MaxBaseQuantity
+        {
+            get => _maxBaseQuantity;
+            set
+            {
+                if (_maxBaseQuantity == value) return;
+                _maxBaseQuantity = value;
+                NotifyOfPropertyChange();
+                ValidateBaseQuantity();
+            }
+        }
+
+        /// <summary>
+        /// Unidad de medida usada en el mensaje de error de stock insuficiente.
+        /// Se actualiza con el item seleccionado.
+        /// </summary>
+        private string _maxBaseQuantityUnit = string.Empty;
+        public string MaxBaseQuantityUnit
+        {
+            get => _maxBaseQuantityUnit;
+            set { _maxBaseQuantityUnit = value ?? string.Empty; NotifyOfPropertyChange(); }
         }
 
         public bool CanComplete => IsLineComplete;
@@ -507,6 +565,62 @@ namespace NetErp.UserControls.ItemDimensionEditor.ViewModels
         {
             SearchFieldFocus = false;
             SearchFieldFocus = true;
+        }
+
+        public void FocusQuantity()
+        {
+            QuantityFieldFocus = false;
+            QuantityFieldFocus = true;
+        }
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        public bool HasErrors => _errors.Count > 0;
+        public event System.EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName)) return Enumerable.Empty<string>();
+            return _errors.TryGetValue(propertyName, out List<string>? list) ? list : Enumerable.Empty<string>();
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.TryGetValue(propertyName, out List<string>? list))
+            {
+                list = [];
+                _errors[propertyName] = list;
+            }
+            if (!list.Contains(error))
+            {
+                list.Add(error);
+                ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.Remove(propertyName))
+                ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Valida <see cref="BaseQuantity"/> contra <see cref="MaxBaseQuantity"/>.
+        /// Solo aplica a items BASE; dimensionados (size/lot/serial) validan en sus modales.
+        /// </summary>
+        private void ValidateBaseQuantity()
+        {
+            ClearErrors(nameof(BaseQuantity));
+            if (_selectedItem == null) return;
+            if (DimensionType != DimensionType.Base) return;
+            if (_maxBaseQuantity is not decimal max) return;
+            if (_baseQuantity > max)
+            {
+                string unit = string.IsNullOrWhiteSpace(_maxBaseQuantityUnit) ? string.Empty : $" {_maxBaseQuantityUnit}";
+                AddError(nameof(BaseQuantity), $"Stock insuficiente. Disponible: {max:0.##}{unit}");
+            }
         }
 
         #endregion

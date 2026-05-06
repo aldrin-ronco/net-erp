@@ -131,7 +131,13 @@ namespace NetErp.Inventory.StockMovementsOut.Helpers
                             .SelectList(c => c.ItemSizeValues, sv => sv
                                 .Field(v => v.Id)
                                 .Field(v => v.Name)
-                                .Field(v => v.DisplayOrder))))
+                                .Field(v => v.DisplayOrder)))
+                        .SelectList(i => i.Stocks, st => st
+                            .Field(s => s.Dimension)
+                            .Field(s => s.Quantity)
+                            .Field(s => s.Cost)
+                            .Select(s => s.Storage, sg => sg
+                                .Field(g => g.Id))))
                     .SelectList(l => l.LotPreselections, lp => lp
                         .Field(lt => lt.Id)
                         .Field(lt => lt.LotNumber)
@@ -172,7 +178,7 @@ namespace NetErp.Inventory.StockMovementsOut.Helpers
                 .Create()
                 .Field(p => p.TotalEntries)
                 .SelectList(p => p.Entries, e => e
-                    .Field(s => s.Tracking)
+                    .Field(s => s.Dimension)
                     .Field(s => s.Quantity)
                     .Field(s => s.Cost)
                     .Select(s => s.Item, i => i

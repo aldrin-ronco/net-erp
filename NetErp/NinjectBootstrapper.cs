@@ -328,6 +328,7 @@ namespace NetErp
             _ = kernel.Bind<IRepository<PaymentMethodGraphQLModel>>().To<GraphQLRepository<PaymentMethodGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StockTotalGraphQLModel>>().To<GraphQLRepository<StockTotalGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
             
             // Inventory module repositories
