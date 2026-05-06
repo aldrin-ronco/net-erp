@@ -48,7 +48,7 @@
                             AllowDefaultButton="False"
                             IsEnabled="{Binding IsStorageReady}"
                             IsReadOnly="{Binding IsSearchReadOnly}"
-                            cal:Message.Attach="[Event KeyDown] = [Action OnSearchKeyDown($eventArgs)]">
+                            cal:Message.Attach="[Event KeyDown] = [Action OnSearchKeyDown($eventArgs)]; [Event GotKeyboardFocus] = [Action OnSearchGotFocus]">
                 <h:FocusBehavior.IsFocused>
                     <Binding Path="SearchFieldFocus" Mode="TwoWay"/>
                 </h:FocusBehavior.IsFocused>
@@ -135,7 +135,7 @@
                                   IsFloatValue="True"
                                   MaskType="Numeric" Mask="{Binding QuantityMask}"
                                   AllowNullInput="False"
-                                  EditValue="{Binding BaseQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                  EditValue="{Binding BaseQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}">
                         <h:FocusBehavior.IsFocused>
                             <Binding Path="QuantityFieldFocus" Mode="TwoWay"/>
                         </h:FocusBehavior.IsFocused>

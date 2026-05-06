@@ -101,6 +101,8 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
         public string DocumentDisplay => _model.DocumentDisplay;
         public string CostCenterName { get => _model.CostCenter?.Name ?? string.Empty; }
         public string StorageName { get => _model.Storage?.Name ?? string.Empty; }
+        public IEnumerable<int> HighlightedStorageIds
+            => _model.Storage?.Id is int id && id > 0 ? [id] : [];
         public DateTime InsertedAt { get => _model.InsertedAt; }
         public string DocumentDate => _model.InsertedAt.ToString("dd/MM/yyyy");
         public string DocumentTime => _model.InsertedAt.ToString("HH:mm");
@@ -294,9 +296,23 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
             {
                 // Auto-populate LineUnitCost desde cache poblado por la búsqueda.
                 int? itemId = Editor.SelectedItem?.Id;
-                LineUnitCost = itemId.HasValue && _baseStockByItemId.TryGetValue(itemId.Value, out var data)
-                    ? data.Cost
-                    : 0m;
+                (decimal Available, decimal Cost) data = itemId.HasValue && _baseStockByItemId.TryGetValue(itemId.Value, out var d)
+                    ? d
+                    : (0m, 0m);
+                LineUnitCost = data.Cost;
+
+                // Inyectar tope de stock para validación INotifyDataErrorInfo del campo Cantidad.
+                // Solo aplica a items BASE; dimensionados validan en sus modales.
+                if (Editor.SelectedItem != null && Editor.DimensionType == DimensionType.Base)
+                {
+                    Editor.MaxBaseQuantityUnit = Editor.SelectedItem.MeasurementUnit?.Abbreviation ?? string.Empty;
+                    Editor.MaxBaseQuantity = data.Available;
+                }
+                else
+                {
+                    Editor.MaxBaseQuantity = null;
+                    Editor.MaxBaseQuantityUnit = string.Empty;
+                }
             }
             if (e.PropertyName == nameof(ItemDimensionEditorViewModel.CanComplete)
                 || e.PropertyName == nameof(ItemDimensionEditorViewModel.HasSelectedItem)
@@ -334,8 +350,12 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
                 (GraphQLQueryFragment fragment, string query) = StockMovementOutQueries.ItemsWithStockPage.Value;
 
                 // stockTotalsPage: filtra por bodega del documento; solo devuelve items con qty > 0.
+                // ExpandoObject (no anónimo): el modal agrega .matching y .pageResponsePagination
+                // dinámicamente — un anónimo es inmutable y haría fallar la asignación.
+                dynamic filters = new ExpandoObject();
+                filters.storageId = _model.Storage?.Id ?? 0;
                 object variables = new GraphQLVariables()
-                    .For(fragment, "filters", new { storageId = _model.Storage?.Id ?? 0 })
+                    .For(fragment, "filters", filters)
                     .Build();
 
                 Func<StockTotalGraphQLModel?, Task> onSelected = entry =>
@@ -397,7 +417,7 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
                 _notificationService.ShowError(
                     $"Stock insuficiente. Disponible: {available:0.##} {args.Item.MeasurementUnit?.Abbreviation ?? string.Empty}",
                     durationMs: 6000);
-                FocusSearchDeferred();
+                FocusQuantityDeferred();
                 return Task.CompletedTask;
             }
 
@@ -417,6 +437,8 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
             optimistic.SetQuantitySilently(args.TotalQuantity);
             optimistic.SetUnitCostSilently(cost);
             optimistic.ApplyLocalDimensions(args.Lots, args.Serials, args.Sizes);
+            // Snapshot stock para columna informativa — solo BASE (sin dimensiones).
+            if (!optimistic.HasDimensions) optimistic.SetAvailableStockSnapshot(available);
             optimistic.LineChanged += OnLineChanged;
             Lines.Add(optimistic);
 
@@ -430,6 +452,15 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
             #pragma warning disable VSTHRD001
             _ = (Application.Current?.Dispatcher.BeginInvoke(
                 new System.Action(() => Editor?.FocusSearch()),
+                System.Windows.Threading.DispatcherPriority.ContextIdle));
+            #pragma warning restore
+        }
+
+        private void FocusQuantityDeferred()
+        {
+            #pragma warning disable VSTHRD001
+            _ = (Application.Current?.Dispatcher.BeginInvoke(
+                new System.Action(() => Editor?.FocusQuantity()),
                 System.Windows.Threading.DispatcherPriority.ContextIdle));
             #pragma warning restore
         }
@@ -598,7 +629,7 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
             foreach (StockTotalGraphQLModel entry in response.PageResponse.Entries)
             {
                 if (entry.Item == null) continue;
-                bool isBase = string.Equals(entry.Tracking, "BASE", StringComparison.OrdinalIgnoreCase);
+                bool isBase = string.Equals(entry.Dimension, "BASE", StringComparison.OrdinalIgnoreCase);
                 if (isBase || !_baseStockByItemId.ContainsKey(entry.Item.Id))
                     _baseStockByItemId[entry.Item.Id] = (entry.Quantity, entry.Cost);
             }
@@ -741,6 +772,28 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
             foreach (StockMovementLineGraphQLModel l in sm.Lines.OrderBy(x => x.DisplayOrder))
                 Lines.Add(StockMovementLineDTO.FromModel(l));
             SubscribeLines();
+            // Pre-cargar cache de stock disponible por item desde la misma query del draft
+            // (item.stocks viene anidado, sin round-trip extra). Habilita validación in-grid
+            // de cantidad para items BASE en líneas existentes sin necesidad de buscar otra
+            // vez. Filtra fila BASE de la bodega del documento.
+            int currentStorageId = _model.Storage?.Id ?? 0;
+            foreach (StockMovementLineGraphQLModel l in sm.Lines)
+            {
+                if (l.Item == null || l.Item.Stocks == null) continue;
+                StockTotalGraphQLModel? baseRow = l.Item.Stocks
+                    .FirstOrDefault(s => string.Equals(s.Dimension, "BASE", StringComparison.OrdinalIgnoreCase)
+                                      && s.Storage?.Id == currentStorageId);
+                if (baseRow != null)
+                    _baseStockByItemId[l.Item.Id] = (baseRow.Quantity, baseRow.Cost);
+            }
+            // Snapshot informativo de stock por línea BASE — alimenta columna "Stock" en grid.
+            // Solo se setea para items sin dimensiones; dimensionados quedan en null.
+            foreach (StockMovementLineDTO dto in Lines)
+            {
+                if (dto.HasDimensions || dto.Item == null) continue;
+                if (_baseStockByItemId.TryGetValue(dto.Item.Id, out (decimal Available, decimal Cost) data))
+                    dto.SetAvailableStockSnapshot(data.Available);
+            }
             NotifyAllHeader();
             // Solo construir Editor la primera vez. Reload solo refresca la grilla
             // y mantiene el UC vivo (preserva foco / bindings).
@@ -976,6 +1029,19 @@ namespace NetErp.Inventory.StockMovementsOut.ViewModels
             if (e.PropertyName == nameof(StockMovementLineDTO.Quantity) && e.NewValue <= 0)
             {
                 _notificationService.ShowError("La cantidad debe ser mayor que cero.", "Error de validación");
+                dto.SetQuantitySilently(e.OldValue);
+                return;
+            }
+            if (e.PropertyName == nameof(StockMovementLineDTO.Quantity)
+                && !dto.HasDimensions
+                && dto.Item?.Id is int itemId
+                && _baseStockByItemId.TryGetValue(itemId, out (decimal Available, decimal Cost) data)
+                && e.NewValue > data.Available)
+            {
+                string unit = dto.Item.MeasurementUnit?.Abbreviation ?? string.Empty;
+                _notificationService.ShowError(
+                    $"Stock insuficiente. Disponible: {data.Available:0.##} {unit}",
+                    durationMs: 6000);
                 dto.SetQuantitySilently(e.OldValue);
                 return;
             }

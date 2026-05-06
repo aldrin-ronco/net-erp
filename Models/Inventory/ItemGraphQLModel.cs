@@ -42,7 +42,7 @@ namespace Models.Inventory
         public DateTime UpdatedAt { get; set; }
         public IEnumerable<EanCodeByItemGraphQLModel> EanCodes { get; set; } = [];
         public IEnumerable<ImageByItemGraphQLModel> Images { get; set; } = [];
-        public IEnumerable<StockGraphQLModel> Stocks { get; set; } = [];
+        public IEnumerable<StockTotalGraphQLModel> Stocks { get; set; } = [];
     }
 
     public class ItemCreateMessage

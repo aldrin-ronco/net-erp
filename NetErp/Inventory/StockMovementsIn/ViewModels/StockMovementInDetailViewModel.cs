@@ -92,6 +92,8 @@ namespace NetErp.Inventory.StockMovementsIn.ViewModels
         public string DocumentDisplay => _model.DocumentDisplay;
         public string CostCenterName { get => _model.CostCenter?.Name ?? string.Empty; }
         public string StorageName { get => _model.Storage?.Name ?? string.Empty; }
+        public IEnumerable<int> HighlightedStorageIds
+            => _model.Storage?.Id is int id && id > 0 ? [id] : [];
         public DateTime InsertedAt { get => _model.InsertedAt; }
         public string DocumentDate => _model.InsertedAt.ToString("dd/MM/yyyy");
         public string DocumentTime => _model.InsertedAt.ToString("HH:mm");
